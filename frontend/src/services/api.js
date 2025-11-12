@@ -1,0 +1,121 @@
+// API Service Layer
+import axios from 'axios';
+import { API_BASE_URL, HTTP_STATUS } from '../utils/constants';
+
+// Create axios instance with default config
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor - Add auth token if available
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor - Handle errors globally
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response) {
+      // Server responded with error status
+      const { status, data } = error.response;
+      
+      switch (status) {
+        case HTTP_STATUS.UNAUTHORIZED:
+          // Clear token and redirect to login
+          localStorage.removeItem('authToken');
+          window.location.href = '/login';
+          break;
+        case HTTP_STATUS.FORBIDDEN:
+          // Redirect to 403 page
+          window.location.href = '/403';
+          break;
+        case HTTP_STATUS.NOT_FOUND:
+          // Redirect to 404 page
+          window.location.href = '/404';
+          break;
+        case HTTP_STATUS.INTERNAL_SERVER_ERROR:
+          // Log error and show message
+          console.error('Server error:', data);
+          break;
+        default:
+          console.error('API error:', data);
+      }
+    } else if (error.request) {
+      // Request made but no response received
+      console.error('Network error:', error.message);
+    } else {
+      // Something else happened
+      console.error('Error:', error.message);
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
+// API Methods
+export const apiService = {
+  // Health check
+  healthCheck: () => api.get('/health'),
+  
+  // Company endpoints
+        registerCompany: (data) => {
+          if (data.step === 1) {
+            return api.post('/company/register', data);
+          } else if (data.step === 3 || data.step === 4) {
+            // Support both step3 and step4 for backward compatibility
+            return api.post('/company/register/step4', data);
+          }
+          throw new Error('Invalid registration step');
+        },
+  verifyCompany: (companyId, data) => api.post(`/company/${companyId}/verify`, data),
+  getCompany: (companyId) => api.get(`/company/${companyId}`),
+  updateCompany: (companyId, data) => api.put(`/company/${companyId}`, data),
+  getCompanies: (params) => api.get('/company', { params }),
+  
+  // Employee endpoints
+  getEmployee: (employeeId) => api.get(`/employee/${employeeId}`),
+  updateEmployee: (employeeId, data) => api.put(`/employee/${employeeId}`, data),
+  createEmployee: (data) => api.post('/employee', data),
+  getEmployees: (params) => api.get('/employee', { params }),
+  
+  // Profile endpoints
+  getProfile: (employeeId) => api.get(`/profile/${employeeId}`),
+  updateProfile: (employeeId, data) => api.put(`/profile/${employeeId}`, data),
+  approveProfile: (employeeId, data) => api.post(`/profile/${employeeId}/approve`, data),
+  
+  // Skills endpoints
+  verifySkills: (data) => api.post('/skills/verify', data),
+  updateSkills: (employeeId, data) => api.put(`/skills/${employeeId}`, data),
+  
+  // Request endpoints
+  createLearningRequest: (data) => api.post('/requests/learning', data),
+  getLearningRequests: (params) => api.get('/requests/learning', { params }),
+  createExtraAttemptRequest: (data) => api.post('/requests/extra-attempts', data),
+  getExtraAttemptRequests: (params) => api.get('/requests/extra-attempts', { params }),
+  approveRequest: (requestId, data) => api.post(`/requests/${requestId}/approve`, data),
+  
+  // Auth endpoints
+  login: (data) => api.post('/auth/login', data),
+  signup: (data) => api.post('/auth/signup', data),
+  logout: () => api.post('/auth/logout'),
+  verifyEmail: (token) => api.post('/auth/verify', { token }),
+};
+
+export default api;
+

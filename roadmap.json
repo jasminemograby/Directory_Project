@@ -1,0 +1,1700 @@
+{
+  "project_name": "Directory Microservice",
+  "version": "1.0.0",
+  "created_at": "2024-01-01",
+  "do_not_redo": [],
+  "ui_ux_note": "UI/UX requirements and design system specifications are documented in docs/ui_ux_requirements.md. All UI components, pages, navigation, and design system will be designed during the UI-UX-Design-Template phase. The current roadmap focuses on functional features.",
+  "features": [
+    {
+      "id": "F001",
+      "title": "Company Registration Form",
+      "description": "HR fills out company registration form with company details, employee list, roles, departments, teams, KPIs, and Learning Path approval policy.",
+      "inputs": [
+        "Company name, industry",
+        "Departments and teams structure",
+        "Employee list (names, emails, roles: regular/internal instructor/external instructor)",
+        "Career paths per employee",
+        "Single Decision Maker for Learning Path approval (optional if auto-approval)",
+        "Learning Path approval policy (Manual/Auto)",
+        "Primary KPI(s)"
+      ],
+      "outputs": [
+        "Company registration request data",
+        "Validation status"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/CompanyRegistration/CompanyRegistrationForm.js",
+        "frontend/src/components/CompanyRegistration/EmployeeListInput.js",
+        "frontend/src/components/CompanyRegistration/DepartmentTeamInput.js",
+        "frontend/src/components/CompanyRegistration/LearningPathPolicyInput.js",
+        "backend/routes/companyRegistration.js",
+        "backend/controllers/companyRegistrationController.js",
+        "backend/validators/companyRegistrationValidator.js",
+        "backend/models/CompanyRegistration.js"
+      ],
+      "dependencies": [],
+      "milestones": [
+        {
+          "id": "M001-001",
+          "title": "Create Company Registration Form UI",
+          "description": "Build React components for company registration form with all required fields",
+          "artifact_filenames": [
+            "frontend/src/components/CompanyRegistration/CompanyRegistrationForm.js",
+            "frontend/src/components/CompanyRegistration/EmployeeListInput.js",
+            "frontend/src/components/CompanyRegistration/DepartmentTeamInput.js",
+            "frontend/src/components/CompanyRegistration/LearningPathPolicyInput.js"
+          ],
+          "required_templates": ["UI-UX-Design-Template.md", "Implementation-Template.md"]
+        },
+        {
+          "id": "M001-002",
+          "title": "Implement Backend Registration Endpoint",
+          "description": "Create backend routes, controllers, and validators for company registration",
+          "artifact_filenames": [
+            "backend/routes/companyRegistration.js",
+            "backend/controllers/companyRegistrationController.js",
+            "backend/validators/companyRegistrationValidator.js",
+            "backend/models/CompanyRegistration.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F002",
+      "title": "Company Legitimacy Verification",
+      "description": "Directory verifies company registration request. If invalid, sends email to HR with reason. If valid, creates company account.",
+      "inputs": ["Company registration request data"],
+      "outputs": [
+        "Verification result (valid/invalid)",
+        "Email notification to HR (if invalid)",
+        "Company account creation (if valid)"
+      ],
+      "artifact_filenames": [
+        "backend/services/companyVerificationService.js",
+        "backend/services/emailService.js",
+        "backend/controllers/companyVerificationController.js"
+      ],
+      "dependencies": ["F001"],
+      "milestones": [
+        {
+          "id": "M002-001",
+          "title": "Implement Company Verification Logic",
+          "description": "Create verification service and email service for company legitimacy check",
+          "artifact_filenames": [
+            "backend/services/companyVerificationService.js",
+            "backend/services/emailService.js",
+            "backend/controllers/companyVerificationController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F003",
+      "title": "Employee Registration Check with Auth Service",
+      "description": "After company creation, Directory checks with Auth Service if all employees are registered. Unregistered employees trigger in-app notifications to HR via SendPulse.",
+      "inputs": ["Employee list from company registration", "Company ID"],
+      "outputs": [
+        "Registration status per employee",
+        "In-app notifications to HR for unregistered employees"
+      ],
+      "artifact_filenames": [
+        "backend/services/authServiceIntegration.js",
+        "backend/services/sendPulseService.js",
+        "backend/controllers/employeeRegistrationController.js"
+      ],
+      "dependencies": ["F002"],
+      "milestones": [
+        {
+          "id": "M003-001",
+          "title": "Integrate Auth Service and SendPulse",
+          "description": "Create services for Auth Service integration and SendPulse notifications",
+          "artifact_filenames": [
+            "backend/services/authServiceIntegration.js",
+            "backend/services/sendPulseService.js",
+            "backend/controllers/employeeRegistrationController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F004",
+      "title": "External Data Collection for Employee Profiles",
+      "description": "Collects employee data from external APIs: LinkedIn, GitHub, Credly, YouTube, ORCID, Crossref. HR provides direct links during registration.",
+      "inputs": [
+        "Employee names, emails",
+        "External source links (GitHub, YouTube, ORCID, CREDLY, Crossref)",
+        "LinkedIn API credentials"
+      ],
+      "outputs": ["Raw employee data from all external sources"],
+      "artifact_filenames": [
+        "backend/services/linkedInService.js",
+        "backend/services/githubService.js",
+        "backend/services/credlyService.js",
+        "backend/services/youtubeService.js",
+        "backend/services/orcidService.js",
+        "backend/services/crossrefService.js",
+        "backend/services/externalDataCollector.js",
+        "backend/config/externalApis.js"
+      ],
+      "dependencies": ["F002"],
+      "milestones": [
+        {
+          "id": "M004-001",
+          "title": "Implement External API Services",
+          "description": "Create services for all external APIs (LinkedIn, GitHub, Credly, YouTube, ORCID, Crossref)",
+          "artifact_filenames": [
+            "backend/services/linkedInService.js",
+            "backend/services/githubService.js",
+            "backend/services/credlyService.js",
+            "backend/services/youtubeService.js",
+            "backend/services/orcidService.js",
+            "backend/services/crossrefService.js",
+            "backend/services/externalDataCollector.js",
+            "backend/config/externalApis.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F005",
+      "title": "AI-Enhanced Profile Enrichment (Bio & Projects)",
+      "description": "Before sending to Skills Engine, Directory uses Gemini API to generate short professional bio and identify/summarize projects from collected raw data.",
+      "inputs": ["Raw employee data from external sources"],
+      "outputs": [
+        "AI-generated short bio",
+        "Project titles and AI-generated summaries"
+      ],
+      "artifact_filenames": [
+        "backend/services/geminiService.js",
+        "backend/services/profileEnrichmentService.js"
+      ],
+      "dependencies": ["F004"],
+      "milestones": [
+        {
+          "id": "M005-001",
+          "title": "Implement Gemini API Integration",
+          "description": "Create Gemini service for AI-based profile enrichment (bio and projects)",
+          "artifact_filenames": [
+            "backend/services/geminiService.js",
+            "backend/services/profileEnrichmentService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md", "Cybersecurity-Validation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F006",
+      "title": "Skills Engine Integration - Skill Normalization",
+      "description": "Directory sends collected raw data and employee type (trainer/regular) to Skills Engine. Skills Engine returns normalized skills as structured competencies (unverified).",
+      "inputs": ["Raw employee data", "Employee type (trainer/regular)"],
+      "outputs": ["Normalized skills (unverified) as structured competencies"],
+      "artifact_filenames": [
+        "backend/services/skillsEngineService.js",
+        "backend/controllers/skillsEngineController.js"
+      ],
+      "dependencies": ["F005"],
+      "milestones": [
+        {
+          "id": "M006-001",
+          "title": "Integrate Skills Engine for Normalization",
+          "description": "Create service for Skills Engine integration to normalize skills",
+          "artifact_filenames": [
+            "backend/services/skillsEngineService.js",
+            "backend/controllers/skillsEngineController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F007",
+      "title": "Employee Profile Creation & Storage",
+      "description": "Creates full employee profile in Directory DB with all collected and enriched data. Profile includes: normalized skills, bio, projects, basic info, role, type. Profile is created in 'pending approval' status awaiting HR confirmation.",
+      "inputs": [
+        "Company registration data",
+        "Enriched profile data (bio, projects)",
+        "Normalized skills from Skills Engine"
+      ],
+      "outputs": ["Employee profile record in database (status: pending approval)"],
+      "artifact_filenames": [
+        "backend/models/Employee.js",
+        "backend/services/profileService.js",
+        "backend/controllers/profileController.js",
+        "database/migrations/001_create_employees_table.sql"
+      ],
+      "dependencies": ["F006"],
+      "milestones": [
+        {
+          "id": "M007-001",
+          "title": "Create Database Schema and Models",
+          "description": "Create employee table migration and model",
+          "artifact_filenames": [
+            "database/migrations/001_create_employees_table.sql",
+            "backend/models/Employee.js"
+          ],
+          "required_templates": ["Database-Design-Template.md", "Implementation-Template.md"]
+        },
+        {
+          "id": "M007-002",
+          "title": "Implement Profile Service",
+          "description": "Create profile service and controller for employee profile creation",
+          "artifact_filenames": [
+            "backend/services/profileService.js",
+            "backend/controllers/profileController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F007A",
+      "title": "HR Initial Profile Approval/Confirmation",
+      "description": "HR reviews and confirms employee experience and information for newly created profiles. HR must approve basic profile before employee card can be generated.",
+      "inputs": [
+        "Employee profile data awaiting approval",
+        "HR confirmation of employee experience and information"
+      ],
+      "outputs": [
+        "Approved employee profile (status: approved)",
+        "Profile ready for employee card generation"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/HR/InitialProfileApproval.js",
+        "backend/routes/initialProfileApproval.js",
+        "backend/controllers/initialProfileApprovalController.js"
+      ],
+      "dependencies": ["F007"],
+      "milestones": [
+        {
+          "id": "M007A-001",
+          "title": "Implement HR Initial Profile Approval",
+          "description": "Create UI component and backend endpoints for HR to approve initial employee profiles",
+          "artifact_filenames": [
+            "frontend/src/components/HR/InitialProfileApproval.js",
+            "frontend/src/pages/HRDashboard.js",
+            "backend/routes/initialProfileApproval.js",
+            "backend/controllers/initialProfileApprovalController.js",
+            "backend/services/initialProfileApprovalService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F007B",
+      "title": "Employee Card Generation",
+      "description": "After HR approval of basic profile, Directory generates complete Employee Card including: normalized skills into competencies (from Skills Engine), short bio (AI-generated), value proposition (career plans with required skills), and relevance scoring (numeric: required skills - current verified skills from Skills Engine).",
+      "inputs": [
+        "Approved employee profile (from F007A)",
+        "Normalized skills from Skills Engine",
+        "Career plans",
+        "Skills Engine data (required vs current skills)"
+      ],
+      "outputs": [
+        "Complete employee card with normalized skills, bio, value proposition, and relevance scoring"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/Profile/EmployeeCard.js",
+        "backend/services/employeeCardService.js"
+      ],
+      "dependencies": ["F007A", "F006", "F009"],
+      "milestones": [
+        {
+          "id": "M007B-001",
+          "title": "Implement Employee Card Generation",
+          "description": "Create service and component to generate complete employee card after HR approval",
+          "artifact_filenames": [
+            "frontend/src/components/Profile/EmployeeCard.js",
+            "backend/services/employeeCardService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F008",
+      "title": "Employee Profile Display",
+      "description": "Frontend component to display employee profile with all sections: bio, projects, skills, value proposition, relevance scores, completed courses, learning path button.",
+      "inputs": ["Employee ID", "User role (for permission-based visibility)"],
+      "outputs": ["Rendered employee profile page"],
+      "artifact_filenames": [
+        "frontend/src/components/Profile/EmployeeProfile.js",
+        "frontend/src/components/Profile/ProfileBio.js",
+        "frontend/src/components/Profile/ProfileProjects.js",
+        "frontend/src/components/Profile/ProfileSkills.js",
+        "frontend/src/components/Profile/ProfileCourses.js",
+        "frontend/src/components/Profile/ProfileValueProposition.js",
+        "frontend/src/pages/ProfilePage.js",
+        "frontend/src/services/profileService.js"
+      ],
+      "dependencies": ["F007B"],
+      "milestones": [
+        {
+          "id": "M008-001",
+          "title": "Build Profile Display Components",
+          "description": "Create React components for displaying employee profile sections",
+          "artifact_filenames": [
+            "frontend/src/components/Profile/EmployeeProfile.js",
+            "frontend/src/components/Profile/ProfileBio.js",
+            "frontend/src/components/Profile/ProfileProjects.js",
+            "frontend/src/components/Profile/ProfileSkills.js",
+            "frontend/src/components/Profile/ProfileCourses.js",
+            "frontend/src/components/Profile/ProfileValueProposition.js",
+            "frontend/src/pages/ProfilePage.js",
+            "frontend/src/services/profileService.js"
+          ],
+          "required_templates": ["UI-UX-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F009",
+      "title": "Value Proposition Generation",
+      "description": "Generates employee value proposition using company career plans and Skills Engine data. Includes skill gap button that leads to Skills Engine frontend.",
+      "inputs": [
+        "Employee career plan",
+        "Skills Engine data (required vs current skills)"
+      ],
+      "outputs": ["Value proposition text", "Skill gap URL"],
+      "artifact_filenames": [
+        "backend/services/valuePropositionService.js",
+        "backend/controllers/valuePropositionController.js"
+      ],
+      "dependencies": ["F006", "F007"],
+      "milestones": [
+        {
+          "id": "M009-001",
+          "title": "Implement Value Proposition Service",
+          "description": "Create service to generate value proposition from career plans and skills data",
+          "artifact_filenames": [
+            "backend/services/valuePropositionService.js",
+            "backend/controllers/valuePropositionController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F010",
+      "title": "Relevance Score Display",
+      "description": "Displays numeric relevance score (required skills - current verified skills) from Skills Engine in employee profile.",
+      "inputs": ["Relevance score from Skills Engine"],
+      "outputs": ["Displayed relevance score in profile"],
+      "artifact_filenames": [
+        "frontend/src/components/Profile/RelevanceScore.js"
+      ],
+      "dependencies": ["F008", "F006"],
+      "milestones": [
+        {
+          "id": "M010-001",
+          "title": "Create Relevance Score Component",
+          "description": "Build React component to display relevance score",
+          "artifact_filenames": [
+            "frontend/src/components/Profile/RelevanceScore.js"
+          ],
+          "required_templates": ["UI-UX-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F011",
+      "title": "Skill Verification Request (Initial)",
+      "description": "Employee clicks 'Verify Your Skills' button. Directory triggers Skills Engine verification process. Skills Engine sends assessment request to Assessment microservice.",
+      "inputs": ["Employee ID", "Selected skills to verify"],
+      "outputs": [
+        "Verification request sent to Skills Engine",
+        "Assessment exam initiated"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/Profile/VerifySkillsButton.js",
+        "backend/routes/skillVerification.js",
+        "backend/controllers/skillVerificationController.js"
+      ],
+      "dependencies": ["F008"],
+      "milestones": [
+        {
+          "id": "M011-001",
+          "title": "Implement Skill Verification Flow",
+          "description": "Create UI button and backend endpoint for skill verification request",
+          "artifact_filenames": [
+            "frontend/src/components/Profile/VerifySkillsButton.js",
+            "backend/routes/skillVerification.js",
+            "backend/controllers/skillVerificationController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F012",
+      "title": "Verified Skills Update from Skills Engine",
+      "description": "After skill verification exam, Skills Engine sends verified skills list back to Directory. Directory updates employee profile with verified skills and relevance scores. Hides 'Verify Your Skills' button.",
+      "inputs": [
+        "Verified skills list from Skills Engine",
+        "Updated relevance scores"
+      ],
+      "outputs": [
+        "Updated employee profile with verified skills",
+        "Hidden 'Verify Your Skills' button"
+      ],
+      "artifact_filenames": [
+        "backend/routes/skillsEngineWebhook.js",
+        "backend/controllers/skillsEngineWebhookController.js"
+      ],
+      "dependencies": ["F011"],
+      "milestones": [
+        {
+          "id": "M012-001",
+          "title": "Implement Skills Engine Webhook",
+          "description": "Create webhook endpoint to receive verified skills updates from Skills Engine",
+          "artifact_filenames": [
+            "backend/routes/skillsEngineWebhook.js",
+            "backend/controllers/skillsEngineWebhookController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F013",
+      "title": "Skills Engine Frontend Redirect",
+      "description": "Employee profile includes 'More' button that redirects to Skills Engine frontend to view full skills and gap details.",
+      "inputs": ["Employee ID"],
+      "outputs": ["Redirect to Skills Engine frontend with employee context"],
+      "artifact_filenames": [
+        "frontend/src/components/Profile/SkillsMoreButton.js"
+      ],
+      "dependencies": ["F008"],
+      "milestones": [
+        {
+          "id": "M013-001",
+          "title": "Create Skills More Button",
+          "description": "Build button component that redirects to Skills Engine frontend",
+          "artifact_filenames": [
+            "frontend/src/components/Profile/SkillsMoreButton.js"
+          ],
+          "required_templates": ["UI-UX-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F014",
+      "title": "HR Training Request - Fully Personalized (Career Path Driven)",
+      "description": "HR submits training request aligned with employee career path. Directory checks missing skills via Value Proposition, queries Marketplace for instructors, sends invitations.",
+      "inputs": [
+        "Employee ID",
+        "Career path alignment",
+        "Missing skills from Value Proposition"
+      ],
+      "outputs": [
+        "Training request",
+        "Instructor search results from Marketplace",
+        "Invitation emails sent"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/HR/TrainingRequestForm.js",
+        "frontend/src/components/HR/CareerPathTrainingRequest.js",
+        "backend/routes/trainingRequests.js",
+        "backend/controllers/trainingRequestController.js",
+        "backend/services/marketplaceService.js"
+      ],
+      "dependencies": ["F009", "F008"],
+      "milestones": [
+        {
+          "id": "M014-001",
+          "title": "Build Training Request UI",
+          "description": "Create React components for HR training request forms",
+          "artifact_filenames": [
+            "frontend/src/components/HR/TrainingRequestForm.js",
+            "frontend/src/components/HR/CareerPathTrainingRequest.js"
+          ],
+          "required_templates": ["UI-UX-Design-Template.md", "Implementation-Template.md"]
+        },
+        {
+          "id": "M014-002",
+          "title": "Implement Training Request Backend",
+          "description": "Create backend endpoints and Marketplace integration for training requests",
+          "artifact_filenames": [
+            "backend/routes/trainingRequests.js",
+            "backend/controllers/trainingRequestController.js",
+            "backend/services/marketplaceService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F015",
+      "title": "HR Training Request - Group/Department (Skill-Driven)",
+      "description": "HR requests specific skills for employees/groups. Directory checks if employees lack these skills, finds instructors via Marketplace, coordinates training.",
+      "inputs": [
+        "Employee/group IDs",
+        "Required skills",
+        "Department/team selection"
+      ],
+      "outputs": [
+        "Group training request",
+        "Instructor matches",
+        "Training coordination"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/HR/GroupTrainingRequest.js",
+        "backend/controllers/groupTrainingController.js"
+      ],
+      "dependencies": ["F014"],
+      "milestones": [
+        {
+          "id": "M015-001",
+          "title": "Implement Group Training Request",
+          "description": "Create UI and backend for group/department skill-driven training requests",
+          "artifact_filenames": [
+            "frontend/src/components/HR/GroupTrainingRequest.js",
+            "backend/controllers/groupTrainingController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F016",
+      "title": "HR Training Request - Specific Instructor",
+      "description": "HR requests a particular instructor. Directory checks if employee lacks skills taught by instructor, coordinates training assignment.",
+      "inputs": ["Employee ID(s)", "Instructor ID"],
+      "outputs": [
+        "Instructor-led training request",
+        "Training assignment"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/HR/InstructorTrainingRequest.js",
+        "backend/controllers/instructorTrainingController.js"
+      ],
+      "dependencies": ["F014"],
+      "milestones": [
+        {
+          "id": "M016-001",
+          "title": "Implement Instructor Training Request",
+          "description": "Create UI and backend for specific instructor training requests",
+          "artifact_filenames": [
+            "frontend/src/components/HR/InstructorTrainingRequest.js",
+            "backend/controllers/instructorTrainingController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F017",
+      "title": "Marketplace Integration - Find Trainers by Skills",
+      "description": "Directory queries Marketplace to find qualified instructors with required skills. Marketplace returns trainer info.",
+      "inputs": ["Required skills", "Search criteria"],
+      "outputs": ["Trainer search results from Marketplace"],
+      "artifact_filenames": [
+        "backend/services/marketplaceService.js"
+      ],
+      "dependencies": [],
+      "milestones": [
+        {
+          "id": "M017-001",
+          "title": "Integrate Marketplace Service",
+          "description": "Create service for Marketplace integration to find trainers",
+          "artifact_filenames": [
+            "backend/services/marketplaceService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F018",
+      "title": "Marketplace Fallback Course Creation",
+      "description": "If no trainer found, Marketplace creates course on the fly. Employee clicks card → goes to Course Builder. Marketplace updates Directory → Directory notifies Content Studio for manual content creation by AI.",
+      "inputs": ["Training request with no trainer match"],
+      "outputs": [
+        "Fallback course created",
+        "Content Studio notification"
+      ],
+      "artifact_filenames": [
+        "backend/services/marketplaceService.js",
+        "backend/services/contentStudioService.js"
+      ],
+      "dependencies": ["F017"],
+      "milestones": [
+        {
+          "id": "M018-001",
+          "title": "Implement Fallback Course Creation",
+          "description": "Add fallback logic to Marketplace service and Content Studio notification",
+          "artifact_filenames": [
+            "backend/services/marketplaceService.js",
+            "backend/services/contentStudioService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F019",
+      "title": "Trainer Invitation Email via Mail API",
+      "description": "Directory sends training invitation email to instructor via Mail API. Instructor status changes to 'Invited'.",
+      "inputs": ["Instructor email", "Training request details"],
+      "outputs": [
+        "Invitation email sent",
+        "Instructor status = Invited"
+      ],
+      "artifact_filenames": [
+        "backend/services/mailService.js",
+        "backend/controllers/invitationController.js"
+      ],
+      "dependencies": ["F014", "F015", "F016"],
+      "milestones": [
+        {
+          "id": "M019-001",
+          "title": "Implement Mail Service",
+          "description": "Create mail service for sending trainer invitations",
+          "artifact_filenames": [
+            "backend/services/mailService.js",
+            "backend/controllers/invitationController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F020",
+      "title": "Trainer Status Management (Invited → Active → Archived)",
+      "description": "Manages trainer lifecycle: Invited (after invitation), Active (after Content Studio assignment), Archived (after completion or HR disapproval).",
+      "inputs": ["Trainer ID", "Status change event"],
+      "outputs": ["Updated trainer status"],
+      "artifact_filenames": [
+        "backend/models/Trainer.js",
+        "backend/services/trainerStatusService.js",
+        "backend/controllers/trainerStatusController.js",
+        "database/migrations/002_create_trainers_table.sql"
+      ],
+      "dependencies": ["F019"],
+      "milestones": [
+        {
+          "id": "M020-001",
+          "title": "Create Trainer Model and Status Management",
+          "description": "Create trainer table migration, model, and status management service",
+          "artifact_filenames": [
+            "database/migrations/002_create_trainers_table.sql",
+            "backend/models/Trainer.js",
+            "backend/services/trainerStatusService.js",
+            "backend/controllers/trainerStatusController.js"
+          ],
+          "required_templates": ["Database-Design-Template.md", "Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F021",
+      "title": "Content Studio Integration - Send Trainer Data",
+      "description": "Directory sends trainer info (trainer_id, trainer_name, company_id), AIEnabled field, can_publish_externally field, and exercises limit to Content Studio.",
+      "inputs": [
+        "Trainer ID",
+        "Company ID",
+        "AI Enabled flag",
+        "Public Publish flag",
+        "Exercises limit (default: 4)"
+      ],
+      "outputs": ["Trainer data sent to Content Studio"],
+      "artifact_filenames": [
+        "backend/services/contentStudioService.js"
+      ],
+      "dependencies": ["F020"],
+      "milestones": [
+        {
+          "id": "M021-001",
+          "title": "Implement Content Studio Integration",
+          "description": "Create service to send trainer data to Content Studio",
+          "artifact_filenames": [
+            "backend/services/contentStudioService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F022",
+      "title": "Content Studio Integration - Course Completion Update",
+      "description": "Content Studio updates Directory when content upload is complete (status → Archived). Sends accomplished course data: course_id, course_name, trainer_id, trainer_name, status.",
+      "inputs": ["Course completion data from Content Studio webhook"],
+      "outputs": [
+        "Trainer status updated to Archived",
+        "Course data stored"
+      ],
+      "artifact_filenames": [
+        "backend/routes/contentStudioWebhook.js",
+        "backend/controllers/contentStudioWebhookController.js"
+      ],
+      "dependencies": ["F021"],
+      "milestones": [
+        {
+          "id": "M022-001",
+          "title": "Implement Content Studio Webhook",
+          "description": "Create webhook endpoint to receive course completion updates from Content Studio",
+          "artifact_filenames": [
+            "backend/routes/contentStudioWebhook.js",
+            "backend/controllers/contentStudioWebhookController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F023",
+      "title": "Course Builder Integration - Receive Course Feedback",
+      "description": "Course Builder sends student feedback for each successfully completed course to Directory: feedback, course_id, course_name, learner_id. Directory also receives test attempts number from Assessment microservice. Directory updates employee profile to display completed courses with course name, feedback, and test attempts number.",
+      "inputs": [
+        "Course feedback data from Course Builder (REST API): feedback, course_id, course_name, learner_id",
+        "Test attempts number from Assessment microservice"
+      ],
+      "outputs": [
+        "Updated employee profile with completed course, feedback, and test attempts number displayed"
+      ],
+      "artifact_filenames": [
+        "backend/routes/courseBuilderWebhook.js",
+        "backend/controllers/courseBuilderWebhookController.js"
+      ],
+      "dependencies": ["F008"],
+      "milestones": [
+        {
+          "id": "M023-001",
+          "title": "Implement Course Builder Integration",
+          "description": "Create REST API endpoint to receive course feedback and test attempts from Course Builder and Assessment",
+          "artifact_filenames": [
+            "backend/routes/courseBuilderWebhook.js",
+            "backend/controllers/courseBuilderWebhookController.js",
+            "frontend/src/components/Profile/ProfileCourses.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F024",
+      "title": "Course Builder Integration - Preferred Language Sync",
+      "description": "Directory sends each employee's preferred language (default: Hebrew) to Course Builder when company is created and whenever employee updates it manually. One-way update.",
+      "inputs": ["Employee ID", "Preferred language value"],
+      "outputs": ["Language preference sent to Course Builder"],
+      "artifact_filenames": [
+        "backend/services/courseBuilderService.js",
+        "frontend/src/components/Profile/LanguagePreference.js"
+      ],
+      "dependencies": ["F008"],
+      "milestones": [
+        {
+          "id": "M024-001",
+          "title": "Implement Language Preference Sync",
+          "description": "Create UI component and service to sync preferred language with Course Builder",
+          "artifact_filenames": [
+            "frontend/src/components/Profile/LanguagePreference.js",
+            "backend/services/courseBuilderService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F025",
+      "title": "Post-Course Exam Extra Attempts Request",
+      "description": "If employee reaches max attempts, 'Request More Attempts' button appears. Employee clicks → Directory creates request routed to HR for approval.",
+      "inputs": [
+        "Employee ID",
+        "Course ID",
+        "Current attempt count"
+      ],
+      "outputs": [
+        "Extra attempt request created",
+        "Request routed to HR"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/Profile/RequestExtraAttemptsButton.js",
+        "backend/routes/extraAttempts.js",
+        "backend/controllers/extraAttemptsController.js",
+        "database/migrations/003_create_extra_attempts_requests_table.sql"
+      ],
+      "dependencies": ["F008", "F023"],
+      "milestones": [
+        {
+          "id": "M025-001",
+          "title": "Implement Extra Attempts Request",
+          "description": "Create UI button, database table, and backend endpoints for extra attempt requests",
+          "artifact_filenames": [
+            "frontend/src/components/Profile/RequestExtraAttemptsButton.js",
+            "database/migrations/003_create_extra_attempts_requests_table.sql",
+            "backend/routes/extraAttempts.js",
+            "backend/controllers/extraAttemptsController.js"
+          ],
+          "required_templates": ["Database-Design-Template.md", "Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F026",
+      "title": "HR Extra Attempts Approval",
+      "description": "HR reviews extra attempt requests in Directory, approves or rejects. If approved, Directory sends approval notification to Course Builder (not directly to Assessment). Course Builder then updates Assessment microservice to enable additional exam attempt.",
+      "inputs": [
+        "Extra attempt request ID",
+        "HR approval/rejection decision"
+      ],
+      "outputs": [
+        "Request status updated",
+        "Approval notification sent to Course Builder (if approved)",
+        "Course Builder updates Assessment microservice with extra attempt approval"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/HR/ExtraAttemptsApproval.js",
+        "backend/controllers/extraAttemptsApprovalController.js"
+      ],
+      "dependencies": ["F025"],
+      "milestones": [
+        {
+          "id": "M026-001",
+          "title": "Implement HR Approval UI and Logic",
+          "description": "Create UI component and backend controller for HR to approve/reject extra attempt requests",
+          "artifact_filenames": [
+            "frontend/src/components/HR/ExtraAttemptsApproval.js",
+            "backend/controllers/extraAttemptsApprovalController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F027",
+      "title": "Skills Engine Integration - Post-Course Skills Update",
+      "description": "Each time employee passes course exam, Skills Engine updates Directory with: newly verified skills, new skills added during learning, updated relevance scores. Directory also receives the number of exam attempts performed by the employee from Assessment microservice.",
+      "inputs": [
+        "Skills update data from Skills Engine (REST API)",
+        "Exam attempts number from Assessment microservice"
+      ],
+      "outputs": [
+        "Updated employee profile with new/verified skills and relevance scores",
+        "Exam attempts number stored and displayed in profile"
+      ],
+      "artifact_filenames": [
+        "backend/routes/skillsEngineWebhook.js"
+      ],
+      "dependencies": ["F012", "F023"],
+      "milestones": [
+        {
+          "id": "M027-001",
+          "title": "Update Skills Engine Integration for Post-Course Updates",
+          "description": "Extend Skills Engine REST API integration to handle post-course skills updates and exam attempts from Assessment",
+          "artifact_filenames": [
+            "backend/routes/skillsEngineWebhook.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F028",
+      "title": "Learning Path Approval Policy Management",
+      "description": "HR sets company Learning Path approval policy (Manual/Auto) during registration or later. Directory sends policy and Decision Makers list to Learner AI (one-way). When an employee is assigned to a new course or training by company, Skills Engine microservice sends employee skill data to Learner AI for Learning Path generation.",
+      "inputs": [
+        "Company ID",
+        "Approval policy (Manual/Auto)",
+        "Decision Maker employee ID",
+        "Employee skill data from Skills Engine (when employee assigned to course/training)"
+      ],
+      "outputs": [
+        "Policy updated in Directory",
+        "Policy sent to Learner AI",
+        "Employee skill data forwarded to Learner AI for Learning Path generation"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/HR/LearningPathPolicySettings.js",
+        "backend/routes/learningPathPolicy.js",
+        "backend/controllers/learningPathPolicyController.js",
+        "backend/services/learnerAIService.js"
+      ],
+      "dependencies": ["F001"],
+      "milestones": [
+        {
+          "id": "M028-001",
+          "title": "Implement Learning Path Policy Management",
+          "description": "Create UI and backend for managing Learning Path approval policy and Learner AI integration",
+          "artifact_filenames": [
+            "frontend/src/components/HR/LearningPathPolicySettings.js",
+            "backend/routes/learningPathPolicy.js",
+            "backend/controllers/learningPathPolicyController.js",
+            "backend/services/learnerAIService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F029",
+      "title": "Decision Maker Learning Path Requests View",
+      "description": "Decision Makers can view pending Learning Path requests under their Directory profile. When clicked, redirects to Learner AI module for detailed approval.",
+      "inputs": ["Decision Maker employee ID"],
+      "outputs": [
+        "List of pending Learning Path requests",
+        "Redirect link to Learner AI"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/Profile/LearningPathRequests.js",
+        "backend/routes/learningPathRequests.js",
+        "backend/controllers/learningPathRequestsController.js"
+      ],
+      "dependencies": ["F028", "F008"],
+      "milestones": [
+        {
+          "id": "M029-001",
+          "title": "Implement Learning Path Requests View",
+          "description": "Create UI component and backend endpoints for Decision Makers to view pending requests",
+          "artifact_filenames": [
+            "frontend/src/components/Profile/LearningPathRequests.js",
+            "backend/routes/learningPathRequests.js",
+            "backend/controllers/learningPathRequestsController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F030",
+      "title": "Learning Analytics Dashboard Redirect",
+      "description": "Employee profile includes 'Dashboard' button. When clicked, Directory redirects to Learning Analytics microservice. Learning Analytics determines appropriate dashboard view based on employee role.",
+      "inputs": ["Employee ID", "Employee role"],
+      "outputs": ["Redirect to Learning Analytics with employee context"],
+      "artifact_filenames": [
+        "frontend/src/components/Profile/DashboardButton.js"
+      ],
+      "dependencies": ["F008"],
+      "milestones": [
+        {
+          "id": "M030-001",
+          "title": "Create Dashboard Button",
+          "description": "Build button component that redirects to Learning Analytics",
+          "artifact_filenames": [
+            "frontend/src/components/Profile/DashboardButton.js"
+          ],
+          "required_templates": ["UI-UX-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F031",
+      "title": "Learning Path Display in Profile",
+      "description": "Each employee can see their approved learning path in profile by clicking 'Learning Path' button. Each company can see learning paths of its employees.",
+      "inputs": ["Employee ID", "Company ID (for company view)"],
+      "outputs": ["Learning path displayed in profile or company view"],
+      "artifact_filenames": [
+        "frontend/src/components/Profile/LearningPathButton.js",
+        "frontend/src/components/Profile/LearningPathDisplay.js",
+        "backend/routes/learningPath.js",
+        "backend/controllers/learningPathController.js"
+      ],
+      "dependencies": ["F008"],
+      "milestones": [
+        {
+          "id": "M031-001",
+          "title": "Implement Learning Path Display",
+          "description": "Create UI components and backend endpoints to display learning paths",
+          "artifact_filenames": [
+            "frontend/src/components/Profile/LearningPathButton.js",
+            "frontend/src/components/Profile/LearningPathDisplay.js",
+            "backend/routes/learningPath.js",
+            "backend/controllers/learningPathController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F032",
+      "title": "Employee Profile Edit (Allowed Fields)",
+      "description": "Employee can view own profile and edit allowed fields. Sensitive fields require HR + Admin approval.",
+      "inputs": ["Employee ID", "Field updates (allowed fields only)"],
+      "outputs": [
+        "Updated profile (if allowed fields)",
+        "Approval request (if sensitive fields)"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/Profile/ProfileEditForm.js",
+        "backend/routes/profileEdit.js",
+        "backend/controllers/profileEditController.js"
+      ],
+      "dependencies": ["F008"],
+      "milestones": [
+        {
+          "id": "M032-001",
+          "title": "Implement Profile Edit Functionality",
+          "description": "Create UI form and backend endpoints for employees to edit their profiles",
+          "artifact_filenames": [
+            "frontend/src/components/Profile/ProfileEditForm.js",
+            "backend/routes/profileEdit.js",
+            "backend/controllers/profileEditController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F033",
+      "title": "HR Profile Approval for Sensitive Fields",
+      "description": "HR reviews and approves/rejects employee requests to change sensitive profile fields. Admin approval also required for critical changes.",
+      "inputs": [
+        "Profile change request ID",
+        "HR approval/rejection decision"
+      ],
+      "outputs": [
+        "Profile updated (if approved)",
+        "Request status updated"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/HR/ProfileApproval.js",
+        "backend/controllers/profileApprovalController.js"
+      ],
+      "dependencies": ["F032"],
+      "milestones": [
+        {
+          "id": "M033-001",
+          "title": "Implement HR Profile Approval",
+          "description": "Create UI component and backend controller for HR to approve profile changes",
+          "artifact_filenames": [
+            "frontend/src/components/HR/ProfileApproval.js",
+            "backend/controllers/profileApprovalController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F034",
+      "title": "Employee Self-Learning Request",
+      "description": "Employee views missing skills and can request self-learning. Active learners: direct enrollment allowed. Not yet directed: HR approval required.",
+      "inputs": [
+        "Employee ID",
+        "Requested course/skill",
+        "Employee learning status"
+      ],
+      "outputs": [
+        "Self-learning request created",
+        "Direct enrollment (if active learner) or approval request (if not)"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/Profile/SelfLearningRequest.js",
+        "backend/routes/selfLearning.js",
+        "backend/controllers/selfLearningController.js"
+      ],
+      "dependencies": ["F008", "F009"],
+      "milestones": [
+        {
+          "id": "M034-001",
+          "title": "Implement Self-Learning Request",
+          "description": "Create UI component and backend endpoints for employees to request self-learning",
+          "artifact_filenames": [
+            "frontend/src/components/Profile/SelfLearningRequest.js",
+            "backend/routes/selfLearning.js",
+            "backend/controllers/selfLearningController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F035",
+      "title": "Trainer Proactive Teaching Request",
+      "description": "Trainers can proactively choose to teach a skill and send teaching requests in Directory.",
+      "inputs": [
+        "Trainer ID",
+        "Skill to teach",
+        "Teaching request details"
+      ],
+      "outputs": [
+        "Teaching request created",
+        "Request sent to HR/Marketplace"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/Trainer/TeachingRequestForm.js",
+        "backend/routes/teachingRequest.js",
+        "backend/controllers/teachingRequestController.js"
+      ],
+      "dependencies": ["F020"],
+      "milestones": [
+        {
+          "id": "M035-001",
+          "title": "Implement Teaching Request",
+          "description": "Create UI form and backend endpoints for trainers to submit teaching requests",
+          "artifact_filenames": [
+            "frontend/src/components/Trainer/TeachingRequestForm.js",
+            "backend/routes/teachingRequest.js",
+            "backend/controllers/teachingRequestController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F036",
+      "title": "Trainer Profile Updates (Courses Taught)",
+      "description": "Trainer profile updates show courses taught. Profile includes AI Enable and Public Publish Enable fields (editable by instructor/company).",
+      "inputs": [
+        "Trainer ID",
+        "Course completion data",
+        "AI Enable flag",
+        "Public Publish flag"
+      ],
+      "outputs": ["Updated trainer profile with courses taught"],
+      "artifact_filenames": [
+        "frontend/src/components/Trainer/TrainerProfile.js",
+        "backend/controllers/trainerProfileController.js"
+      ],
+      "dependencies": ["F020", "F022"],
+      "milestones": [
+        {
+          "id": "M036-001",
+          "title": "Implement Trainer Profile Display",
+          "description": "Create UI component and backend controller to display and update trainer profiles",
+          "artifact_filenames": [
+            "frontend/src/components/Trainer/TrainerProfile.js",
+            "backend/controllers/trainerProfileController.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F037",
+      "title": "Hierarchical Profile Visibility (RBAC)",
+      "description": "Profile visibility follows company hierarchy: Company Manager/HR → Department Leader → Team Leader → Employees. Each higher-level role can view profiles of all lower-level roles within their scope.",
+      "inputs": [
+        "Viewer employee ID",
+        "Target employee ID",
+        "Company hierarchy data"
+      ],
+      "outputs": [
+        "Profile visibility decision (allowed/denied)",
+        "Profile data (if allowed)"
+      ],
+      "artifact_filenames": [
+        "backend/services/rbacService.js",
+        "backend/middleware/profileVisibilityMiddleware.js"
+      ],
+      "dependencies": ["F008"],
+      "milestones": [
+        {
+          "id": "M037-001",
+          "title": "Implement RBAC Service and Middleware",
+          "description": "Create RBAC service and middleware for hierarchical profile visibility",
+          "artifact_filenames": [
+            "backend/services/rbacService.js",
+            "backend/middleware/profileVisibilityMiddleware.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md", "Cybersecurity-Validation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F038",
+      "title": "Directory Super Admin Dashboard",
+      "description": "Super Admin can access dedicated dashboard. Displays aggregated reports and analytics from HR & Management Reporting microservice. Can view all companies and employee profiles.",
+      "inputs": ["Admin credentials"],
+      "outputs": [
+        "Admin dashboard with analytics",
+        "Company and employee list views"
+      ],
+      "artifact_filenames": [
+        "frontend/src/pages/AdminDashboard.js",
+        "frontend/src/components/Admin/CompanyListView.js",
+        "frontend/src/components/Admin/EmployeeListView.js",
+        "frontend/src/components/Admin/AnalyticsView.js",
+        "backend/routes/admin.js",
+        "backend/controllers/adminController.js",
+        "backend/services/managementReportingService.js"
+      ],
+      "dependencies": [],
+      "milestones": [
+        {
+          "id": "M038-001",
+          "title": "Build Admin Dashboard UI",
+          "description": "Create React components for admin dashboard with analytics and company/employee views",
+          "artifact_filenames": [
+            "frontend/src/pages/AdminDashboard.js",
+            "frontend/src/components/Admin/CompanyListView.js",
+            "frontend/src/components/Admin/EmployeeListView.js",
+            "frontend/src/components/Admin/AnalyticsView.js"
+          ],
+          "required_templates": ["UI-UX-Design-Template.md", "Implementation-Template.md"]
+        },
+        {
+          "id": "M038-002",
+          "title": "Implement Admin Backend",
+          "description": "Create backend endpoints and Management Reporting integration for admin dashboard",
+          "artifact_filenames": [
+            "backend/routes/admin.js",
+            "backend/controllers/adminController.js",
+            "backend/services/managementReportingService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F039",
+      "title": "Admin Action Logging",
+      "description": "Logs all critical admin actions: profile creation, deletion, updates, approvals. Logs stored for at least 12 months for auditing.",
+      "inputs": [
+        "Admin action type",
+        "Action details",
+        "Admin user ID"
+      ],
+      "outputs": ["Action log entry"],
+      "artifact_filenames": [
+        "backend/services/auditLogService.js",
+        "backend/middleware/auditLogMiddleware.js",
+        "database/migrations/004_create_audit_logs_table.sql"
+      ],
+      "dependencies": [],
+      "milestones": [
+        {
+          "id": "M039-001",
+          "title": "Implement Audit Logging",
+          "description": "Create audit log table, service, and middleware for logging admin actions",
+          "artifact_filenames": [
+            "database/migrations/004_create_audit_logs_table.sql",
+            "backend/services/auditLogService.js",
+            "backend/middleware/auditLogMiddleware.js"
+          ],
+          "required_templates": ["Database-Design-Template.md", "Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F039A",
+      "title": "Critical Requests Routing to Directory Admin",
+      "description": "All critical requests (profile creation with real data, course/instructor assignments, sensitive operations) must go through Directory admin for approval before execution. Directory routes these requests to admin dashboard for review and approval.",
+      "inputs": [
+        "Critical request data",
+        "Request type (profile creation, course assignment, instructor assignment, etc.)"
+      ],
+      "outputs": [
+        "Request routed to Directory admin",
+        "Admin approval/rejection decision",
+        "Request executed (if approved) or rejected (if denied)"
+      ],
+      "artifact_filenames": [
+        "frontend/src/components/Admin/CriticalRequestsApproval.js",
+        "backend/services/criticalRequestRoutingService.js",
+        "backend/controllers/criticalRequestController.js"
+      ],
+      "dependencies": ["F038", "F039"],
+      "milestones": [
+        {
+          "id": "M039A-001",
+          "title": "Implement Critical Requests Routing",
+          "description": "Create UI component, service, and controller for routing critical requests to Directory admin",
+          "artifact_filenames": [
+            "frontend/src/components/Admin/CriticalRequestsApproval.js",
+            "backend/services/criticalRequestRoutingService.js",
+            "backend/controllers/criticalRequestController.js",
+            "database/migrations/007_create_critical_requests_table.sql"
+          ],
+          "required_templates": ["Database-Design-Template.md", "Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F040",
+      "title": "HR Settings Management",
+      "description": "HR can set: allowed assessment retakes, number of exercises in courses (default: 4), verification grade for skills, if trainer can public publish content, Learning Path approval policy, Decision Makers.",
+      "inputs": [
+        "Company ID",
+        "Setting name",
+        "Setting value"
+      ],
+      "outputs": ["Updated company settings"],
+      "artifact_filenames": [
+        "frontend/src/components/HR/CompanySettings.js",
+        "backend/routes/companySettings.js",
+        "backend/controllers/companySettingsController.js",
+        "database/migrations/005_create_company_settings_table.sql"
+      ],
+      "dependencies": ["F001"],
+      "milestones": [
+        {
+          "id": "M040-001",
+          "title": "Implement Company Settings",
+          "description": "Create database table, UI component, and backend endpoints for company settings management",
+          "artifact_filenames": [
+            "database/migrations/005_create_company_settings_table.sql",
+            "frontend/src/components/HR/CompanySettings.js",
+            "backend/routes/companySettings.js",
+            "backend/controllers/companySettingsController.js"
+          ],
+          "required_templates": ["Database-Design-Template.md", "Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F041",
+      "title": "Data Integration - HR & Management Reporting",
+      "description": "Directory sends all company and employee data, including primary KPIs, to HR & Management Reporting microservice.",
+      "inputs": [
+        "Company data",
+        "Employee data",
+        "KPI data"
+      ],
+      "outputs": ["Data sent to HR & Management Reporting"],
+      "artifact_filenames": [
+        "backend/services/managementReportingService.js"
+      ],
+      "dependencies": ["F007"],
+      "milestones": [
+        {
+          "id": "M041-001",
+          "title": "Implement Management Reporting Integration",
+          "description": "Create service to send company and employee data to HR & Management Reporting",
+          "artifact_filenames": [
+            "backend/services/managementReportingService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F042",
+      "title": "Data Integration - Contextual Corporate Assistant",
+      "description": "Directory provides company and profiles data to Contextual Corporate Assistant for RAG/Graph recommendations.",
+      "inputs": [
+        "Company data",
+        "Employee profile data"
+      ],
+      "outputs": ["Data sent to Contextual Corporate Assistant"],
+      "artifact_filenames": [
+        "backend/services/contextualAssistantService.js"
+      ],
+      "dependencies": ["F007"],
+      "milestones": [
+        {
+          "id": "M042-001",
+          "title": "Implement Contextual Assistant Integration",
+          "description": "Create service to send company and profile data to Contextual Corporate Assistant",
+          "artifact_filenames": [
+            "backend/services/contextualAssistantService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F043",
+      "title": "Data Integration - Learning Analytics",
+      "description": "Directory sends company and employee data including KPIs and student feedback to Learning Analytics microservice for insights.",
+      "inputs": [
+        "Company data",
+        "Employee data",
+        "Student feedback",
+        "KPI data"
+      ],
+      "outputs": ["Data sent to Learning Analytics"],
+      "artifact_filenames": [
+        "backend/services/learningAnalyticsService.js"
+      ],
+      "dependencies": ["F007", "F023"],
+      "milestones": [
+        {
+          "id": "M043-001",
+          "title": "Implement Learning Analytics Integration",
+          "description": "Create service to send company, employee, and feedback data to Learning Analytics",
+          "artifact_filenames": [
+            "backend/services/learningAnalyticsService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F044",
+      "title": "Completed Courses Display (Passed Only)",
+      "description": "Only passed courses are displayed under 'Completed Courses' in employee profile. Failed courses are not shown, even if Assessment identified new verified skills.",
+      "inputs": [
+        "Employee ID",
+        "Course completion status"
+      ],
+      "outputs": ["List of completed (passed) courses in profile"],
+      "artifact_filenames": [
+        "frontend/src/components/Profile/ProfileCourses.js"
+      ],
+      "dependencies": ["F008", "F023"],
+      "milestones": [
+        {
+          "id": "M044-001",
+          "title": "Update Profile Courses Component",
+          "description": "Update ProfileCourses component to only display passed courses",
+          "artifact_filenames": [
+            "frontend/src/components/Profile/ProfileCourses.js"
+          ],
+          "required_templates": ["Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F045",
+      "title": "Mock Data Fallback System",
+      "description": "When Directory calls external APIs (microservices or third-party), if API call fails (timeout, error, missing response), Directory automatically loads mock data from centralized /mockData/index.json file.",
+      "inputs": [
+        "Failed API call",
+        "API identifier"
+      ],
+      "outputs": ["Mock data response"],
+      "artifact_filenames": [
+        "mockData/index.json",
+        "backend/services/mockDataService.js",
+        "backend/middleware/mockDataFallbackMiddleware.js"
+      ],
+      "dependencies": [],
+      "milestones": [
+        {
+          "id": "M045-001",
+          "title": "Implement Mock Data Fallback",
+          "description": "Create centralized mock data file, service, and middleware for API fallback",
+          "artifact_filenames": [
+            "mockData/index.json",
+            "backend/services/mockDataService.js",
+            "backend/middleware/mockDataFallbackMiddleware.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F046",
+      "title": "Single Public Entry Endpoint",
+      "description": "Directory exposes one main public endpoint that serves as unified communication gateway. Accepts: calling service name/identifier, JSON object describing requested data. Uses AI-assisted prompt to dynamically generate and execute SQL queries based on database schema. Returns exactly the data fields requested.",
+      "inputs": [
+        "Calling service name/identifier",
+        "JSON object describing requested data"
+      ],
+      "outputs": ["Dynamically generated SQL query result"],
+      "artifact_filenames": [
+        "backend/routes/publicEntry.js",
+        "backend/controllers/publicEntryController.js",
+        "backend/services/aiQueryService.js",
+        "backend/services/dynamicQueryService.js"
+      ],
+      "dependencies": [],
+      "milestones": [
+        {
+          "id": "M046-001",
+          "title": "Implement Public Entry Endpoint",
+          "description": "Create public endpoint with AI-assisted dynamic query generation",
+          "artifact_filenames": [
+            "backend/routes/publicEntry.js",
+            "backend/controllers/publicEntryController.js",
+            "backend/services/aiQueryService.js",
+            "backend/services/dynamicQueryService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md", "Cybersecurity-Validation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F047",
+      "title": "Database Schema Management",
+      "description": "Maintains database schema definitions. AI-assisted query generation must reference current database schema before executing. Schema stored in Supabase.",
+      "inputs": [
+        "Schema definition",
+        "Migration files"
+      ],
+      "outputs": [
+        "Database schema in Supabase",
+        "Schema reference for AI queries"
+      ],
+      "artifact_filenames": [
+        "database/schema.sql",
+        "database/migrations/",
+        "backend/services/schemaService.js"
+      ],
+      "dependencies": [],
+      "milestones": [
+        {
+          "id": "M047-001",
+          "title": "Create Database Schema and Service",
+          "description": "Create schema SQL file, migration structure, and service to reference schema for AI queries",
+          "artifact_filenames": [
+            "database/schema.sql",
+            "database/migrations/",
+            "backend/services/schemaService.js"
+          ],
+          "required_templates": ["Database-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F048",
+      "title": "Security - Input Validation & SQL Injection Prevention",
+      "description": "All dynamically generated SQL queries must be validated to prevent SQL injection. All user inputs validated before processing.",
+      "inputs": ["User input", "SQL query"],
+      "outputs": [
+        "Validated input",
+        "Sanitized SQL query"
+      ],
+      "artifact_filenames": [
+        "backend/middleware/inputValidationMiddleware.js",
+        "backend/services/sqlInjectionPreventionService.js"
+      ],
+      "dependencies": ["F046"],
+      "milestones": [
+        {
+          "id": "M048-001",
+          "title": "Implement Security Middleware and Services",
+          "description": "Create input validation middleware and SQL injection prevention service",
+          "artifact_filenames": [
+            "backend/middleware/inputValidationMiddleware.js",
+            "backend/services/sqlInjectionPreventionService.js"
+          ],
+          "required_templates": ["Cybersecurity-Validation-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F049",
+      "title": "Security - Secrets Management",
+      "description": "All API keys, tokens, and secrets stored securely in environment variables. No hardcoded secrets in code.",
+      "inputs": ["Secret values"],
+      "outputs": ["Secure secret storage"],
+      "artifact_filenames": [
+        "backend/config/secrets.js",
+        ".env.example"
+      ],
+      "dependencies": [],
+      "milestones": [
+        {
+          "id": "M049-001",
+          "title": "Implement Secrets Management",
+          "description": "Create secrets configuration and .env.example file",
+          "artifact_filenames": [
+            "backend/config/secrets.js",
+            ".env.example"
+          ],
+          "required_templates": ["Cybersecurity-Validation-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F050",
+      "title": "GDPR Compliance - Consent Storage",
+      "description": "Explicit user consent stored for GDPR compliance. PII minimization - store only necessary personal data.",
+      "inputs": [
+        "User consent data",
+        "PII data"
+      ],
+      "outputs": [
+        "Consent record stored",
+        "Minimized PII stored"
+      ],
+      "artifact_filenames": [
+        "database/migrations/006_create_consent_table.sql",
+        "backend/services/consentService.js"
+      ],
+      "dependencies": ["F007"],
+      "milestones": [
+        {
+          "id": "M050-001",
+          "title": "Implement GDPR Compliance",
+          "description": "Create consent table and service for GDPR compliance",
+          "artifact_filenames": [
+            "database/migrations/006_create_consent_table.sql",
+            "backend/services/consentService.js"
+          ],
+          "required_templates": ["Database-Design-Template.md", "Cybersecurity-Validation-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F051",
+      "title": "Data Backup System",
+      "description": "Daily backups of database and critical files. Monthly backups for long-term storage. Backups stored off main server (cloud storage or separate storage).",
+      "inputs": [
+        "Database data",
+        "Critical files"
+      ],
+      "outputs": [
+        "Daily backup",
+        "Monthly backup"
+      ],
+      "artifact_filenames": [
+        "backend/scripts/backup.js",
+        "backend/services/backupService.js"
+      ],
+      "dependencies": ["F047"],
+      "milestones": [
+        {
+          "id": "M051-001",
+          "title": "Implement Backup System",
+          "description": "Create backup script and service for daily and monthly backups",
+          "artifact_filenames": [
+            "backend/scripts/backup.js",
+            "backend/services/backupService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F052",
+      "title": "Health Check Endpoint",
+      "description": "Provides health check endpoint for monitoring and deployment verification. Returns system status.",
+      "inputs": ["Health check request"],
+      "outputs": ["System health status"],
+      "artifact_filenames": [
+        "backend/routes/health.js",
+        "backend/controllers/healthController.js"
+      ],
+      "dependencies": [],
+      "milestones": [
+        {
+          "id": "M052-001",
+          "title": "Implement Health Check Endpoint",
+          "description": "Create health check endpoint for monitoring",
+          "artifact_filenames": [
+            "backend/routes/health.js",
+            "backend/controllers/healthController.js"
+          ],
+          "required_templates": ["Implementation-Template.md"]
+        }
+      ]
+    },
+    {
+      "id": "F053",
+      "title": "Company Isolation Constraint",
+      "description": "Companies cannot contact other companies directly. This is a system-wide constraint that prevents cross-company communication and data access. All company data is isolated within each company's scope.",
+      "inputs": [
+        "Company ID",
+        "Request to access another company's data"
+      ],
+      "outputs": [
+        "Access denied (if attempting cross-company access)",
+        "Isolation enforced"
+      ],
+      "artifact_filenames": [
+        "backend/middleware/companyIsolationMiddleware.js",
+        "backend/services/companyIsolationService.js"
+      ],
+      "dependencies": [],
+      "milestones": [
+        {
+          "id": "M053-001",
+          "title": "Implement Company Isolation",
+          "description": "Create middleware and service to enforce company isolation constraint",
+          "artifact_filenames": [
+            "backend/middleware/companyIsolationMiddleware.js",
+            "backend/services/companyIsolationService.js"
+          ],
+          "required_templates": ["Feature-Design-Template.md", "Implementation-Template.md", "Cybersecurity-Validation-Template.md"]
+        }
+      ]
+    }
+  ]
+}
+
