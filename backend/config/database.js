@@ -74,15 +74,30 @@ pool.on('error', (err) => {
   }
 });
 
-// Test connection on startup
+// Test connection on startup (with retry for Railway/Supabase)
 (async () => {
-  try {
-    const testResult = await pool.query('SELECT NOW()');
-    console.log('✅ Database connection test successful:', testResult.rows[0].now);
-  } catch (error) {
-    console.error('❌ Database connection test failed:', error.message);
-    console.error('Error code:', error.code);
-    console.error('Error detail:', error.detail);
+  const maxRetries = 3;
+  const retryDelay = 2000; // 2 seconds
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      // Wait a bit before first attempt (Railway needs time to establish connection)
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+      
+      const testResult = await pool.query('SELECT NOW()');
+      console.log('✅ Database connection test successful:', testResult.rows[0].now);
+      return; // Success, exit
+    } catch (error) {
+      if (i === maxRetries - 1) {
+        // Last attempt failed - log but don't crash (connection might work later)
+        console.warn('⚠️ Database connection test failed after retries:', error.message);
+        console.warn('The app will continue - connection will be tested on first query.');
+      } else {
+        console.log(`Database connection test attempt ${i + 1} failed, retrying...`);
+      }
+    }
   }
 })();
 

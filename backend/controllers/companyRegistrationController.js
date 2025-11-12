@@ -6,53 +6,29 @@ const registerCompanyStep1 = async (req, res, next) => {
   try {
     const { companyName, industry, hrName, hrEmail, hrRole, domain } = req.body;
 
-    console.log('Registering company:', { companyName, industry, hrEmail, domain });
-
     // Create company registration record
-    let result;
-    try {
-      result = await query(
-        `INSERT INTO companies (name, industry, domain, verification_status, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-         RETURNING id, name, industry, domain, verification_status`,
-        [companyName, industry, domain, 'pending']
-      );
-      console.log('Company created successfully:', result.rows[0].id);
-    } catch (dbError) {
-      console.error('Database error creating company:', {
-        message: dbError.message,
-        code: dbError.code,
-        detail: dbError.detail,
-        hint: dbError.hint
-      });
-      throw dbError;
-    }
+    const result = await query(
+      `INSERT INTO companies (name, industry, domain, verification_status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+       RETURNING id, name, industry, domain, verification_status`,
+      [companyName, industry, domain, 'pending']
+    );
 
     const company = result.rows[0];
 
     // Store HR information in company settings
     // Employee record will be created later after verification
-    try {
-      await query(
-        `INSERT INTO company_settings (company_id, setting_key, setting_value, updated_at)
-         VALUES ($1, $2, $3, CURRENT_TIMESTAMP),
-                ($4, $5, $6, CURRENT_TIMESTAMP),
-                ($7, $8, $9, CURRENT_TIMESTAMP)`,
-        [
-          company.id, 'hr_name', hrName,
-          company.id, 'hr_email', hrEmail,
-          company.id, 'hr_role', hrRole,
-        ]
-      );
-      console.log('HR settings saved successfully');
-    } catch (dbError) {
-      console.error('Database error saving HR settings:', {
-        message: dbError.message,
-        code: dbError.code,
-        detail: dbError.detail
-      });
-      throw dbError;
-    }
+    await query(
+      `INSERT INTO company_settings (company_id, setting_key, setting_value, updated_at)
+       VALUES ($1, $2, $3, CURRENT_TIMESTAMP),
+              ($4, $5, $6, CURRENT_TIMESTAMP),
+              ($7, $8, $9, CURRENT_TIMESTAMP)`,
+      [
+        company.id, 'hr_name', hrName,
+        company.id, 'hr_email', hrEmail,
+        company.id, 'hr_role', hrRole,
+      ]
+    );
 
     // Initiate domain verification (async)
     companyVerificationService.verifyDomain(company.id, domain, hrEmail)
