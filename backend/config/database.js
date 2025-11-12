@@ -35,10 +35,18 @@ if (process.env.SUPABASE_URL) {
   connectionString = process.env.DATABASE_URL;
 }
 
-// Log connection string (without password) only in development
-if (connectionString && process.env.NODE_ENV === 'development') {
+// Log connection string (without password) for debugging
+if (connectionString) {
   const maskedConnection = connectionString.replace(/:[^:@]+@/, ':****@');
   console.log('Database connection string:', maskedConnection);
+  console.log('Database connection source:', 
+    process.env.DATABASE_URL ? 'DATABASE_URL' :
+    process.env.SUPABASE_CONNECTION_POOLER_URL ? 'SUPABASE_CONNECTION_POOLER_URL' :
+    'Constructed from SUPABASE_URL'
+  );
+} else {
+  console.error('ERROR: No database connection string found!');
+  console.error('Required: DATABASE_URL or SUPABASE_URL + SUPABASE_DB_PASSWORD');
 }
 
 const pool = new Pool({
@@ -53,13 +61,30 @@ const pool = new Pool({
 
 // Test connection
 pool.on('connect', () => {
-  console.log('Database connected successfully');
+  console.log('✅ Database connected successfully');
 });
 
 pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
-  process.exit(-1);
+  console.error('❌ Unexpected error on idle client', err);
+  console.error('Error code:', err.code);
+  console.error('Error message:', err.message);
+  // Don't exit in production - let the app handle errors gracefully
+  if (process.env.NODE_ENV !== 'production') {
+    process.exit(-1);
+  }
 });
+
+// Test connection on startup
+(async () => {
+  try {
+    const testResult = await pool.query('SELECT NOW()');
+    console.log('✅ Database connection test successful:', testResult.rows[0].now);
+  } catch (error) {
+    console.error('❌ Database connection test failed:', error.message);
+    console.error('Error code:', error.code);
+    console.error('Error detail:', error.detail);
+  }
+})();
 
 // Query helper function
 const query = async (text, params) => {
