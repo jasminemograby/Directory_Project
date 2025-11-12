@@ -49,25 +49,8 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
+// Apply CORS middleware
 app.use(cors(corsOptions));
-
-// Explicit OPTIONS handler - MUST be before any body parsing middleware
-app.options('*', (req, res) => {
-  const origin = req.headers.origin;
-  
-  // Check if origin is allowed
-  if (origin && allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Max-Age', '86400');
-    return res.status(204).end();
-  }
-  
-  // If origin not allowed, still respond (but CORS will block it)
-  res.status(204).end();
-});
 
 // Middleware
 // Temporarily disable helmet to test CORS (re-enable after CORS is working)
