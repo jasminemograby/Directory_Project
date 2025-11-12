@@ -14,11 +14,12 @@ const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
   : ['http://localhost:3000'];
 
-// Log CORS configuration
-console.log('CORS Configuration:');
-console.log('  CORS_ORIGIN env:', process.env.CORS_ORIGIN || 'not set');
-console.log('  Allowed origins:', allowedOrigins);
-console.log('  NODE_ENV:', process.env.NODE_ENV || 'not set');
+// Log CORS configuration (development only)
+if (process.env.NODE_ENV === 'development') {
+  console.log('CORS Configuration:');
+  console.log('  CORS_ORIGIN env:', process.env.CORS_ORIGIN || 'not set');
+  console.log('  Allowed origins:', allowedOrigins);
+}
 
 // CORS middleware - MUST be before helmet and other middleware
 const corsOptions = {
@@ -35,9 +36,11 @@ const corsOptions = {
       // In development, allow all origins
       callback(null, true);
     } else {
-      // Log the rejected origin for debugging
-      console.log('CORS blocked origin:', origin);
-      console.log('Allowed origins:', allowedOrigins);
+      // Log the rejected origin (development only)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('CORS blocked origin:', origin);
+        console.log('Allowed origins:', allowedOrigins);
+      }
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -53,11 +56,10 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Middleware
-// Temporarily disable helmet to test CORS (re-enable after CORS is working)
-// app.use(helmet({
-//   crossOriginResourcePolicy: { policy: "cross-origin" },
-//   crossOriginEmbedderPolicy: false
-// }));
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false
+}));
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -96,7 +98,6 @@ const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Directory Backend running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Listening on 0.0.0.0:${PORT}`);
 });
 
 // Handle server errors
