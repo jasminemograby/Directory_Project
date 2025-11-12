@@ -61,6 +61,9 @@ app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Explicit OPTIONS handler for all routes (must be before routes)
+app.options('*', cors(corsOptions));
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
