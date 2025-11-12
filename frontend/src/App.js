@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import Layout from './components/common/Layout';
 import { ROUTES, USER_ROLES } from './utils/constants';
 
 // Pages
@@ -17,7 +18,11 @@ import CompanyRegistrationVerification from './components/CompanyRegistration/Co
 import CompanyRegistrationStep4 from './components/CompanyRegistration/CompanyRegistrationStep4';
 
 // Home page - merged with HR Landing
-const Home = () => <HRLanding />;
+const Home = () => (
+  <Layout>
+    <HRLanding />
+  </Layout>
+);
 
 const Login = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -36,12 +41,28 @@ function App() {
           {/* Public Routes */}
           <Route path={ROUTES.HOME} element={<Home />} />
           <Route path={ROUTES.LOGIN} element={<Login />} />
-          <Route path={ROUTES.HR_LANDING} element={<HRLanding />} />
+          <Route path={ROUTES.HR_LANDING} element={
+            <Layout>
+              <HRLanding />
+            </Layout>
+          } />
           
           {/* Company Registration Routes */}
-          <Route path={ROUTES.COMPANY_REGISTER_STEP1} element={<CompanyRegistrationStep1 />} />
-          <Route path={ROUTES.COMPANY_REGISTER_VERIFICATION} element={<CompanyRegistrationVerification />} />
-          <Route path={ROUTES.COMPANY_REGISTER_STEP3} element={<CompanyRegistrationStep4 />} />
+          <Route path={ROUTES.COMPANY_REGISTER_STEP1} element={
+            <Layout>
+              <CompanyRegistrationStep1 />
+            </Layout>
+          } />
+          <Route path={ROUTES.COMPANY_REGISTER_VERIFICATION} element={
+            <Layout>
+              <CompanyRegistrationVerification />
+            </Layout>
+          } />
+          <Route path={ROUTES.COMPANY_REGISTER_STEP3} element={
+            <Layout>
+              <CompanyRegistrationStep4 />
+            </Layout>
+          } />
           {/* Keep step4 route for backward compatibility, redirect to step3 */}
           <Route path={ROUTES.COMPANY_REGISTER_STEP4} element={<Navigate to={ROUTES.COMPANY_REGISTER_STEP3} replace />} />
           {/* Keep result route for backward compatibility, redirect to step3 */}

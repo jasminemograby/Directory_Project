@@ -200,6 +200,19 @@ CREATE TABLE IF NOT EXISTS critical_requests (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Notifications table (In-App Notifications)
+CREATE TABLE IF NOT EXISTS notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+    type VARCHAR(100) NOT NULL,
+    recipient_email VARCHAR(255) NOT NULL,
+    message TEXT,
+    status VARCHAR(20) DEFAULT 'sent' CHECK (status IN ('sent', 'failed', 'pending')),
+    message_id VARCHAR(255),
+    read_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_employees_company_id ON employees(company_id);
 CREATE INDEX IF NOT EXISTS idx_employees_email ON employees(email);
@@ -211,6 +224,10 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_actor_id ON audit_logs(actor_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
 CREATE INDEX IF NOT EXISTS idx_critical_requests_status ON critical_requests(status);
 CREATE INDEX IF NOT EXISTS idx_companies_verification_status ON companies(verification_status);
+CREATE INDEX IF NOT EXISTS idx_notifications_company_id ON notifications(company_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient_email ON notifications(recipient_email);
+CREATE INDEX IF NOT EXISTS idx_notifications_read_at ON notifications(read_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()

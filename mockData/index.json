@@ -44,6 +44,25 @@
           "rating": 4.5
         }
       ]
+    },
+    "auth_service": {
+      "registration_check": {
+        "default": {
+          "isRegistered": false,
+          "userId": null,
+          "note": "Mock data: All employees treated as not registered when Auth Service unavailable"
+        }
+      }
+    },
+    "sendpulse": {
+      "in_app_notification": {
+        "default": {
+          "success": true,
+          "messageId": "db-stored",
+          "pushSent": false,
+          "note": "Mock data: In-app notification stored in database. Push notification not sent (SendPulse not configured or user not subscribed)"
+        }
+      }
     }
   }
 }

@@ -115,6 +115,18 @@ export const apiService = {
   signup: (data) => api.post('/auth/signup', data),
   logout: () => api.post('/auth/logout'),
   verifyEmail: (token) => api.post('/auth/verify', { token }),
+  
+  // Notifications endpoints
+  getNotifications: (userEmail, params = {}) => 
+    api.get('/notifications', { params: { user_email: userEmail, ...params } }),
+  getUnreadCount: (userEmail) => 
+    api.get('/notifications/unread-count', { params: { user_email: userEmail } }),
+  markNotificationAsRead: (notificationId, userEmail) => 
+    api.patch(`/notifications/${notificationId}/read`, { user_email: userEmail }),
+  markAllNotificationsAsRead: (userEmail) => 
+    api.patch('/notifications/mark-all-read', { user_email: userEmail }),
+  deleteNotification: (notificationId, userEmail) => 
+    api.delete(`/notifications/${notificationId}`, { data: { user_email: userEmail } }),
 };
 
 export default api;

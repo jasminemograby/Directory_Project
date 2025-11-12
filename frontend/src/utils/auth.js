@@ -41,6 +41,12 @@ export const authService = {
     return user?.role || null;
   },
   
+  // Get user email
+  getUserEmail: () => {
+    const user = authService.getCurrentUser();
+    return user?.email || null;
+  },
+  
   // Check if user has specific role
   hasRole: (role) => {
     const userRole = authService.getUserRole();
