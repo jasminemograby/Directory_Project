@@ -51,17 +51,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Middleware
-// Temporarily disable helmet to test CORS (re-enable after CORS is working)
-// app.use(helmet({
-//   crossOriginResourcePolicy: { policy: "cross-origin" },
-//   crossOriginEmbedderPolicy: false
-// }));
-app.use(morgan('combined'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Explicit OPTIONS handler for all routes (must be before routes)
+// Explicit OPTIONS handler - MUST be before any body parsing middleware
 app.options('*', (req, res) => {
   const origin = req.headers.origin;
   
@@ -78,6 +68,16 @@ app.options('*', (req, res) => {
   // If origin not allowed, still respond (but CORS will block it)
   res.status(204).end();
 });
+
+// Middleware
+// Temporarily disable helmet to test CORS (re-enable after CORS is working)
+// app.use(helmet({
+//   crossOriginResourcePolicy: { policy: "cross-origin" },
+//   crossOriginEmbedderPolicy: false
+// }));
+app.use(morgan('combined'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
