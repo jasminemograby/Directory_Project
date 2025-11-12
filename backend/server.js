@@ -62,7 +62,22 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Explicit OPTIONS handler for all routes (must be before routes)
-app.options('*', cors(corsOptions));
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  
+  // Check if origin is allowed
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    return res.status(204).end();
+  }
+  
+  // If origin not allowed, still respond (but CORS will block it)
+  res.status(204).end();
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
