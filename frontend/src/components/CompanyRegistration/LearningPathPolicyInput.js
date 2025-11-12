@@ -1,6 +1,5 @@
 // Learning Path Policy Input Component
 import React from 'react';
-import Input from '../common/Input';
 import { LEARNING_PATH_POLICY } from '../../utils/constants';
 
 const LearningPathPolicyInput = ({ value, onChange, employees = [], errors = {} }) => {

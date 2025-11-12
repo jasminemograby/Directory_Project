@@ -7,7 +7,6 @@ import EmployeeListInput from './EmployeeListInput';
 import DepartmentTeamInput from './DepartmentTeamInput';
 import LearningPathPolicyInput from './LearningPathPolicyInput';
 import { apiService } from '../../services/api';
-import { validateForm, validators } from '../../utils/validation';
 import { ROUTES, LEARNING_PATH_POLICY } from '../../utils/constants';
 
 const CompanyRegistrationStep4 = () => {

@@ -40,7 +40,7 @@ export const validators = {
   
   // Phone validation (basic)
   phone: (phone) => {
-    const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+    const phoneRegex = /^[\d\s\-+()]+$/;
     return phoneRegex.test(phone);
   },
   
