@@ -10,7 +10,11 @@ const notFound = require('./middleware/notFound');
 const app = express();
 
 // Middleware
-app.use(helmet());
+// Configure helmet to not interfere with CORS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false
+}));
 // CORS configuration - support multiple origins
 const allowedOrigins = process.env.CORS_ORIGIN 
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
