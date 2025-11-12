@@ -85,6 +85,8 @@ app.get('/api/health', (req, res) => {
 
 // Routes
 app.use('/api/company', require('./routes/companyRegistration'));
+app.use('/api/employee-registration', require('./routes/employeeRegistration'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // 404 handler (must be after all routes)
 app.use(notFound);

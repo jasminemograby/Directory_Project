@@ -353,6 +353,23 @@ const registerCompanyStep4 = async (req, res, next) => {
       return { companyId: company.id };
     });
 
+    // After company setup, check employee registration status (async - don't block response)
+    const employeeRegistrationController = require('./employeeRegistrationController');
+    employeeRegistrationController.checkCompanyEmployeesRegistration(result.companyId)
+      .then(async (registrationResult) => {
+        if (registrationResult.unregistered.length > 0) {
+          // Send in-app notification to HR about unregistered employees
+          await employeeRegistrationController.notifyHRAboutUnregisteredEmployees(
+            result.companyId,
+            registrationResult.unregistered
+          );
+        }
+      })
+      .catch((error) => {
+        // Log error but don't fail the registration
+        console.error('Error checking employee registration:', error.message);
+      });
+
     res.status(201).json({
       success: true,
       data: {
