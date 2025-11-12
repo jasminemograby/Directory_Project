@@ -1,6 +1,6 @@
 // Main App Component
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import { ROUTES, USER_ROLES } from './utils/constants';
@@ -17,14 +17,36 @@ import CompanyRegistrationVerification from './components/CompanyRegistration/Co
 import CompanyRegistrationStep4 from './components/CompanyRegistration/CompanyRegistrationStep4';
 
 // Placeholder pages (to be implemented)
-const Home = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="text-center">
-      <h1 className="text-4xl font-bold text-primary-cyan mb-4">Directory Microservice</h1>
-      <p className="text-gray-600">Welcome to the Directory system</p>
+const Home = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center max-w-2xl mx-auto px-4">
+        <h1 className="text-4xl font-bold text-primary-cyan mb-4">Directory Microservice</h1>
+        <p className="text-gray-600 mb-8 text-lg">Welcome to the Directory system</p>
+        
+        <div className="space-y-4">
+          <button
+            onClick={() => navigate(ROUTES.COMPANY_REGISTER_STEP1)}
+            className="bg-primary-cyan text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-purple transition-colors shadow-lg hover:shadow-xl"
+          >
+            Register Your Company
+          </button>
+          
+          <div className="pt-4">
+            <button
+              onClick={() => navigate(ROUTES.HR_LANDING)}
+              className="text-primary-cyan hover:text-primary-purple font-medium underline"
+            >
+              HR Portal
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Login = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
