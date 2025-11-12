@@ -9,12 +9,6 @@ const notFound = require('./middleware/notFound');
 
 const app = express();
 
-// Middleware
-// Configure helmet to not interfere with CORS
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  crossOriginEmbedderPolicy: false
-}));
 // CORS configuration - support multiple origins
 const allowedOrigins = process.env.CORS_ORIGIN 
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
@@ -26,7 +20,7 @@ console.log('  CORS_ORIGIN env:', process.env.CORS_ORIGIN || 'not set');
 console.log('  Allowed origins:', allowedOrigins);
 console.log('  NODE_ENV:', process.env.NODE_ENV || 'not set');
 
-// CORS middleware - must be before routes
+// CORS middleware - MUST be before helmet and other middleware
 const corsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
@@ -56,6 +50,13 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// Middleware
+// Configure helmet to not interfere with CORS (must be after CORS)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false
+}));
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
