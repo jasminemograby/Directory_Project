@@ -15,10 +15,18 @@ const errorHandler = (err, req, res, next) => {
   }
 
   // Database connection errors
-  if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.message?.includes('Connection terminated')) {
+  if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || 
+      err.code === 'ENOTFOUND' || err.code === 'ECONNRESET' ||
+      err.message?.includes('Connection terminated') || 
+      err.message?.includes('timeout') ||
+      err.message?.includes('Connection pool')) {
     status = 503;
     message = 'Database connection error. Please try again.';
-    console.error('Database connection error:', err.message);
+    console.error('Database connection error:', {
+      code: err.code,
+      message: err.message,
+      detail: err.detail
+    });
   } else if (err.code === '23505') {
     // Unique constraint violation
     status = 409;
