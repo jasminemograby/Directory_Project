@@ -52,11 +52,11 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Middleware
-// Configure helmet to not interfere with CORS (must be after CORS)
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  crossOriginEmbedderPolicy: false
-}));
+// Temporarily disable helmet to test CORS (re-enable after CORS is working)
+// app.use(helmet({
+//   crossOriginResourcePolicy: { policy: "cross-origin" },
+//   crossOriginEmbedderPolicy: false
+// }));
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
