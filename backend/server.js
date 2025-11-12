@@ -65,7 +65,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health check endpoint (also at root for Railway)
-app.get('/health', cors(corsOptions), (req, res) => {
+app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -74,7 +74,7 @@ app.get('/health', cors(corsOptions), (req, res) => {
   });
 });
 
-app.get('/api/health', cors(corsOptions), (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
