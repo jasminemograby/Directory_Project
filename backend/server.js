@@ -93,6 +93,7 @@ app.get('/api/health', (req, res) => {
 // Routes
 app.use('/api/company', require('./routes/companyRegistration'));
 app.use('/api/employee-registration', require('./routes/employeeRegistration'));
+app.use('/api/employee', require('./routes/employees'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/external', require('./routes/externalData'));
 

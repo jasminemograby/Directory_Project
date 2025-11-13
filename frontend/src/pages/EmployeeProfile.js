@@ -9,6 +9,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 const EmployeeProfile = () => {
   const { employeeId } = useParams();
   const [employee, setEmployee] = useState(null);
+  const [processedData, setProcessedData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEnriched, setIsEnriched] = useState(false);
@@ -26,11 +27,25 @@ const EmployeeProfile = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiService.getEmployee(currentEmployeeId);
-      if (response.data && response.data.data) {
-        setEmployee(response.data.data);
+      
+      // Fetch basic employee data
+      const employeeResponse = await apiService.getEmployee(currentEmployeeId);
+      if (employeeResponse.data && employeeResponse.data.data) {
+        setEmployee(employeeResponse.data.data);
       } else {
         setError('Employee profile not found. Please check your employee ID.');
+      }
+
+      // Fetch processed data (bio, projects, skills) - NOT raw data
+      try {
+        const processedResponse = await apiService.getProcessedData(currentEmployeeId);
+        if (processedResponse.data && processedResponse.data.data) {
+          setProcessedData(processedResponse.data.data);
+        }
+      } catch (processedError) {
+        console.warn('No processed data available yet:', processedError.message);
+        // This is OK - processed data might not exist yet
+        setProcessedData(null);
       }
     } catch (error) {
       console.error('Error fetching employee data:', error);
@@ -85,10 +100,10 @@ const EmployeeProfile = () => {
   }, [currentEmployeeId, fetchEmployeeData, checkEnrichmentStatus]);
 
 
-  const handleEnrichmentComplete = () => {
+  const handleEnrichmentComplete = async () => {
     setIsEnriched(true);
-    // Refresh employee data to show updated profile
-    fetchEmployeeData();
+    // Refresh employee data and processed data to show updated profile
+    await fetchEmployeeData();
   };
 
   if (loading) {
@@ -149,41 +164,101 @@ const EmployeeProfile = () => {
           </div>
         )}
 
-        {/* Profile Content - Only show if enriched */}
+        {/* Profile Content - Only show processed data (NOT raw data) */}
         {isEnriched && employee && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Profile Information</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <p className="mt-1 text-gray-900">{employee.name || 'N/A'}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <p className="mt-1 text-gray-900">{employee.email || 'N/A'}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Role</label>
-                <p className="mt-1 text-gray-900">{employee.role || 'N/A'}</p>
-              </div>
-
-              {employee.bio && (
+          <div className="space-y-6">
+            {/* Basic Employee Information */}
+            <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+              <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Profile Information</h2>
+              
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Bio</label>
-                  <p className="mt-1 text-gray-900">{employee.bio}</p>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Name</label>
+                  <p className="text-gray-900" style={{ color: 'var(--text-primary)' }}>{employee.name || 'N/A'}</p>
                 </div>
-              )}
 
-              {employee.profile_status && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Profile Status</label>
-                  <p className="mt-1 text-gray-900 capitalize">{employee.profile_status}</p>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Email</label>
+                  <p className="text-gray-900" style={{ color: 'var(--text-primary)' }}>{employee.email || 'N/A'}</p>
                 </div>
-              )}
+
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Role</label>
+                  <p className="text-gray-900" style={{ color: 'var(--text-primary)' }}>{employee.role || 'N/A'}</p>
+                </div>
+
+                {employee.profile_status && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Profile Status</label>
+                    <p className="capitalize" style={{ color: 'var(--text-primary)' }}>{employee.profile_status}</p>
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* AI-Generated Bio (Processed Data) */}
+            {processedData?.bio && (
+              <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+                <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Professional Bio</h2>
+                <p className="text-gray-700 leading-relaxed" style={{ color: 'var(--text-primary)' }}>{processedData.bio}</p>
+                {processedData.processedAt && (
+                  <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                    Generated on {new Date(processedData.processedAt).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Projects (Processed Data) */}
+            {processedData?.projects && processedData.projects.length > 0 && (
+              <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+                <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Projects</h2>
+                <div className="space-y-4">
+                  {processedData.projects.map((project) => (
+                    <div key={project.id} className="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
+                      <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{project.title}</h3>
+                      <p className="text-gray-600" style={{ color: 'var(--text-secondary)' }}>{project.summary}</p>
+                      {project.source && (
+                        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                          Source: {project.source}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Skills (Processed Data) */}
+            {processedData?.skills && processedData.skills.length > 0 && (
+              <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+                <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Skills</h2>
+                <div className="flex flex-wrap gap-2">
+                  {processedData.skills.map((skill) => (
+                    <span
+                      key={skill.id}
+                      className="px-3 py-1 rounded-full text-sm font-medium"
+                      style={{
+                        backgroundColor: skill.type === 'verified' ? 'var(--accent-green)' : 'var(--bg-secondary)',
+                        color: skill.type === 'verified' ? 'white' : 'var(--text-primary)'
+                      }}
+                    >
+                      {skill.name}
+                      {skill.type === 'verified' && ' ✓'}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Message if no processed data yet */}
+            {!processedData?.bio && !processedData?.projects?.length && !processedData?.skills?.length && (
+              <div className="rounded-lg p-6 border border-yellow-200" style={{ backgroundColor: '#fef3c7' }}>
+                <p className="text-yellow-800">
+                  Profile enrichment in progress. Your bio, projects, and skills will appear here once processing is complete.
+                </p>
+              </div>
+            )}
           </div>
         )}
 

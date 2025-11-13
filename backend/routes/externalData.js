@@ -16,5 +16,8 @@ router.get('/github/data/:employeeId', externalDataController.fetchGitHubData);
 // Combined data collection
 router.post('/collect/:employeeId', externalDataController.collectAllData);
 
+// Get processed data (bio, projects, skills)
+router.get('/processed/:employeeId', externalDataController.getProcessedData);
+
 module.exports = router;
 

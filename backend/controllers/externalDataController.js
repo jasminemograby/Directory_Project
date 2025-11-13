@@ -216,7 +216,7 @@ const fetchGitHubData = async (req, res, next) => {
 };
 
 /**
- * Collect all external data for employee
+ * Collect all external data for employee and process through Gemini
  * POST /api/external/collect/:employeeId
  */
 const collectAllData = async (req, res, next) => {
@@ -264,12 +264,55 @@ const collectAllData = async (req, res, next) => {
       }
     }
 
+    // Process data through Gemini AI (enrichment)
+    let enrichmentResult = null;
+    if (results.linkedin || results.github) {
+      try {
+        const profileEnrichmentService = require('../services/profileEnrichmentService');
+        enrichmentResult = await profileEnrichmentService.enrichProfile(employeeId);
+        console.log('[Collect] Profile enrichment completed');
+      } catch (error) {
+        console.error('[Collect] Error enriching profile:', error.message);
+        // Don't fail the entire request if enrichment fails
+        enrichmentResult = { error: error.message };
+      }
+    }
+
     res.json({
       success: true,
-      data: results
+      data: results,
+      enrichment: enrichmentResult
     });
   } catch (error) {
     console.error('Error collecting external data:', error.message);
+    next(error);
+  }
+};
+
+/**
+ * Get processed profile data (bio, projects, skills)
+ * GET /api/external/processed/:employeeId
+ */
+const getProcessedData = async (req, res, next) => {
+  try {
+    const { employeeId } = req.params;
+
+    if (!employeeId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Employee ID is required'
+      });
+    }
+
+    const profileEnrichmentService = require('../services/profileEnrichmentService');
+    const processedData = await profileEnrichmentService.getProcessedData(employeeId);
+
+    res.json({
+      success: true,
+      data: processedData
+    });
+  } catch (error) {
+    console.error('Error fetching processed data:', error.message);
     next(error);
   }
 };
@@ -281,6 +324,7 @@ module.exports = {
   initiateGitHubAuth,
   handleGitHubCallback,
   fetchGitHubData,
-  collectAllData
+  collectAllData,
+  getProcessedData
 };
 

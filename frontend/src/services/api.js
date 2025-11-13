@@ -124,6 +124,7 @@ export const apiService = {
   fetchLinkedInData: (employeeId) => api.get(`/external/linkedin/data/${employeeId}`),
   fetchGitHubData: (employeeId) => api.get(`/external/github/data/${employeeId}`),
   collectAllExternalData: (employeeId) => api.post(`/external/collect/${employeeId}`),
+  getProcessedData: (employeeId) => api.get(`/external/processed/${employeeId}`),
   
   // Notifications endpoints
   getNotifications: (userEmail, params = {}) => 
