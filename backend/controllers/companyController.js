@@ -8,6 +8,8 @@ const { query } = require('../config/database');
  */
 const getCompanyById = async (companyId) => {
   try {
+    console.log(`[getCompanyById] Fetching company with ID: ${companyId}`);
+    
     // Get company basic info
     const companyResult = await query(
       `SELECT 
@@ -26,8 +28,11 @@ const getCompanyById = async (companyId) => {
     );
 
     if (companyResult.rows.length === 0) {
+      console.log(`[getCompanyById] Company not found with ID: ${companyId}`);
       return null;
     }
+
+    console.log(`[getCompanyById] Company found: ${companyResult.rows[0].id}, name: ${companyResult.rows[0].name}`);
 
     const company = companyResult.rows[0];
 
