@@ -132,12 +132,45 @@ const CompanyRegistrationStep4 = () => {
 
       const response = await apiService.registerCompany(payload);
 
+      console.log('Registration response:', response.data);
+
       if (response.data.success) {
+        // Store company ID and HR employee ID for HR Dashboard
+        const companyId = response.data.data?.companyId;
+        const hrEmployeeId = response.data.data?.hrEmployeeId;
+        
+        if (!companyId) {
+          console.error('No companyId in response:', response.data);
+          setErrors({
+            submit: 'Registration succeeded but company ID not found. Please contact support.',
+          });
+          setLoading(false);
+          return;
+        }
+
+        console.log('Storing companyId:', companyId);
+        localStorage.setItem('companyId', companyId);
+        
+        // Store HR employee ID so HR can access their profile
+        if (hrEmployeeId) {
+          console.log('Storing HR employee ID:', hrEmployeeId);
+          localStorage.setItem('currentEmployeeId', hrEmployeeId);
+          localStorage.setItem('hrEmployeeId', hrEmployeeId);
+        }
+        
         // Clear registration ID
         localStorage.removeItem('companyRegistrationId');
-        // Redirect to HR landing page with success message
-        navigate(ROUTES.HR_LANDING, {
-          state: { message: 'Company registration completed successfully!' },
+        
+        console.log('Navigating to HR Dashboard:', ROUTES.HR_DASHBOARD);
+        
+        // Redirect to HR Dashboard
+        navigate(ROUTES.HR_DASHBOARD, {
+          state: { 
+            message: 'Company registration completed successfully!',
+            companyId: companyId,
+            hrEmployeeId: hrEmployeeId
+          },
+          replace: true, // Replace history entry
         });
       } else {
         // Handle unexpected response format

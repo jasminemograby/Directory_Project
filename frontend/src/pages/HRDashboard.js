@@ -262,7 +262,20 @@ const HRDashboard = () => {
       {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-3 gap-4">
+          <Button
+            variant="primary"
+            onClick={() => {
+              const hrEmployeeId = localStorage.getItem('hrEmployeeId') || localStorage.getItem('currentEmployeeId');
+              if (hrEmployeeId) {
+                navigate(`${ROUTES.EMPLOYEE_PROFILE}?employeeId=${hrEmployeeId}`);
+              } else {
+                navigate(ROUTES.EMPLOYEE_PROFILE);
+              }
+            }}
+          >
+            View My Profile
+          </Button>
           <Button
             variant="secondary"
             onClick={() => navigate(ROUTES.COMPANY_REGISTER_STEP1)}

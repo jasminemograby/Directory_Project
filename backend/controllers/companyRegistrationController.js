@@ -350,6 +350,55 @@ const registerCompanyStep4 = async (req, res, next) => {
         );
       }
 
+      // Create HR employee profile if not already created
+      // Get HR info from company_settings
+      const hrSettingsResult = await client.query(
+        `SELECT setting_key, setting_value 
+         FROM company_settings 
+         WHERE company_id = $1 AND setting_key IN ('hr_name', 'hr_email', 'hr_role')`,
+        [company.id]
+      );
+
+      const hrSettings = {};
+      hrSettingsResult.rows.forEach(row => {
+        hrSettings[row.setting_key] = row.setting_value;
+      });
+
+      if (hrSettings.hr_email) {
+        // Check if HR employee already exists
+        const hrEmployeeCheck = await client.query(
+          `SELECT id FROM employees WHERE email = $1 AND company_id = $2`,
+          [hrSettings.hr_email, company.id]
+        );
+
+        if (hrEmployeeCheck.rows.length === 0) {
+          // Create HR employee profile
+          const hrEmployeeResult = await client.query(
+            `INSERT INTO employees (
+              company_id, name, email, role, target_role, type,
+              department_id, team_id, profile_status, created_at, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            RETURNING id`,
+            [
+              company.id,
+              hrSettings.hr_name || 'HR Manager',
+              hrSettings.hr_email,
+              hrSettings.hr_role || 'HR Manager',
+              hrSettings.hr_role || 'HR Manager', // target_role same as current role
+              'regular', // HR is regular employee by default
+              null, // No department/team assignment for HR
+              null,
+              'pending', // Profile status pending until enrichment
+            ]
+          );
+
+          console.log(`✅ HR employee profile created: ${hrEmployeeResult.rows[0].id} for ${hrSettings.hr_email}`);
+        } else {
+          console.log(`ℹ️ HR employee already exists: ${hrEmployeeCheck.rows[0].id}`);
+        }
+      }
+
       return { companyId: company.id };
     });
 
@@ -370,10 +419,22 @@ const registerCompanyStep4 = async (req, res, next) => {
         console.error('Error checking employee registration:', error.message);
       });
 
+    // Get HR employee ID to return to frontend
+    const hrEmployeeResult = await query(
+      `SELECT id FROM employees 
+       WHERE company_id = $1 
+       AND email = (SELECT setting_value FROM company_settings WHERE company_id = $1 AND setting_key = 'hr_email' LIMIT 1)
+       LIMIT 1`,
+      [result.companyId]
+    );
+
+    const hrEmployeeId = hrEmployeeResult.rows.length > 0 ? hrEmployeeResult.rows[0].id : null;
+
     res.status(201).json({
       success: true,
       data: {
         companyId: result.companyId,
+        hrEmployeeId: hrEmployeeId, // Return HR employee ID so frontend can store it
       },
       message: 'Company setup completed successfully.',
     });

@@ -1,6 +1,6 @@
 // Employee Profile Page - Main profile page with mandatory profile enrichment
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import Layout from '../components/common/Layout';
 import EnhanceProfile from '../components/Profile/EnhanceProfile';
 import { apiService } from '../services/api';
@@ -8,7 +8,6 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const EmployeeProfile = () => {
   const { employeeId } = useParams();
-  const navigate = useNavigate();
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
