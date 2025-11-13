@@ -415,16 +415,13 @@ const registerCompanyStep4 = async (req, res, next) => {
       if (hrSettings.hr_email) {
         // Check if HR employee already exists (either created in employees loop or already exists)
         // Use employeeMap to check if HR was already created in the employees loop
-        const hrEmailLower = hrSettings.hr_email.toLowerCase().trim();
+        const hrEmailNormalized = hrSettings.hr_email.trim().toLowerCase();
         let hrEmployeeId = null;
         
-        // First check if HR was created in the employees loop
-        for (const [email, empId] of employeeMap.entries()) {
-          if (email.toLowerCase().trim() === hrEmailLower) {
-            hrEmployeeId = empId;
-            console.log(`ℹ️ HR employee already created in employees loop: ${hrEmployeeId}`);
-            break;
-          }
+        // First check if HR was created in the employees loop (use normalized email)
+        if (employeeMap.has(hrEmailNormalized)) {
+          hrEmployeeId = employeeMap.get(hrEmailNormalized);
+          console.log(`ℹ️ HR employee already created in employees loop: ${hrEmployeeId}`);
         }
         
         // If not found in employeeMap, check database
