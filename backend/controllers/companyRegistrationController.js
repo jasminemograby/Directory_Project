@@ -174,10 +174,17 @@ const registerCompanyStep4 = async (req, res, next) => {
       const employeeMap = new Map(); // Map email to employee ID for decision maker lookup
       
       for (const emp of employees) {
+        // Normalize email (trim and lowercase) for comparison
+        const normalizedEmail = emp.email ? emp.email.trim().toLowerCase() : null;
+        if (!normalizedEmail) {
+          throw new Error(`Invalid email for employee: ${emp.name || 'Unknown'}`);
+        }
+
         // Check if employee with this email already exists (email is UNIQUE globally)
+        // Use case-insensitive comparison
         const existingEmp = await client.query(
-          `SELECT id, company_id FROM employees WHERE email = $1`,
-          [emp.email]
+          `SELECT id, company_id, email FROM employees WHERE LOWER(TRIM(email)) = $1`,
+          [normalizedEmail]
         );
 
         let employeeId;
@@ -186,13 +193,14 @@ const registerCompanyStep4 = async (req, res, next) => {
           // If employee exists in the same company, use existing ID
           if (existingEmployee.company_id === company.id) {
             employeeId = existingEmployee.id;
-            employeeMap.set(emp.email, employeeId);
+            employeeMap.set(normalizedEmail, employeeId);
+            console.log(`[Step4] Employee already exists in same company: ${employeeId} (${existingEmployee.email})`);
             
             // Don't skip - we still need to update managers and external links
             // Continue to the manager update section below
           } else {
             // Employee exists in a different company - this is an error (email must be unique globally)
-            throw new Error(`Employee with email ${emp.email} already exists in another company. Email must be unique across all companies.`);
+            throw new Error(`Employee with email ${existingEmployee.email} already exists in another company (ID: ${existingEmployee.company_id}). Email must be unique across all companies.`);
           }
         } else {
           // Employee doesn't exist, create new one
@@ -204,6 +212,7 @@ const registerCompanyStep4 = async (req, res, next) => {
 
           try {
             console.log(`[Step4] Creating employee: ${emp.email} for company ${company.id}`);
+            // Use normalized email for insert
             const empResult = await client.query(
               `INSERT INTO employees (
                 company_id, name, email, role, target_role, type,
@@ -214,7 +223,7 @@ const registerCompanyStep4 = async (req, res, next) => {
               [
                 company.id,
                 emp.name,
-                emp.email,
+                normalizedEmail, // Use normalized email
                 emp.currentRole,
                 emp.targetRole,
                 emp.type,
@@ -225,7 +234,7 @@ const registerCompanyStep4 = async (req, res, next) => {
             );
             
             employeeId = empResult.rows[0].id;
-            employeeMap.set(emp.email, employeeId);
+            employeeMap.set(normalizedEmail, employeeId);
             console.log(`[Step4] Employee created successfully: ${employeeId} (${emp.email})`);
           } catch (insertError) {
             console.error(`[Step4] Error creating employee ${emp.email}:`, {
@@ -237,21 +246,24 @@ const registerCompanyStep4 = async (req, res, next) => {
             // If insert fails due to duplicate, check again (race condition)
             if (insertError.code === '23505' && insertError.constraint === 'employees_email_key') {
               try {
+                // Use case-insensitive comparison
                 const retryCheck = await client.query(
-                  `SELECT id, company_id FROM employees WHERE email = $1`,
-                  [emp.email]
+                  `SELECT id, company_id, email FROM employees WHERE LOWER(TRIM(email)) = $1`,
+                  [normalizedEmail]
                 );
                 if (retryCheck.rows.length > 0) {
                   const retryEmployee = retryCheck.rows[0];
                   if (retryEmployee.company_id === company.id) {
                     employeeId = retryEmployee.id;
-                    employeeMap.set(emp.email, employeeId);
+                    employeeMap.set(normalizedEmail, employeeId);
+                    console.log(`[Step4] Employee found after duplicate error: ${employeeId} (${retryEmployee.email})`);
                     // Don't continue - we still need to update managers
                   } else {
-                    throw new Error(`Employee with email ${emp.email} already exists in another company. Email must be unique across all companies.`);
+                    throw new Error(`Employee with email ${retryEmployee.email} already exists in another company (ID: ${retryEmployee.company_id}). Email must be unique across all companies.`);
                   }
                 } else {
                   // This shouldn't happen, but if it does, re-throw the error
+                  console.error(`[Step4] Duplicate constraint error but employee not found: ${normalizedEmail}`);
                   throw insertError;
                 }
               } catch (retryError) {
@@ -288,9 +300,9 @@ const registerCompanyStep4 = async (req, res, next) => {
 
             // Update team manager if this employee is a team manager
             for (const [teamKey, teamInfo] of teamMap.entries()) {
-              const teamManagerEmail = teamInfo.managerEmail ? teamInfo.managerEmail.trim() : null;
-              const empEmail = emp.email ? emp.email.trim() : null;
-              if (teamManagerEmail && empEmail && teamManagerEmail.toLowerCase() === empEmail.toLowerCase() && teamInfo.dbId) {
+              const teamManagerEmail = teamInfo.managerEmail ? teamInfo.managerEmail.trim().toLowerCase() : null;
+              const empEmailNormalized = normalizedEmail;
+              if (teamManagerEmail && empEmailNormalized && teamManagerEmail === empEmailNormalized && teamInfo.dbId) {
                 await client.query(
                   `UPDATE teams SET manager_id = $1 WHERE id = $2`,
                   [employeeId, teamInfo.dbId]
@@ -452,7 +464,7 @@ const registerCompanyStep4 = async (req, res, next) => {
             );
 
             hrEmployeeId = hrEmployeeResult.rows[0].id;
-            employeeMap.set(hrSettings.hr_email, hrEmployeeId);
+            employeeMap.set(hrEmailNormalized, hrEmployeeId);
             console.log(`✅ HR employee profile created: ${hrEmployeeId} for ${hrSettings.hr_email}`);
           } catch (insertError) {
             // If insert fails due to duplicate (race condition), try to get existing
