@@ -131,19 +131,31 @@ const getCompany = async (req, res, next) => {
  */
 const getCompanyIdByHrEmail = async (hrEmail) => {
   try {
-    const result = await query(
-      `SELECT company_id
-       FROM company_settings
-       WHERE setting_key = 'hr_email' AND setting_value = $1
-       LIMIT 1`,
-      [hrEmail]
-    );
-
-    if (result.rows.length === 0) {
+    // Normalize email for comparison (case-insensitive)
+    const normalizedEmail = hrEmail ? hrEmail.trim().toLowerCase() : null;
+    if (!normalizedEmail) {
+      console.error('[getCompanyIdByHrEmail] Invalid HR email provided');
       return null;
     }
 
-    return result.rows[0].company_id;
+    console.log(`[getCompanyIdByHrEmail] Looking for company with HR email: ${normalizedEmail}`);
+    
+    const result = await query(
+      `SELECT company_id
+       FROM company_settings
+       WHERE setting_key = 'hr_email' AND LOWER(TRIM(setting_value)) = $1
+       LIMIT 1`,
+      [normalizedEmail]
+    );
+
+    if (result.rows.length === 0) {
+      console.log(`[getCompanyIdByHrEmail] No company found for HR email: ${normalizedEmail}`);
+      return null;
+    }
+
+    const companyId = result.rows[0].company_id;
+    console.log(`[getCompanyIdByHrEmail] Found company ID: ${companyId} for HR email: ${normalizedEmail}`);
+    return companyId;
   } catch (error) {
     console.error('Error getting company ID by HR email:', error.message);
     throw error;
