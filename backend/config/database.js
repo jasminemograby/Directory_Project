@@ -98,19 +98,44 @@ pool.on('error', (err) => {
   }
 })();
 
-// Query helper function
-const query = async (text, params) => {
-  try {
-    const res = await pool.query(text, params);
-    return res;
-  } catch (error) {
-    console.error('Database query error', { 
-      error: error.message,
-      code: error.code,
-      detail: error.detail,
-      hint: error.hint
-    });
-    throw error;
+// Query helper function with retry logic for connection issues
+const query = async (text, params, retries = 2) => {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await pool.query(text, params);
+      return res;
+    } catch (error) {
+      // Check if it's a connection error that might be retryable
+      const isConnectionError = 
+        error.code === 'ECONNREFUSED' || 
+        error.code === 'ETIMEDOUT' || 
+        error.code === 'ENOTFOUND' || 
+        error.code === 'ECONNRESET' ||
+        error.message?.includes('Connection terminated') ||
+        error.message?.includes('timeout') ||
+        error.message?.includes('Connection pool');
+      
+      // If it's a connection error and we have retries left, wait and retry
+      if (isConnectionError && attempt < retries) {
+        const delay = (attempt + 1) * 1000; // 1s, 2s, etc.
+        console.warn(`Database connection error (attempt ${attempt + 1}/${retries + 1}), retrying in ${delay}ms...`, {
+          code: error.code,
+          message: error.message
+        });
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue; // Retry
+      }
+      
+      // Log error and throw
+      console.error('Database query error', { 
+        error: error.message,
+        code: error.code,
+        detail: error.detail,
+        hint: error.hint,
+        attempt: attempt + 1
+      });
+      throw error;
+    }
   }
 };
 
@@ -118,19 +143,29 @@ const query = async (text, params) => {
 const transaction = async (callback) => {
   const client = await pool.connect();
   try {
+    console.log('[TRANSACTION] Starting transaction...');
     await client.query('BEGIN');
+    console.log('[TRANSACTION] Transaction BEGIN successful');
+    
     const result = await callback(client);
+    
+    console.log('[TRANSACTION] Callback completed, committing...');
     await client.query('COMMIT');
+    console.log('[TRANSACTION] Transaction COMMIT successful');
+    
     return result;
   } catch (error) {
+    console.error('[TRANSACTION] Error in transaction, rolling back...', error.message);
     try {
       await client.query('ROLLBACK');
+      console.log('[TRANSACTION] Rollback successful');
     } catch (rollbackError) {
-      console.error('Rollback error:', rollbackError.message);
+      console.error('[TRANSACTION] Rollback error:', rollbackError.message);
     }
     throw error;
   } finally {
     client.release();
+    console.log('[TRANSACTION] Client released back to pool');
   }
 };
 
