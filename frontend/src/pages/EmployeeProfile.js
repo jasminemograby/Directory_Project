@@ -1,5 +1,5 @@
 // Employee Profile Page - Main profile page with mandatory profile enrichment
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import Layout from '../components/common/Layout';
 import EnhanceProfile from '../components/Profile/EnhanceProfile';
@@ -15,7 +15,10 @@ const EmployeeProfile = () => {
   const [isEnriched, setIsEnriched] = useState(false);
 
   // Get employee ID from localStorage if not in URL (for mock login)
-  const currentEmployeeId = employeeId || localStorage.getItem('currentEmployeeId');
+  // Use useMemo to prevent unnecessary recalculations
+  const currentEmployeeId = useMemo(() => {
+    return employeeId || localStorage.getItem('currentEmployeeId');
+  }, [employeeId]);
 
   const fetchEmployeeData = useCallback(async () => {
     if (!currentEmployeeId) {
@@ -63,6 +66,8 @@ const EmployeeProfile = () => {
   }, [currentEmployeeId]);
 
   const checkEnrichmentStatus = useCallback(async () => {
+    if (!currentEmployeeId) return;
+    
     try {
       // Check if both LinkedIn and GitHub are connected
       const [linkedInResult, githubResult] = await Promise.allSettled([
@@ -94,10 +99,13 @@ const EmployeeProfile = () => {
       return;
     }
 
-    // Only fetch if we have an employee ID
-    fetchEmployeeData();
-    checkEnrichmentStatus();
-  }, [currentEmployeeId, fetchEmployeeData, checkEnrichmentStatus]);
+    // Only fetch if we have an employee ID and we're not already loading
+    if (!loading) {
+      fetchEmployeeData();
+      checkEnrichmentStatus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEmployeeId]); // Only depend on currentEmployeeId to prevent infinite loop
 
 
   const handleEnrichmentComplete = async () => {
