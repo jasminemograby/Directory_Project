@@ -255,41 +255,58 @@ const registerCompanyStep4 = async (req, res, next) => {
         // At this point, employeeId is set (either from existing or newly created)
 
         // Update department manager if this employee is a department manager
-        for (const [deptKey, deptInfo] of departmentMap.entries()) {
-          const managerEmail = deptInfo.managerEmail ? deptInfo.managerEmail.trim() : null;
-          const empEmail = emp.email ? emp.email.trim() : null;
-          const isMatch = managerEmail && empEmail && managerEmail.toLowerCase() === empEmail.toLowerCase();
-          
-          if (isMatch) {
-            await client.query(
-              `UPDATE departments SET manager_id = $1 WHERE id = $2`,
-              [employeeId, deptInfo.dbId]
-            );
-          }
-        }
+        if (employeeId) {
+          try {
+            for (const [deptKey, deptInfo] of departmentMap.entries()) {
+              const managerEmail = deptInfo.managerEmail ? deptInfo.managerEmail.trim() : null;
+              const empEmail = emp.email ? emp.email.trim() : null;
+              const isMatch = managerEmail && empEmail && managerEmail.toLowerCase() === empEmail.toLowerCase();
+              
+              if (isMatch && deptInfo.dbId) {
+                await client.query(
+                  `UPDATE departments SET manager_id = $1 WHERE id = $2`,
+                  [employeeId, deptInfo.dbId]
+                );
+              }
+            }
 
-        // Update team manager if this employee is a team manager
-        for (const [teamKey, teamInfo] of teamMap.entries()) {
-          const teamManagerEmail = teamInfo.managerEmail ? teamInfo.managerEmail.trim() : null;
-          const empEmail = emp.email ? emp.email.trim() : null;
-          if (teamManagerEmail && empEmail && teamManagerEmail.toLowerCase() === empEmail.toLowerCase()) {
-            await client.query(
-              `UPDATE teams SET manager_id = $1 WHERE id = $2`,
-              [employeeId, teamInfo.dbId]
-            );
+            // Update team manager if this employee is a team manager
+            for (const [teamKey, teamInfo] of teamMap.entries()) {
+              const teamManagerEmail = teamInfo.managerEmail ? teamInfo.managerEmail.trim() : null;
+              const empEmail = emp.email ? emp.email.trim() : null;
+              if (teamManagerEmail && empEmail && teamManagerEmail.toLowerCase() === empEmail.toLowerCase() && teamInfo.dbId) {
+                await client.query(
+                  `UPDATE teams SET manager_id = $1 WHERE id = $2`,
+                  [employeeId, teamInfo.dbId]
+                );
+              }
+            }
+          } catch (updateError) {
+            // Log but don't fail transaction for manager updates
+            console.warn(`Failed to update managers for employee ${employeeId}:`, updateError.message);
+            // If transaction is aborted, re-throw to trigger rollback
+            if (updateError.message?.includes('aborted') || updateError.code === '25P02') {
+              throw updateError;
+            }
           }
         }
 
         // Store external data links
-        if (emp.externalLinks) {
+        if (emp.externalLinks && employeeId) {
           const linkTypes = ['linkedin', 'github', 'credly', 'youtube', 'orcid', 'crossref'];
           for (const linkType of linkTypes) {
             if (emp.externalLinks[linkType]) {
-              await client.query(
-                `INSERT INTO external_data_links (employee_id, link_type, url, created_at)
-                 VALUES ($1, $2, $3, CURRENT_TIMESTAMP)`,
-                [employeeId, linkType, emp.externalLinks[linkType]]
-              );
+              try {
+                await client.query(
+                  `INSERT INTO external_data_links (employee_id, link_type, url, created_at)
+                   VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+                   ON CONFLICT DO NOTHING`,
+                  [employeeId, linkType, emp.externalLinks[linkType]]
+                );
+              } catch (linkError) {
+                // Log but don't fail transaction for external links
+                console.warn(`Failed to insert external link ${linkType} for employee ${employeeId}:`, linkError.message);
+              }
             }
           }
         }
@@ -424,16 +441,26 @@ const registerCompanyStep4 = async (req, res, next) => {
           } catch (insertError) {
             // If insert fails due to duplicate (race condition), try to get existing
             if (insertError.code === '23505' && insertError.constraint === 'employees_email_key') {
-              const retryCheck = await client.query(
-                `SELECT id FROM employees WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) AND company_id = $2`,
-                [hrSettings.hr_email, company.id]
-              );
-              if (retryCheck.rows.length > 0) {
-                hrEmployeeId = retryCheck.rows[0].id;
-                employeeMap.set(hrSettings.hr_email, hrEmployeeId);
-                console.log(`ℹ️ HR employee created by another process: ${hrEmployeeId}`);
-              } else {
-                throw insertError;
+              // Check if transaction is still active before querying
+              try {
+                const retryCheck = await client.query(
+                  `SELECT id FROM employees WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) AND company_id = $2`,
+                  [hrSettings.hr_email, company.id]
+                );
+                if (retryCheck.rows.length > 0) {
+                  hrEmployeeId = retryCheck.rows[0].id;
+                  employeeMap.set(hrSettings.hr_email, hrEmployeeId);
+                  console.log(`ℹ️ HR employee created by another process: ${hrEmployeeId}`);
+                } else {
+                  // If not found, the transaction might be aborted - re-throw to trigger rollback
+                  throw insertError;
+                }
+              } catch (retryError) {
+                // If retry query also fails (transaction aborted), re-throw original error
+                if (retryError.message?.includes('aborted') || retryError.code === '25P02') {
+                  throw insertError; // Re-throw original error to trigger rollback
+                }
+                throw retryError;
               }
             } else {
               throw insertError;
