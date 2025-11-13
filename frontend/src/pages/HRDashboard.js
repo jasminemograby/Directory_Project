@@ -48,11 +48,33 @@ const HRDashboard = () => {
         let response;
 
         if (companyId) {
-          // Fetch by company ID
-          response = await apiService.getCompany(companyId);
+          // Try to fetch by company ID first
+          try {
+            response = await apiService.getCompany(companyId);
+          } catch (idError) {
+            // If 404 by ID, try by HR email as fallback
+            if (idError.response?.status === 404) {
+              console.warn(`Company not found by ID ${companyId}, trying HR email fallback...`);
+              const hrEmail = getHrEmail();
+              if (hrEmail) {
+                response = await apiService.getCompanyByHrEmail(hrEmail);
+                // Update stored company ID if found by email
+                if (response.data.success && response.data.data.id) {
+                  localStorage.setItem('companyId', response.data.data.id);
+                }
+              } else {
+                throw idError; // Re-throw if no HR email available
+              }
+            } else {
+              throw idError; // Re-throw if not a 404 error
+            }
+          }
         } else {
           // Fetch by HR email
           const hrEmail = getHrEmail();
+          if (!hrEmail) {
+            throw new Error('No company ID or HR email available');
+          }
           response = await apiService.getCompanyByHrEmail(hrEmail);
           // Store company ID for future use
           if (response.data.success && response.data.data.id) {
