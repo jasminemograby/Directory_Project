@@ -1,5 +1,5 @@
 // Enhance Profile Component - LinkedIn & GitHub OAuth Integration
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { apiService } from '../../services/api';
 import Button from '../common/Button';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -48,12 +48,18 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
     checkConnectionStatus();
   }, [checkConnectionStatus]);
 
-  // Check if both are connected
+  // Check if both are connected (only call once)
+  const hasCalledComplete = useRef(false);
   useEffect(() => {
-    if (linkedInStatus === 'connected' && githubStatus === 'connected') {
+    if (linkedInStatus === 'connected' && githubStatus === 'connected' && !hasCalledComplete.current) {
+      hasCalledComplete.current = true;
       if (onEnrichmentComplete) {
         onEnrichmentComplete();
       }
+    }
+    // Reset if disconnected
+    if (linkedInStatus !== 'connected' || githubStatus !== 'connected') {
+      hasCalledComplete.current = false;
     }
   }, [linkedInStatus, githubStatus, onEnrichmentComplete]);
 

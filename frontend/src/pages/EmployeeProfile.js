@@ -1,5 +1,5 @@
 // Employee Profile Page - Main profile page with mandatory profile enrichment
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import Layout from '../components/common/Layout';
 import EnhanceProfile from '../components/Profile/EnhanceProfile';
@@ -118,11 +118,22 @@ const EmployeeProfile = () => {
   }, [currentEmployeeId]); // Only depend on currentEmployeeId to prevent infinite loop
 
 
-  const handleEnrichmentComplete = async () => {
+  // Use ref to prevent multiple calls
+  const enrichmentCompleteCalled = useRef(false);
+  
+  const handleEnrichmentComplete = useCallback(async () => {
+    if (enrichmentCompleteCalled.current) return;
+    enrichmentCompleteCalled.current = true;
+    
     setIsEnriched(true);
     // Refresh employee data and processed data to show updated profile
     await fetchEmployeeData();
-  };
+    
+    // Reset after a delay to allow re-triggering if needed
+    setTimeout(() => {
+      enrichmentCompleteCalled.current = false;
+    }, 5000);
+  }, [fetchEmployeeData]);
 
   if (loading) {
     return (
