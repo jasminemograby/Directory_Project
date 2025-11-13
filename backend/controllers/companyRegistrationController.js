@@ -203,6 +203,7 @@ const registerCompanyStep4 = async (req, res, next) => {
           const teamId = teamInfo ? teamInfo.dbId : null;
 
           try {
+            console.log(`[Step4] Creating employee: ${emp.email} for company ${company.id}`);
             const empResult = await client.query(
               `INSERT INTO employees (
                 company_id, name, email, role, target_role, type,
@@ -225,7 +226,14 @@ const registerCompanyStep4 = async (req, res, next) => {
             
             employeeId = empResult.rows[0].id;
             employeeMap.set(emp.email, employeeId);
+            console.log(`[Step4] Employee created successfully: ${employeeId} (${emp.email})`);
           } catch (insertError) {
+            console.error(`[Step4] Error creating employee ${emp.email}:`, {
+              code: insertError.code,
+              constraint: insertError.constraint,
+              message: insertError.message,
+              detail: insertError.detail
+            });
             // If insert fails due to duplicate, check again (race condition)
             if (insertError.code === '23505' && insertError.constraint === 'employees_email_key') {
               try {
