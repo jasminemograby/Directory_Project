@@ -59,16 +59,19 @@ const registerCompanyStep4 = async (req, res, next) => {
 
     const result = await transaction(async (client) => {
       // Get company
+      console.log(`[Step4] Looking for company with ID: ${registrationId}`);
       const companyResult = await client.query(
         'SELECT id, verification_status FROM companies WHERE id = $1',
         [registrationId]
       );
 
       if (companyResult.rows.length === 0) {
+        console.error(`[Step4] Company not found with ID: ${registrationId}`);
         throw new Error('Company registration not found');
       }
 
       const company = companyResult.rows[0];
+      console.log(`[Step4] Found company: ${company.id}, verification_status: ${company.verification_status}`);
 
       if (company.verification_status !== 'verified') {
         throw new Error('Company must be verified before completing setup');
@@ -439,8 +442,11 @@ const registerCompanyStep4 = async (req, res, next) => {
         }
       }
 
+      console.log(`[Step4] Transaction completed successfully for company: ${company.id}`);
       return { companyId: company.id };
     });
+
+    console.log(`[Step4] Company setup completed. Company ID: ${result.companyId}`);
 
     // After company setup, check employee registration status (async - don't block response)
     const employeeRegistrationController = require('./employeeRegistrationController');
