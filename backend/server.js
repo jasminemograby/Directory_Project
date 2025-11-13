@@ -36,12 +36,19 @@ const corsOptions = {
       // In development, allow all origins
       callback(null, true);
     } else {
-      // Log the rejected origin (development only)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('CORS blocked origin:', origin);
-        console.log('Allowed origins:', allowedOrigins);
+      // Check if origin is a Vercel preview URL (for preview deployments)
+      const isVercelPreview = origin.includes('vercel.app') || origin.includes('vercel.com');
+      
+      if (isVercelPreview) {
+        // Allow all Vercel preview URLs
+        console.log(`[CORS] Allowing Vercel preview URL: ${origin}`);
+        callback(null, true);
+      } else {
+        // Log the rejected origin
+        console.error('[CORS] Blocked origin:', origin);
+        console.error('[CORS] Allowed origins:', allowedOrigins);
+        callback(new Error('Not allowed by CORS'));
       }
-      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,

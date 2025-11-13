@@ -531,11 +531,21 @@ const registerCompanyStep4 = async (req, res, next) => {
 
     const hrEmployeeId = hrEmployeeResult.rows.length > 0 ? hrEmployeeResult.rows[0].id : null;
 
+    // Get HR email from company_settings to return to frontend
+    const hrEmailResult = await query(
+      `SELECT setting_value FROM company_settings 
+       WHERE company_id = $1 AND setting_key = 'hr_email' 
+       LIMIT 1`,
+      [result.companyId]
+    );
+    const hrEmail = hrEmailResult.rows.length > 0 ? hrEmailResult.rows[0].setting_value : null;
+
     res.status(201).json({
       success: true,
       data: {
         companyId: result.companyId,
         hrEmployeeId: hrEmployeeId, // Return HR employee ID so frontend can store it
+        hrEmail: hrEmail, // Return HR email so frontend can store it
       },
       message: 'Company setup completed successfully.',
     });

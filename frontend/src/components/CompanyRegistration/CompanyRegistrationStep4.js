@@ -138,6 +138,7 @@ const CompanyRegistrationStep4 = () => {
         // Store company ID and HR employee ID for HR Dashboard
         const companyId = response.data.data?.companyId;
         const hrEmployeeId = response.data.data?.hrEmployeeId;
+        const hrEmail = response.data.data?.hrEmail; // Get HR email from response
         
         if (!companyId) {
           console.error('No companyId in response:', response.data);
@@ -156,6 +157,18 @@ const CompanyRegistrationStep4 = () => {
           console.log('Storing HR employee ID:', hrEmployeeId);
           localStorage.setItem('currentEmployeeId', hrEmployeeId);
           localStorage.setItem('hrEmployeeId', hrEmployeeId);
+        }
+        
+        // Store HR email if provided in response (or keep existing if already set)
+        if (hrEmail) {
+          console.log('Storing HR email:', hrEmail);
+          localStorage.setItem('hrEmail', hrEmail);
+        } else {
+          // If not in response, check if already in localStorage
+          const existingHrEmail = localStorage.getItem('hrEmail');
+          if (!existingHrEmail) {
+            console.warn('HR email not found in response or localStorage');
+          }
         }
         
         // Clear registration ID
