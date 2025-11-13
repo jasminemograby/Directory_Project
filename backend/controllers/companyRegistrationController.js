@@ -498,10 +498,41 @@ const registerCompanyStep4 = async (req, res, next) => {
       }
 
       console.log(`[Step4] Transaction completed successfully for company: ${company.id}`);
+      
+      // CRITICAL: Verify company exists in DB before returning
+      const verifyCompany = await client.query(
+        'SELECT id, name, verification_status FROM companies WHERE id = $1',
+        [company.id]
+      );
+      
+      if (verifyCompany.rows.length === 0) {
+        console.error(`[Step4] CRITICAL ERROR: Company ${company.id} not found in DB after transaction!`);
+        throw new Error('Company not found after transaction commit');
+      }
+      
+      console.log(`[Step4] Verified company exists in DB: ${verifyCompany.rows[0].id} | ${verifyCompany.rows[0].name}`);
+      
       return { companyId: company.id };
     });
 
     console.log(`[Step4] Company setup completed. Company ID: ${result.companyId}`);
+    
+    // CRITICAL: Verify company exists AFTER transaction using connection pool
+    try {
+      const postTransactionCheck = await query(
+        'SELECT id, name, verification_status FROM companies WHERE id = $1',
+        [result.companyId]
+      );
+      
+      if (postTransactionCheck.rows.length === 0) {
+        console.error(`[Step4] CRITICAL ERROR: Company ${result.companyId} not found in DB after transaction using connection pool!`);
+        console.error(`[Step4] This indicates a connection pool or transaction isolation issue`);
+      } else {
+        console.log(`[Step4] Post-transaction verification: Company found via connection pool: ${postTransactionCheck.rows[0].id} | ${postTransactionCheck.rows[0].name}`);
+      }
+    } catch (verifyError) {
+      console.error(`[Step4] Error verifying company after transaction:`, verifyError.message);
+    }
 
     // After company setup, check employee registration status (async - don't block response)
     const employeeRegistrationController = require('./employeeRegistrationController');

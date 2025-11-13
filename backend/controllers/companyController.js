@@ -8,7 +8,14 @@ const { query } = require('../config/database');
  */
 const getCompanyById = async (companyId) => {
   try {
+    console.log(`[getCompanyById] ========== START ==========`);
     console.log(`[getCompanyById] Fetching company with ID: ${companyId}`);
+    console.log(`[getCompanyById] Company ID type: ${typeof companyId}`);
+    console.log(`[getCompanyById] Company ID length: ${companyId?.length}`);
+    
+    // First, check if ANY companies exist
+    const allCompaniesCheck = await query('SELECT COUNT(*) as count FROM companies');
+    console.log(`[getCompanyById] Total companies in DB: ${allCompaniesCheck.rows[0].count}`);
     
     // Get company basic info
     const companyResult = await query(
@@ -27,12 +34,32 @@ const getCompanyById = async (companyId) => {
       [companyId]
     );
 
+    console.log(`[getCompanyById] Query executed. Rows returned: ${companyResult.rows.length}`);
+    
     if (companyResult.rows.length === 0) {
-      console.log(`[getCompanyById] Company not found with ID: ${companyId}`);
+      console.log(`[getCompanyById] ❌ Company not found with ID: ${companyId}`);
+      
+      // Debug: Check if company exists with different query
+      const debugCheck = await query(
+        `SELECT id, name, created_at FROM companies WHERE id::text = $1`,
+        [companyId]
+      );
+      console.log(`[getCompanyById] Debug check (id::text): ${debugCheck.rows.length} rows`);
+      
+      // Check recent companies
+      const recentCompanies = await query(
+        'SELECT id, name, created_at FROM companies ORDER BY created_at DESC LIMIT 5'
+      );
+      console.log(`[getCompanyById] Recent companies in DB:`);
+      recentCompanies.rows.forEach(c => {
+        console.log(`[getCompanyById]   - ${c.id} | ${c.name} | ${c.created_at}`);
+      });
+      
+      console.log(`[getCompanyById] ========== END (NOT FOUND) ==========`);
       return null;
     }
 
-    console.log(`[getCompanyById] Company found: ${companyResult.rows[0].id}, name: ${companyResult.rows[0].name}`);
+    console.log(`[getCompanyById] ✅ Company found: ${companyResult.rows[0].id}, name: ${companyResult.rows[0].name}`);
 
     const company = companyResult.rows[0];
 
