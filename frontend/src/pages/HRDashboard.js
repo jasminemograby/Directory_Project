@@ -127,9 +127,9 @@ const HRDashboard = () => {
   if (error) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-red-900 mb-2">Error</h2>
-          <p className="text-red-700">{error}</p>
+        <div className="border border-red-300 rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)' }}>
+          <h2 className="text-xl font-semibold text-red-600 mb-2">Error</h2>
+          <p style={{ color: 'var(--text-secondary)' }}>{error}</p>
           <Button
             variant="primary"
             onClick={() => navigate(ROUTES.HOME)}
@@ -145,9 +145,9 @@ const HRDashboard = () => {
   if (!company) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-yellow-900 mb-2">No Company Found</h2>
-          <p className="text-yellow-700">No company data found. Please register a company first.</p>
+        <div className="border border-accent-orange rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)' }}>
+          <h2 className="text-xl font-semibold text-accent-orange mb-2">No Company Found</h2>
+          <p style={{ color: 'var(--text-secondary)' }}>No company data found. Please register a company first.</p>
           <Button
             variant="primary"
             onClick={() => navigate(ROUTES.COMPANY_REGISTER_STEP1)}
@@ -161,37 +161,37 @@ const HRDashboard = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-screen" style={{ backgroundColor: 'var(--bg-primary)' }}>
       {/* Success Message */}
       {successMessage && (
-        <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-green-800">{successMessage}</p>
+        <div className="mb-6 border border-accent-green rounded-lg p-4" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)' }}>
+          <p className="text-accent-green font-medium">{successMessage}</p>
         </div>
       )}
 
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">HR Dashboard</h1>
-        <p className="mt-2 text-gray-600">Welcome back, {company.hr?.name || 'HR'}</p>
+        <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>HR Dashboard</h1>
+        <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>Welcome back, {company.hr?.name || 'HR'}</p>
       </div>
 
       {/* Company Overview Card */}
-      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Company Overview</h2>
+      <div className="rounded-lg p-6 mb-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+        <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Company Overview</h2>
         <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <h3 className="text-lg font-medium text-gray-700 mb-2">Company Information</h3>
+            <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Company Information</h3>
             <div className="space-y-2">
-              <p><span className="font-medium">Name:</span> {company.name}</p>
-              <p><span className="font-medium">Industry:</span> {company.industry || 'N/A'}</p>
-              <p><span className="font-medium">Domain:</span> {company.domain || 'N/A'}</p>
-              <p><span className="font-medium">Status:</span> 
-                <span className={`ml-2 px-2 py-1 rounded text-sm ${
+              <p style={{ color: 'var(--text-primary)' }}><span className="font-medium" style={{ color: 'var(--text-accent)' }}>Name:</span> {company.name}</p>
+              <p style={{ color: 'var(--text-primary)' }}><span className="font-medium" style={{ color: 'var(--text-accent)' }}>Industry:</span> {company.industry || 'N/A'}</p>
+              <p style={{ color: 'var(--text-primary)' }}><span className="font-medium" style={{ color: 'var(--text-accent)' }}>Domain:</span> {company.domain || 'N/A'}</p>
+              <p style={{ color: 'var(--text-primary)' }}><span className="font-medium" style={{ color: 'var(--text-accent)' }}>Status:</span> 
+                <span className={`ml-2 px-2 py-1 rounded text-sm font-medium ${
                   company.verification_status === 'verified' 
-                    ? 'bg-green-100 text-green-800' 
+                    ? 'bg-accent-green text-white' 
                     : company.verification_status === 'pending'
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-red-100 text-red-800'
+                    ? 'bg-accent-orange text-white'
+                    : 'bg-red-500 text-white'
                 }`}>
                   {company.verification_status || 'pending'}
                 </span>
@@ -199,11 +199,11 @@ const HRDashboard = () => {
             </div>
           </div>
           <div>
-            <h3 className="text-lg font-medium text-gray-700 mb-2">HR Information</h3>
+            <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>HR Information</h3>
             <div className="space-y-2">
-              <p><span className="font-medium">Name:</span> {company.hr?.name || 'N/A'}</p>
-              <p><span className="font-medium">Email:</span> {company.hr?.email || 'N/A'}</p>
-              <p><span className="font-medium">Role:</span> {company.hr?.role || 'N/A'}</p>
+              <p style={{ color: 'var(--text-primary)' }}><span className="font-medium" style={{ color: 'var(--text-accent)' }}>Name:</span> {company.hr?.name || 'N/A'}</p>
+              <p style={{ color: 'var(--text-primary)' }}><span className="font-medium" style={{ color: 'var(--text-accent)' }}>Email:</span> {company.hr?.email || 'N/A'}</p>
+              <p style={{ color: 'var(--text-primary)' }}><span className="font-medium" style={{ color: 'var(--text-accent)' }}>Role:</span> {company.hr?.role || 'N/A'}</p>
             </div>
           </div>
         </div>
@@ -211,42 +211,42 @@ const HRDashboard = () => {
 
       {/* Statistics Cards */}
       <div className="grid md:grid-cols-3 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="rounded-lg p-6 transition-all" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }} onMouseEnter={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-hover)'} onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-card)'}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Departments</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{company.statistics?.departments || 0}</p>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Departments</p>
+              <p className="text-3xl font-bold mt-2" style={{ color: 'var(--text-primary)' }}>{company.statistics?.departments || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: 'var(--gradient-primary)', boxShadow: 'var(--shadow-glow)' }}>
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="rounded-lg p-6 transition-all" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }} onMouseEnter={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-hover)'} onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-card)'}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Teams</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{company.statistics?.teams || 0}</p>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Teams</p>
+              <p className="text-3xl font-bold mt-2" style={{ color: 'var(--text-primary)' }}>{company.statistics?.teams || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: 'var(--gradient-secondary)', boxShadow: 'var(--shadow-glow)' }}>
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="rounded-lg p-6 transition-all" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }} onMouseEnter={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-hover)'} onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-card)'}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Employees</p>
-              <p className="text-3xl font-bold text-gray-900 mt-2">{company.statistics?.employees || 0}</p>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Employees</p>
+              <p className="text-3xl font-bold mt-2" style={{ color: 'var(--text-primary)' }}>{company.statistics?.employees || 0}</p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: 'var(--gradient-accent)', boxShadow: 'var(--shadow-glow)' }}>
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             </div>
@@ -256,25 +256,25 @@ const HRDashboard = () => {
 
       {/* Company Settings */}
       {company.settings && (company.settings.exerciseLimit || company.settings.passingGrade || company.settings.maxAttempts) && (
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Company Settings</h2>
+        <div className="rounded-lg p-6 mb-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+          <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Company Settings</h2>
           <div className="grid md:grid-cols-3 gap-4">
             {company.settings.exerciseLimit && (
               <div>
-                <p className="text-sm font-medium text-gray-600">Exercise Limit</p>
-                <p className="text-lg font-semibold text-gray-900">{company.settings.exerciseLimit}</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Exercise Limit</p>
+                <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{company.settings.exerciseLimit}</p>
               </div>
             )}
             {company.settings.passingGrade && (
               <div>
-                <p className="text-sm font-medium text-gray-600">Passing Grade</p>
-                <p className="text-lg font-semibold text-gray-900">{company.settings.passingGrade}%</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Passing Grade</p>
+                <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{company.settings.passingGrade}%</p>
               </div>
             )}
             {company.settings.maxAttempts && (
               <div>
-                <p className="text-sm font-medium text-gray-600">Max Attempts</p>
-                <p className="text-lg font-semibold text-gray-900">{company.settings.maxAttempts}</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Max Attempts</p>
+                <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{company.settings.maxAttempts}</p>
               </div>
             )}
           </div>
@@ -282,8 +282,8 @@ const HRDashboard = () => {
       )}
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+      <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Quick Actions</h2>
         <div className="grid md:grid-cols-3 gap-4">
           <Button
             variant="primary"
