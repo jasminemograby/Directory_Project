@@ -1,5 +1,5 @@
 // Enhance Profile Component - LinkedIn & GitHub OAuth Integration
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../services/api';
 import Button from '../common/Button';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -13,21 +13,7 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
-  // Check connection status on mount
-  useEffect(() => {
-    checkConnectionStatus();
-  }, [employeeId]);
-
-  // Check if both are connected
-  useEffect(() => {
-    if (linkedInStatus === 'connected' && githubStatus === 'connected') {
-      if (onEnrichmentComplete) {
-        onEnrichmentComplete();
-      }
-    }
-  }, [linkedInStatus, githubStatus, onEnrichmentComplete]);
-
-  const checkConnectionStatus = async () => {
+  const checkConnectionStatus = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -55,7 +41,22 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [employeeId]);
+
+  // Check connection status on mount
+  useEffect(() => {
+    checkConnectionStatus();
+  }, [checkConnectionStatus]);
+
+  // Check if both are connected
+  useEffect(() => {
+    if (linkedInStatus === 'connected' && githubStatus === 'connected') {
+      if (onEnrichmentComplete) {
+        onEnrichmentComplete();
+      }
+    }
+  }, [linkedInStatus, githubStatus, onEnrichmentComplete]);
+
 
   const handleLinkedInConnect = async () => {
     try {
@@ -103,7 +104,7 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
     }
   };
 
-  const handleFetchData = async () => {
+  const handleFetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -136,7 +137,7 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [employeeId]);
 
   // Check URL params for OAuth callback success
   useEffect(() => {
@@ -164,7 +165,7 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, []);
+  }, [handleFetchData]);
 
   const isBothConnected = linkedInStatus === 'connected' && githubStatus === 'connected';
 

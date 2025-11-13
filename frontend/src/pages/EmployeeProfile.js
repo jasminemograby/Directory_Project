@@ -1,5 +1,5 @@
 // Employee Profile Page - Main profile page with mandatory profile enrichment
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/common/Layout';
 import EnhanceProfile from '../components/Profile/EnhanceProfile';
@@ -17,21 +17,7 @@ const EmployeeProfile = () => {
   // Get employee ID from localStorage if not in URL (for mock login)
   const currentEmployeeId = employeeId || localStorage.getItem('currentEmployeeId');
 
-  useEffect(() => {
-    // For testing: if no employee ID, use a mock ID or show message
-    // In production, this should redirect to login
-    if (!currentEmployeeId) {
-      // For now, show a message asking to set employee ID
-      setError('Please set an employee ID. For testing, you can set it in localStorage: localStorage.setItem("currentEmployeeId", "your-employee-uuid")');
-      setLoading(false);
-      return;
-    }
-
-    fetchEmployeeData();
-    checkEnrichmentStatus();
-  }, [currentEmployeeId, navigate]);
-
-  const fetchEmployeeData = async () => {
+  const fetchEmployeeData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiService.getEmployee(currentEmployeeId);
@@ -44,9 +30,9 @@ const EmployeeProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentEmployeeId]);
 
-  const checkEnrichmentStatus = async () => {
+  const checkEnrichmentStatus = useCallback(async () => {
     try {
       // Check if both LinkedIn and GitHub are connected
       const [linkedInResult, githubResult] = await Promise.allSettled([
@@ -67,7 +53,22 @@ const EmployeeProfile = () => {
       console.error('Error checking enrichment status:', error);
       setIsEnriched(false);
     }
-  };
+  }, [currentEmployeeId]);
+
+  useEffect(() => {
+    // For testing: if no employee ID, use a mock ID or show message
+    // In production, this should redirect to login
+    if (!currentEmployeeId) {
+      // For now, show a message asking to set employee ID
+      setError('Please set an employee ID. For testing, you can set it in localStorage: localStorage.setItem("currentEmployeeId", "your-employee-uuid")');
+      setLoading(false);
+      return;
+    }
+
+    fetchEmployeeData();
+    checkEnrichmentStatus();
+  }, [currentEmployeeId, navigate, fetchEmployeeData, checkEnrichmentStatus]);
+
 
   const handleEnrichmentComplete = () => {
     setIsEnriched(true);

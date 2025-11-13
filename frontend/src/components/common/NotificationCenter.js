@@ -1,5 +1,7 @@
 // Notification Center Component
-import React, { useState, useEffect, useRef } from 'react';
+// NOTE: This component is currently not in use (notifications feature paused)
+// Keeping it for future use when notifications are re-enabled
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { apiService } from '../../services/api';
 
 const NotificationCenter = ({ userEmail }) => {
@@ -10,7 +12,7 @@ const NotificationCenter = ({ userEmail }) => {
   const dropdownRef = useRef(null);
 
   // Fetch notifications
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!userEmail) return;
 
     try {
@@ -25,10 +27,10 @@ const NotificationCenter = ({ userEmail }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userEmail]);
 
   // Fetch unread count only (lighter request)
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
     if (!userEmail) return;
 
     try {
@@ -39,7 +41,7 @@ const NotificationCenter = ({ userEmail }) => {
     } catch (error) {
       console.error('Error fetching unread count:', error);
     }
-  };
+  }, [userEmail]);
 
   // Mark notification as read
   const markAsRead = async (notificationId) => {
@@ -107,7 +109,7 @@ const NotificationCenter = ({ userEmail }) => {
       const interval = setInterval(fetchUnreadCount, 30000);
       return () => clearInterval(interval);
     }
-  }, [userEmail]);
+  }, [userEmail, fetchNotifications, fetchUnreadCount]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -141,6 +143,7 @@ const NotificationCenter = ({ userEmail }) => {
         onClick={toggleDropdown}
         className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg transition-colors"
         aria-label="Notifications"
+        style={{ position: 'relative', zIndex: 10 }}
       >
         {/* Bell Icon */}
         <svg
@@ -168,7 +171,7 @@ const NotificationCenter = ({ userEmail }) => {
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col">
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-hidden flex flex-col" style={{ position: 'absolute', top: '100%', right: 0 }}>
           {/* Header */}
           <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>

@@ -1,5 +1,5 @@
 // HR Dashboard Page
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { ROUTES } from '../utils/constants';
@@ -15,7 +15,7 @@ const HRDashboard = () => {
   const [successMessage, setSuccessMessage] = useState(null);
 
   // Get company ID from localStorage or location state
-  const getCompanyId = () => {
+  const getCompanyId = useCallback(() => {
     // Try location state first (from registration redirect)
     if (location.state?.companyId) {
       return location.state.companyId;
@@ -31,12 +31,12 @@ const HRDashboard = () => {
       return null; // Will fetch by email
     }
     return null;
-  };
+  }, [location.state]);
 
   // Get HR email
-  const getHrEmail = () => {
+  const getHrEmail = useCallback(() => {
     return localStorage.getItem('hrEmail') || 'hr@example.com';
-  };
+  }, []);
 
   useEffect(() => {
     const fetchCompanyData = async () => {
@@ -92,7 +92,7 @@ const HRDashboard = () => {
     };
 
     fetchCompanyData();
-  }, [location.state]);
+  }, [location.state, getCompanyId, getHrEmail]);
 
   if (loading) {
     return (
