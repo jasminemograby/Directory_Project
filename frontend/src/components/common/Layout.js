@@ -1,13 +1,30 @@
 // Layout Component with Navigation
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import NotificationCenter from './NotificationCenter';
 import { ROUTES } from '../../utils/constants';
 import { authService } from '../../utils/auth';
 
 const Layout = ({ children }) => {
   const location = useLocation();
-  const userEmail = authService.getUserEmail() || 'hr@example.com'; // Fallback for testing
+  
+  // Get user email from multiple sources (priority order):
+  // 1. Auth service (if logged in)
+  // 2. localStorage (from company registration)
+  // 3. Fallback for testing
+  const getUserEmail = () => {
+    // Try auth service first
+    const authEmail = authService.getUserEmail();
+    if (authEmail) return authEmail;
+    
+    // Try localStorage (from company registration)
+    const storedHrEmail = localStorage.getItem('hrEmail');
+    if (storedHrEmail) return storedHrEmail;
+    
+    // Fallback for testing
+    return 'hr@example.com';
+  };
+  
+  const userEmail = getUserEmail();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -46,19 +63,16 @@ const Layout = ({ children }) => {
               </Link>
             </div>
 
-            {/* Right Side - Notifications & User */}
-            <div className="flex items-center space-x-4">
-              {/* Notification Center */}
-              <NotificationCenter userEmail={userEmail} />
-
-              {/* User Menu (placeholder) */}
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  {userEmail.charAt(0).toUpperCase()}
-                </div>
-                <span className="hidden md:block text-sm text-gray-700">{userEmail}</span>
-              </div>
-            </div>
+                  {/* Right Side - User */}
+                  <div className="flex items-center space-x-4">
+                    {/* User Menu (placeholder) */}
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                        {userEmail.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="hidden md:block text-sm text-gray-700">{userEmail}</span>
+                    </div>
+                  </div>
           </div>
         </div>
       </nav>

@@ -8,7 +8,7 @@ const HRLanding = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div>
       {/* Hero Section */}
       <div className="bg-gradient-primary text-white py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">

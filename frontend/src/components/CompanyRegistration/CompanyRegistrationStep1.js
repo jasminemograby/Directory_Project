@@ -74,6 +74,8 @@ const CompanyRegistrationStep1 = () => {
       if (response.data.success) {
         // Store registration ID for next step
         localStorage.setItem('companyRegistrationId', response.data.data.id);
+        // Store HR email for NotificationCenter
+        localStorage.setItem('hrEmail', formData.hrEmail);
         navigate(ROUTES.COMPANY_REGISTER_VERIFICATION);
       }
     } catch (error) {

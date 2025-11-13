@@ -31,17 +31,30 @@ Vercel צריך לדעת איך לטפל ב-React Router routes. בלי קובץ
 
 ## מה לעשות עכשיו?
 
-1. **הקובץ כבר נוצר** - `frontend/vercel.json`
-2. **Push ל-GitHub:**
-   ```bash
-   git add frontend/vercel.json
-   git commit -m "Add vercel.json for React Router support"
-   git push
-   ```
-3. **Vercel יבנה מחדש אוטומטית** - זה ייקח 2-3 דקות
-4. **בדוק שוב:**
+1. **הקובץ כבר נוצר ונדחף** - `frontend/vercel.json` ✅
+
+2. **Redeploy ב-Vercel (חשוב!):**
+   - לך ל-Vercel Dashboard: https://vercel.com/dashboard
+   - בחר את הפרויקט `directory-project-bice`
+   - לך ל-**"Deployments"** tab
+   - לחץ על ה-**"..."** ליד ה-deployment האחרון
+   - בחר **"Redeploy"**
+   - המתן 2-3 דקות
+
+3. **בדוק שוב:**
    - `https://directory-project-bice.vercel.app/profile`
    - אמור לעבוד עכשיו!
+
+### ⚠️ אם עדיין לא עובד:
+
+**בדוק את ה-Build Logs:**
+- ב-Vercel Dashboard → Deployments → לחץ על ה-deployment האחרון
+- בדוק את ה-Build Logs
+- חפש שגיאות או warnings
+
+**ודא שה-`vercel.json` קיים ב-GitHub:**
+- לך ל-`frontend/vercel.json` ב-GitHub
+- ודא שהקובץ קיים
 
 ## הערה על Employee ID
 
