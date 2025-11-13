@@ -66,6 +66,7 @@ const EmployeeProfile = () => {
   }, [currentEmployeeId]);
 
   const checkingEnrichment = useRef(false);
+  const hasLoadedData = useRef(false);
   
   const checkEnrichmentStatus = useCallback(async () => {
     if (!currentEmployeeId || checkingEnrichment.current) return;
@@ -107,11 +108,13 @@ const EmployeeProfile = () => {
 
     // Only fetch once when component mounts or employeeId changes
     let isMounted = true;
-    let hasLoaded = false;
+    
+    // Reset hasLoaded when employeeId changes
+    hasLoadedData.current = false;
     
     const loadData = async () => {
-      if (isMounted && !hasLoaded) {
-        hasLoaded = true;
+      if (isMounted && !hasLoadedData.current) {
+        hasLoadedData.current = true;
         await fetchEmployeeData();
         // Delay enrichment check to avoid race conditions
         setTimeout(async () => {
@@ -126,7 +129,6 @@ const EmployeeProfile = () => {
     
     return () => {
       isMounted = false;
-      hasLoaded = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentEmployeeId]); // Only depend on currentEmployeeId to prevent infinite loop
