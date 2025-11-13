@@ -11,6 +11,8 @@ import Error404 from './pages/Error404';
 import Error403 from './pages/Error403';
 import Error500 from './pages/Error500';
 import HRLanding from './pages/HRLanding';
+import HRDashboard from './pages/HRDashboard';
+import EmployeeProfile from './pages/EmployeeProfile';
 
 // Company Registration Components
 import CompanyRegistrationStep1 from './components/CompanyRegistration/CompanyRegistrationStep1';
@@ -46,6 +48,18 @@ function App() {
               <HRLanding />
             </Layout>
           } />
+          
+          {/* HR Dashboard */}
+          <Route path={ROUTES.HR_DASHBOARD} element={
+            <Layout>
+              <HRDashboard />
+            </Layout>
+          } />
+          
+          {/* Employee Profile */}
+          <Route path={ROUTES.EMPLOYEE_PROFILE} element={<EmployeeProfile />} />
+          <Route path={ROUTES.PROFILE} element={<EmployeeProfile />} />
+          <Route path={ROUTES.PROFILE_ME} element={<EmployeeProfile />} />
           
           {/* Company Registration Routes */}
           <Route path={ROUTES.COMPANY_REGISTER_STEP1} element={

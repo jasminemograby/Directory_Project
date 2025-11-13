@@ -1,0 +1,292 @@
+// Enhance Profile Component - LinkedIn & GitHub OAuth Integration
+import React, { useState, useEffect } from 'react';
+import { apiService } from '../../services/api';
+import Button from '../common/Button';
+import LoadingSpinner from '../common/LoadingSpinner';
+
+const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
+  const [linkedInStatus, setLinkedInStatus] = useState('disconnected'); // disconnected, connecting, connected
+  const [githubStatus, setGithubStatus] = useState('disconnected');
+  const [linkedInData, setLinkedInData] = useState(null);
+  const [githubData, setGithubData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+
+  // Check connection status on mount
+  useEffect(() => {
+    checkConnectionStatus();
+  }, [employeeId]);
+
+  // Check if both are connected
+  useEffect(() => {
+    if (linkedInStatus === 'connected' && githubStatus === 'connected') {
+      if (onEnrichmentComplete) {
+        onEnrichmentComplete();
+      }
+    }
+  }, [linkedInStatus, githubStatus, onEnrichmentComplete]);
+
+  const checkConnectionStatus = async () => {
+    try {
+      setLoading(true);
+      
+      // Try to fetch data - if successful, connection exists
+      const [linkedInResult, githubResult] = await Promise.allSettled([
+        apiService.fetchLinkedInData(employeeId),
+        apiService.fetchGitHubData(employeeId)
+      ]);
+
+      if (linkedInResult.status === 'fulfilled' && linkedInResult.value.data) {
+        setLinkedInStatus('connected');
+        setLinkedInData(linkedInResult.value.data);
+      } else {
+        setLinkedInStatus('disconnected');
+      }
+
+      if (githubResult.status === 'fulfilled' && githubResult.value.data) {
+        setGithubStatus('connected');
+        setGithubData(githubResult.value.data);
+      } else {
+        setGithubStatus('disconnected');
+      }
+    } catch (error) {
+      console.error('Error checking connection status:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLinkedInConnect = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setLinkedInStatus('connecting');
+
+      // Get authorization URL
+      const response = await apiService.initiateLinkedInAuth(employeeId);
+      
+      if (response.data && response.data.data && response.data.data.authorization_url) {
+        // Redirect to LinkedIn OAuth
+        window.location.href = response.data.data.authorization_url;
+      } else {
+        throw new Error('Failed to get LinkedIn authorization URL');
+      }
+    } catch (error) {
+      console.error('Error initiating LinkedIn auth:', error);
+      setError('Failed to connect LinkedIn. Please try again.');
+      setLinkedInStatus('disconnected');
+      setLoading(false);
+    }
+  };
+
+  const handleGitHubConnect = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setGithubStatus('connecting');
+
+      // Get authorization URL
+      const response = await apiService.initiateGitHubAuth(employeeId);
+      
+      if (response.data && response.data.data && response.data.data.authorization_url) {
+        // Redirect to GitHub OAuth
+        window.location.href = response.data.data.authorization_url;
+      } else {
+        throw new Error('Failed to get GitHub authorization URL');
+      }
+    } catch (error) {
+      console.error('Error initiating GitHub auth:', error);
+      setError('Failed to connect GitHub. Please try again.');
+      setGithubStatus('disconnected');
+      setLoading(false);
+    }
+  };
+
+  const handleFetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Collect all external data
+      const response = await apiService.collectAllExternalData(employeeId);
+      
+      if (response.data && response.data.data) {
+        const { linkedin, github } = response.data.data;
+
+        if (linkedin && !linkedin.error) {
+          setLinkedInStatus('connected');
+          setLinkedInData(linkedin);
+        }
+
+        if (github && !github.error) {
+          setGithubStatus('connected');
+          setGithubData(github);
+        }
+
+        // Show success message
+        if ((linkedin && !linkedin.error) || (github && !github.error)) {
+          setSuccessMessage('Profile enriched successfully! Your LinkedIn and GitHub data has been imported.');
+          setTimeout(() => setSuccessMessage(null), 5000);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching external data:', error);
+      setError('Failed to fetch profile data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Check URL params for OAuth callback success
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const linkedInParam = urlParams.get('linkedin');
+    const githubParam = urlParams.get('github');
+    const errorParam = urlParams.get('error');
+
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam));
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (linkedInParam === 'connected') {
+      setLinkedInStatus('connected');
+      setSuccessMessage('LinkedIn connected successfully!');
+      // Fetch data
+      handleFetchData();
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (githubParam === 'connected') {
+      setGithubStatus('connected');
+      setSuccessMessage('GitHub connected successfully!');
+      // Fetch data
+      handleFetchData();
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  const isBothConnected = linkedInStatus === 'connected' && githubStatus === 'connected';
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-4">Enhance My Profile</h2>
+      
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700">
+          {error}
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-700">
+          {successMessage}
+        </div>
+      )}
+
+      <p className="text-gray-600 mb-6">
+        Connect your LinkedIn and GitHub accounts to enrich your profile with your professional data, 
+        skills, and projects. This information will be used to enhance your profile and skill analysis.
+      </p>
+
+      <div className="space-y-4">
+        {/* LinkedIn Connection */}
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-blue-600 rounded flex items-center justify-center">
+                <span className="text-white font-bold">in</span>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-800">LinkedIn</h3>
+                <p className="text-sm text-gray-500">
+                  {linkedInStatus === 'connected' ? 'Connected' : 'Not connected'}
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={handleLinkedInConnect}
+              disabled={loading || linkedInStatus === 'connecting' || linkedInStatus === 'connected'}
+              className={linkedInStatus === 'connected' ? 'bg-gray-400 cursor-not-allowed' : ''}
+            >
+              {linkedInStatus === 'connected' ? 'Connected ✓' : linkedInStatus === 'connecting' ? 'Connecting...' : 'Connect'}
+            </Button>
+          </div>
+        </div>
+
+        {/* GitHub Connection */}
+        <div className="border rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gray-800 rounded flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482C19.138 20.197 22 16.425 22 12.017 22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-800">GitHub</h3>
+                <p className="text-sm text-gray-500">
+                  {githubStatus === 'connected' ? 'Connected' : 'Not connected'}
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={handleGitHubConnect}
+              disabled={loading || githubStatus === 'connecting' || githubStatus === 'connected'}
+              className={githubStatus === 'connected' ? 'bg-gray-400 cursor-not-allowed' : ''}
+            >
+              {githubStatus === 'connected' ? 'Connected ✓' : githubStatus === 'connecting' ? 'Connecting...' : 'Connect'}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Data Preview */}
+      {(linkedInData || githubData) && (
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <h3 className="font-semibold text-gray-800 mb-3">Imported Data Preview</h3>
+          
+          {linkedInData && linkedInData.profile && (
+            <div className="mb-3">
+              <p className="text-sm font-medium text-gray-700">LinkedIn:</p>
+              <p className="text-sm text-gray-600">
+                {linkedInData.profile.localizedFirstName} {linkedInData.profile.localizedLastName}
+              </p>
+            </div>
+          )}
+
+          {githubData && githubData.profile && (
+            <div className="mb-3">
+              <p className="text-sm font-medium text-gray-700">GitHub:</p>
+              <p className="text-sm text-gray-600">
+                {githubData.profile.name || githubData.profile.login}
+                {githubData.repositories && ` • ${githubData.repositories.length} repositories`}
+              </p>
+            </div>
+          )}
+
+          <p className="text-xs text-gray-500 mt-3">
+            Your data is used securely within the system to enhance your profile and skill analysis.
+          </p>
+        </div>
+      )}
+
+      {loading && (
+        <div className="mt-4 flex justify-center">
+          <LoadingSpinner />
+        </div>
+      )}
+
+      {isBothConnected && (
+        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-700 font-medium">
+            ✓ Profile Enriched Successfully — your LinkedIn and GitHub data has been imported.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default EnhanceProfile;
+

@@ -87,6 +87,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/company', require('./routes/companyRegistration'));
 app.use('/api/employee-registration', require('./routes/employeeRegistration'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/external', require('./routes/externalData'));
 
 // 404 handler (must be after all routes)
 app.use(notFound);

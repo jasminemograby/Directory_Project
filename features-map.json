@@ -1,0 +1,98 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2025-01-11",
+  "features": {
+    "F001": {
+      "id": "F001",
+      "title": "Company Registration Form",
+      "description": "HR registers company in two steps: (1) Basic form with company basic data and HR data, (2) After domain verification, full company setup with all details including employee list with external data source links.",
+      "status": "complete",
+      "files": {
+        "frontend": [
+          "frontend/src/components/CompanyRegistration/CompanyRegistrationStep1.js",
+          "frontend/src/components/CompanyRegistration/CompanyRegistrationVerification.js",
+          "frontend/src/components/CompanyRegistration/CompanyRegistrationStep4.js",
+          "frontend/src/components/CompanyRegistration/EmployeeListInput.js",
+          "frontend/src/components/CompanyRegistration/DepartmentTeamInput.js",
+          "frontend/src/components/CompanyRegistration/LearningPathPolicyInput.js",
+          "frontend/src/pages/HRLanding.js"
+        ],
+        "backend": [
+          "backend/routes/companyRegistration.js",
+          "backend/controllers/companyRegistrationController.js",
+          "backend/validators/companyRegistrationValidator.js",
+          "backend/services/companyVerificationService.js",
+          "backend/services/emailService.js"
+        ],
+        "database": [
+          "database/schema.sql"
+        ]
+      }
+    },
+    "F002": {
+      "id": "F002",
+      "title": "Company Legitimacy Verification",
+      "description": "Directory verifies company registration request. If invalid, sends email to HR with reason. If valid, creates company account.",
+      "status": "complete",
+      "files": {
+        "backend": [
+          "backend/services/companyVerificationService.js",
+          "backend/services/emailService.js"
+        ]
+      }
+    },
+    "F003": {
+      "id": "F003",
+      "title": "Employee Registration Check with Auth Service",
+      "description": "After company creation, Directory checks with Auth Service if all employees are registered. Unregistered employees trigger in-app notifications to HR via SendPulse.",
+      "status": "complete",
+      "files": {
+        "backend": [
+          "backend/services/authServiceIntegration.js",
+          "backend/services/sendPulseService.js",
+          "backend/controllers/employeeRegistrationController.js",
+          "backend/routes/employeeRegistration.js",
+          "backend/routes/notifications.js",
+          "backend/controllers/notificationsController.js"
+        ],
+        "database": [
+          "database/schema.sql"
+        ]
+      }
+    },
+    "F004": {
+      "id": "F004",
+      "title": "External Data Collection (LinkedIn & GitHub)",
+      "description": "Collects employee data from external APIs: LinkedIn and GitHub. Implements OAuth flows for user authorization before accessing accounts. Stores tokens securely and fetches profile data.",
+      "status": "in_progress",
+      "files": {
+        "backend": [
+          "backend/services/linkedInService.js",
+          "backend/services/githubService.js",
+          "backend/routes/externalData.js",
+          "backend/controllers/externalDataController.js"
+        ],
+        "database": [
+          "database/schema.sql",
+          "database/migrations/add_oauth_tokens_table.sql"
+        ]
+      }
+    }
+  },
+  "shared": {
+    "core": [
+      "backend/config/database.js",
+      "backend/middleware/errorHandler.js",
+      "backend/middleware/validateRequest.js",
+      "frontend/src/services/api.js",
+      "frontend/src/utils/constants.js",
+      "frontend/src/utils/validation.js",
+      "frontend/src/components/common/Layout.js",
+      "frontend/src/components/common/Button.js",
+      "frontend/src/components/common/Input.js",
+      "frontend/src/components/common/LoadingSpinner.js",
+      "frontend/src/components/common/ErrorBoundary.js"
+    ]
+  }
+}
+

@@ -85,6 +85,7 @@ export const apiService = {
         },
   verifyCompany: (companyId, data) => api.post(`/company/${companyId}/verify`, data),
   getCompany: (companyId) => api.get(`/company/${companyId}`),
+  getCompanyByHrEmail: (hrEmail) => api.get('/company', { params: { hrEmail } }),
   updateCompany: (companyId, data) => api.put(`/company/${companyId}`, data),
   getCompanies: (params) => api.get('/company', { params }),
   
@@ -115,6 +116,13 @@ export const apiService = {
   signup: (data) => api.post('/auth/signup', data),
   logout: () => api.post('/auth/logout'),
   verifyEmail: (token) => api.post('/auth/verify', { token }),
+  
+  // External Data endpoints (LinkedIn, GitHub)
+  initiateLinkedInAuth: (employeeId) => api.get(`/external/linkedin/authorize/${employeeId}`),
+  initiateGitHubAuth: (employeeId) => api.get(`/external/github/authorize/${employeeId}`),
+  fetchLinkedInData: (employeeId) => api.get(`/external/linkedin/data/${employeeId}`),
+  fetchGitHubData: (employeeId) => api.get(`/external/github/data/${employeeId}`),
+  collectAllExternalData: (employeeId) => api.post(`/external/collect/${employeeId}`),
   
   // Notifications endpoints
   getNotifications: (userEmail, params = {}) => 

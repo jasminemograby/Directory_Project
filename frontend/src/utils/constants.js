@@ -32,6 +32,7 @@ export const ROUTES = {
   PROFILE_ME: '/profile/me',
   PROFILE_EDIT: '/profile/:employeeId/edit',
   PROFILE_EDIT_ME: '/profile/me/edit',
+  EMPLOYEE_PROFILE: '/profile',
   
   // Requests
   REQUESTS_LEARNING: '/requests/learning',
