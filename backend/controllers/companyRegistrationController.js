@@ -173,11 +173,37 @@ const registerCompanyStep4 = async (req, res, next) => {
       // Create employees with department/team assignment
       const employeeMap = new Map(); // Map email to employee ID for decision maker lookup
       
+      // Get HR email from company_settings to exclude it from employees list if present
+      const hrSettingsCheck = await client.query(
+        `SELECT setting_value FROM company_settings 
+         WHERE company_id = $1 AND setting_key = 'hr_email' 
+         LIMIT 1`,
+        [company.id]
+      );
+      const hrEmailFromSettings = hrSettingsCheck.rows.length > 0 
+        ? hrSettingsCheck.rows[0].setting_value?.trim().toLowerCase() 
+        : null;
+      
       for (const emp of employees) {
         // Normalize email (trim and lowercase) for comparison
         const normalizedEmail = emp.email ? emp.email.trim().toLowerCase() : null;
         if (!normalizedEmail) {
           throw new Error(`Invalid email for employee: ${emp.name || 'Unknown'}`);
+        }
+
+        // Skip HR email if it appears in employees list - it will be created separately
+        if (hrEmailFromSettings && normalizedEmail === hrEmailFromSettings) {
+          console.log(`[Step4] Skipping HR email from employees list: ${normalizedEmail} (will be created separately)`);
+          // Still check if it exists and add to employeeMap for manager lookups
+          const hrCheck = await client.query(
+            `SELECT id FROM employees WHERE LOWER(TRIM(email)) = $1 AND company_id = $2`,
+            [normalizedEmail, company.id]
+          );
+          if (hrCheck.rows.length > 0) {
+            employeeMap.set(normalizedEmail, hrCheck.rows[0].id);
+            console.log(`[Step4] HR employee already exists, added to map: ${hrCheck.rows[0].id}`);
+          }
+          continue; // Skip creating this employee - HR will be created separately
         }
 
         // Check if employee with this email already exists (email is UNIQUE globally)
