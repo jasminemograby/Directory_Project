@@ -131,8 +131,15 @@ const getCompanyById = async (companyId) => {
  */
 const getCompany = async (req, res, next) => {
   try {
+    console.log(`[getCompany] ========== ENDPOINT CALLED ==========`);
+    console.log(`[getCompany] Request method: ${req.method}`);
+    console.log(`[getCompany] Request URL: ${req.url}`);
+    console.log(`[getCompany] Request params:`, req.params);
+    console.log(`[getCompany] Request query:`, req.query);
+    
     const { id } = req.params;
-    console.log(`[getCompany] Fetching company with ID: ${id}`);
+    console.log(`[getCompany] Extracted company ID: ${id}`);
+    console.log(`[getCompany] Company ID type: ${typeof id}`);
 
     const company = await getCompanyById(id);
 
@@ -199,7 +206,13 @@ const getCompanyIdByHrEmail = async (hrEmail) => {
  */
 const getCompanyByHrEmail = async (req, res, next) => {
   try {
+    console.log(`[getCompanyByHrEmail] ========== ENDPOINT CALLED ==========`);
+    console.log(`[getCompanyByHrEmail] Request method: ${req.method}`);
+    console.log(`[getCompanyByHrEmail] Request URL: ${req.url}`);
+    console.log(`[getCompanyByHrEmail] Request query:`, req.query);
+    
     const { hrEmail } = req.query;
+    console.log(`[getCompanyByHrEmail] Extracted HR email: ${hrEmail}`);
 
     if (!hrEmail) {
       return res.status(400).json({
