@@ -268,7 +268,9 @@ const HRDashboard = () => {
             onClick={() => {
               const hrEmployeeId = localStorage.getItem('hrEmployeeId') || localStorage.getItem('currentEmployeeId');
               if (hrEmployeeId) {
-                navigate(`${ROUTES.EMPLOYEE_PROFILE}?employeeId=${hrEmployeeId}`);
+                // Navigate to profile with employee ID in URL
+                navigate(ROUTES.EMPLOYEE_PROFILE);
+                // EmployeeProfile will get the ID from localStorage
               } else {
                 navigate(ROUTES.EMPLOYEE_PROFILE);
               }
