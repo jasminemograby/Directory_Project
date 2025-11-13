@@ -481,7 +481,7 @@ const registerCompanyStep4 = async (req, res, next) => {
                 );
                 if (retryCheck.rows.length > 0) {
                   hrEmployeeId = retryCheck.rows[0].id;
-                  employeeMap.set(hrSettings.hr_email, hrEmployeeId);
+                  employeeMap.set(hrEmailNormalized, hrEmployeeId);
                   console.log(`ℹ️ HR employee created by another process: ${hrEmployeeId}`);
                 } else {
                   // If not found, the transaction might be aborted - re-throw to trigger rollback

@@ -1,97 +1,50 @@
-# איך למחוק עובדים מהמסד נתונים
+# מדריך לניקוי Employees ישנים
 
-## שיטה 1: באמצעות סקריפט Node.js (מומלץ)
+אם אתה מקבל שגיאת "Employee with this email already exists" למרות שזה מייל חדש, זה אומר שיש employees ישנים ב-database מהניסיונות הקודמים.
 
-### שלבים:
-1. פתח טרמינל/PowerShell בפרויקט
-2. הרץ את הפקודה:
-   ```powershell
-   node backend/scripts/clear-employees.js
-   ```
+## פתרון מהיר - ניקוי Employees לפי Email
 
-### מה הסקריפט עושה:
-- מוחק את כל העובדים מהטבלה `employees`
-- מציג רשימה של העובדים שנמחקו
-- משתמש ב-transaction כדי להבטיח שהכל מתבצע בצורה בטוחה
+יש לך שני אפשרויות:
 
----
+### אפשרות 1: ניקוי ידני ב-Supabase
 
-## שיטה 2: באמצעות Supabase SQL Editor
-
-### שלבים:
-1. לך ל-Supabase Dashboard: https://supabase.com/dashboard
-2. בחר את הפרויקט שלך
-3. לחץ על **SQL Editor** בתפריט השמאלי
-4. הדבק את ה-SQL הבא:
-   ```sql
-   -- Delete all employees
-   DELETE FROM employees;
-   
-   -- Optional: Delete departments and teams too
-   -- DELETE FROM teams;
-   -- DELETE FROM departments;
-   ```
-5. לחץ **Run** (או F5)
-
-### ⚠️ אזהרה:
-- זה ימחק את **כל** העובדים מהמסד נתונים
-- אם יש לך עובדים חשובים, שמור אותם לפני המחיקה
-
----
-
-## שיטה 3: למחוק רק עובדים ספציפיים
-
-### באמצעות Supabase SQL Editor:
+1. לך ל-Supabase Dashboard → SQL Editor
+2. הרץ את ה-query הבא (החלף את ה-emails):
 
 ```sql
--- למחוק עובד ספציפי לפי email
-DELETE FROM employees WHERE email = 'hello@gmail.com';
+-- בדוק איזה employees יש
+SELECT id, name, email, company_id, created_at 
+FROM employees 
+WHERE LOWER(TRIM(email)) IN ('email1@example.com', 'email2@example.com')
+ORDER BY created_at DESC;
 
--- למחוק עובדים לפי חברה
-DELETE FROM employees WHERE company_id = 'YOUR_COMPANY_ID_HERE';
-
--- למחוק כמה עובדים לפי emails
-DELETE FROM employees WHERE email IN ('hello@gmail.com', 's@gmail.com');
+-- אם אתה רוצה למחוק אותם (הזהר!)
+DELETE FROM employees 
+WHERE LOWER(TRIM(email)) IN ('email1@example.com', 'email2@example.com');
 ```
 
----
+### אפשרות 2: שימוש ב-Script
 
-## שיטה 4: למחוק רק עובדים מחברה ספציפית
+יש script חדש `backend/scripts/clear-employees-by-email.js`:
 
-אם אתה רוצה למחוק רק עובדים מחברה מסוימת:
-
-```sql
--- קודם, מצא את ה-company_id
-SELECT id, name FROM companies;
-
--- אחר כך, מחק את העובדים של החברה הזו
-DELETE FROM employees WHERE company_id = 'YOUR_COMPANY_ID_HERE';
+```bash
+cd backend
+node scripts/clear-employees-by-email.js email1@example.com email2@example.com
 ```
 
----
+השיטה הזו:
+- בודקת אם employees קיימים
+- מוחקת את כל הנתונים הקשורים (external links, OAuth tokens, etc.)
+- מוחקת את ה-employees
 
-## איך לבדוק מה נמחק
+## מה תוקן
 
-לאחר המחיקה, תוכל לבדוק:
+1. **Case-insensitive email comparison** - עכשיו המערכת בודקת emails ב-case-insensitive
+2. **Email normalization** - כל ה-emails נשמרים ב-lowercase
+3. **Better duplicate handling** - אם employee קיים באותה חברה, המערכת משתמשת ב-existing ID
 
-```sql
--- בדוק כמה עובדים נשארו
-SELECT COUNT(*) FROM employees;
+## אם עדיין יש בעיה
 
--- ראה את כל העובדים שנשארו
-SELECT id, name, email, company_id FROM employees;
-```
-
----
-
-## אם יש שגיאה
-
-אם מקבל שגיאה של foreign key constraint:
-- זה אומר שיש טבלאות אחרות שמתייחסות לעובדים
-- הסקריפט מטפל בזה אוטומטית (CASCADE)
-- אם עדיין יש בעיה, מחק קודם את הטבלאות הקשורות:
-  ```sql
-  DELETE FROM external_data_links;
-  DELETE FROM employees;
-  ```
-
+1. בדוק את ה-logs ב-Railway - חפש `[Step4] Error creating employee`
+2. בדוק ב-Supabase אם יש employees עם אותו email
+3. נסה לנקות את ה-employees הישנים
