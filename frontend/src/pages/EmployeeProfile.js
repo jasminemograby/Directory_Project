@@ -99,11 +99,21 @@ const EmployeeProfile = () => {
       return;
     }
 
-    // Only fetch if we have an employee ID and we're not already loading
-    if (!loading) {
-      fetchEmployeeData();
-      checkEnrichmentStatus();
-    }
+    // Only fetch once when component mounts or employeeId changes
+    let isMounted = true;
+    
+    const loadData = async () => {
+      if (isMounted) {
+        await fetchEmployeeData();
+        await checkEnrichmentStatus();
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentEmployeeId]); // Only depend on currentEmployeeId to prevent infinite loop
 
