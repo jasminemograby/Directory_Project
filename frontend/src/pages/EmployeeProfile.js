@@ -65,8 +65,12 @@ const EmployeeProfile = () => {
     }
   }, [currentEmployeeId]);
 
+  const checkingEnrichment = useRef(false);
+  
   const checkEnrichmentStatus = useCallback(async () => {
-    if (!currentEmployeeId) return;
+    if (!currentEmployeeId || checkingEnrichment.current) return;
+    
+    checkingEnrichment.current = true;
     
     try {
       // Check if both LinkedIn and GitHub are connected
@@ -87,6 +91,8 @@ const EmployeeProfile = () => {
     } catch (error) {
       console.error('Error checking enrichment status:', error);
       setIsEnriched(false);
+    } finally {
+      checkingEnrichment.current = false;
     }
   }, [currentEmployeeId]);
 
@@ -101,11 +107,18 @@ const EmployeeProfile = () => {
 
     // Only fetch once when component mounts or employeeId changes
     let isMounted = true;
+    let hasLoaded = false;
     
     const loadData = async () => {
-      if (isMounted) {
+      if (isMounted && !hasLoaded) {
+        hasLoaded = true;
         await fetchEmployeeData();
-        await checkEnrichmentStatus();
+        // Delay enrichment check to avoid race conditions
+        setTimeout(async () => {
+          if (isMounted) {
+            await checkEnrichmentStatus();
+          }
+        }, 500);
       }
     };
     
@@ -113,6 +126,7 @@ const EmployeeProfile = () => {
     
     return () => {
       isMounted = false;
+      hasLoaded = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentEmployeeId]); // Only depend on currentEmployeeId to prevent infinite loop
