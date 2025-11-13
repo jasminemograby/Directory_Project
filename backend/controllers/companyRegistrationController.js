@@ -228,22 +228,30 @@ const registerCompanyStep4 = async (req, res, next) => {
           } catch (insertError) {
             // If insert fails due to duplicate, check again (race condition)
             if (insertError.code === '23505' && insertError.constraint === 'employees_email_key') {
-              const retryCheck = await client.query(
-                `SELECT id, company_id FROM employees WHERE email = $1`,
-                [emp.email]
-              );
-              if (retryCheck.rows.length > 0) {
-                const retryEmployee = retryCheck.rows[0];
-                if (retryEmployee.company_id === company.id) {
-                  employeeId = retryEmployee.id;
-                  employeeMap.set(emp.email, employeeId);
-                  // Don't continue - we still need to update managers
+              try {
+                const retryCheck = await client.query(
+                  `SELECT id, company_id FROM employees WHERE email = $1`,
+                  [emp.email]
+                );
+                if (retryCheck.rows.length > 0) {
+                  const retryEmployee = retryCheck.rows[0];
+                  if (retryEmployee.company_id === company.id) {
+                    employeeId = retryEmployee.id;
+                    employeeMap.set(emp.email, employeeId);
+                    // Don't continue - we still need to update managers
+                  } else {
+                    throw new Error(`Employee with email ${emp.email} already exists in another company. Email must be unique across all companies.`);
+                  }
                 } else {
-                  throw new Error(`Employee with email ${emp.email} already exists in another company. Email must be unique across all companies.`);
+                  // This shouldn't happen, but if it does, re-throw the error
+                  throw insertError;
                 }
-              } else {
-                // This shouldn't happen, but if it does, re-throw the error
-                throw insertError;
+              } catch (retryError) {
+                // If retry query fails (transaction might be aborted), re-throw original error
+                if (retryError.message?.includes('aborted') || retryError.code === '25P02') {
+                  throw insertError; // Re-throw original error to trigger rollback
+                }
+                throw retryError;
               }
             } else {
               // Not a duplicate email error, re-throw
