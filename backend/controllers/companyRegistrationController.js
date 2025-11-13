@@ -429,13 +429,15 @@ const registerCompanyStep4 = async (req, res, next) => {
         
         // If not found in employeeMap, check database
         if (!hrEmployeeId) {
+          const hrEmailNormalized = hrSettings.hr_email.trim().toLowerCase();
           const hrEmployeeCheck = await client.query(
-            `SELECT id FROM employees WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) AND company_id = $2`,
-            [hrSettings.hr_email, company.id]
+            `SELECT id FROM employees WHERE LOWER(TRIM(email)) = $1 AND company_id = $2`,
+            [hrEmailNormalized, company.id]
           );
 
           if (hrEmployeeCheck.rows.length > 0) {
             hrEmployeeId = hrEmployeeCheck.rows[0].id;
+            employeeMap.set(hrEmailNormalized, hrEmployeeId);
             console.log(`ℹ️ HR employee already exists in database: ${hrEmployeeId}`);
           }
         }
@@ -443,6 +445,7 @@ const registerCompanyStep4 = async (req, res, next) => {
         // Only create if HR doesn't exist
         if (!hrEmployeeId) {
           try {
+            const hrEmailNormalized = hrSettings.hr_email.trim().toLowerCase();
             const hrEmployeeResult = await client.query(
               `INSERT INTO employees (
                 company_id, name, email, role, target_role, type,
@@ -453,7 +456,7 @@ const registerCompanyStep4 = async (req, res, next) => {
               [
                 company.id,
                 hrSettings.hr_name || 'HR Manager',
-                hrSettings.hr_email,
+                hrEmailNormalized, // Use normalized email
                 hrSettings.hr_role || 'HR Manager',
                 hrSettings.hr_role || 'HR Manager', // target_role same as current role
                 'regular', // HR is regular employee by default
@@ -471,9 +474,10 @@ const registerCompanyStep4 = async (req, res, next) => {
             if (insertError.code === '23505' && insertError.constraint === 'employees_email_key') {
               // Check if transaction is still active before querying
               try {
+                const hrEmailNormalized = hrSettings.hr_email.trim().toLowerCase();
                 const retryCheck = await client.query(
-                  `SELECT id FROM employees WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) AND company_id = $2`,
-                  [hrSettings.hr_email, company.id]
+                  `SELECT id FROM employees WHERE LOWER(TRIM(email)) = $1 AND company_id = $2`,
+                  [hrEmailNormalized, company.id]
                 );
                 if (retryCheck.rows.length > 0) {
                   hrEmployeeId = retryCheck.rows[0].id;
