@@ -365,37 +365,77 @@ const registerCompanyStep4 = async (req, res, next) => {
       });
 
       if (hrSettings.hr_email) {
-        // Check if HR employee already exists
-        const hrEmployeeCheck = await client.query(
-          `SELECT id FROM employees WHERE email = $1 AND company_id = $2`,
-          [hrSettings.hr_email, company.id]
-        );
-
-        if (hrEmployeeCheck.rows.length === 0) {
-          // Create HR employee profile
-          const hrEmployeeResult = await client.query(
-            `INSERT INTO employees (
-              company_id, name, email, role, target_role, type,
-              department_id, team_id, profile_status, created_at, updated_at
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            RETURNING id`,
-            [
-              company.id,
-              hrSettings.hr_name || 'HR Manager',
-              hrSettings.hr_email,
-              hrSettings.hr_role || 'HR Manager',
-              hrSettings.hr_role || 'HR Manager', // target_role same as current role
-              'regular', // HR is regular employee by default
-              null, // No department/team assignment for HR
-              null,
-              'pending', // Profile status pending until enrichment
-            ]
+        // Check if HR employee already exists (either created in employees loop or already exists)
+        // Use employeeMap to check if HR was already created in the employees loop
+        const hrEmailLower = hrSettings.hr_email.toLowerCase().trim();
+        let hrEmployeeId = null;
+        
+        // First check if HR was created in the employees loop
+        for (const [email, empId] of employeeMap.entries()) {
+          if (email.toLowerCase().trim() === hrEmailLower) {
+            hrEmployeeId = empId;
+            console.log(`ℹ️ HR employee already created in employees loop: ${hrEmployeeId}`);
+            break;
+          }
+        }
+        
+        // If not found in employeeMap, check database
+        if (!hrEmployeeId) {
+          const hrEmployeeCheck = await client.query(
+            `SELECT id FROM employees WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) AND company_id = $2`,
+            [hrSettings.hr_email, company.id]
           );
 
-          console.log(`✅ HR employee profile created: ${hrEmployeeResult.rows[0].id} for ${hrSettings.hr_email}`);
-        } else {
-          console.log(`ℹ️ HR employee already exists: ${hrEmployeeCheck.rows[0].id}`);
+          if (hrEmployeeCheck.rows.length > 0) {
+            hrEmployeeId = hrEmployeeCheck.rows[0].id;
+            console.log(`ℹ️ HR employee already exists in database: ${hrEmployeeId}`);
+          }
+        }
+
+        // Only create if HR doesn't exist
+        if (!hrEmployeeId) {
+          try {
+            const hrEmployeeResult = await client.query(
+              `INSERT INTO employees (
+                company_id, name, email, role, target_role, type,
+                department_id, team_id, profile_status, created_at, updated_at
+              )
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+              RETURNING id`,
+              [
+                company.id,
+                hrSettings.hr_name || 'HR Manager',
+                hrSettings.hr_email,
+                hrSettings.hr_role || 'HR Manager',
+                hrSettings.hr_role || 'HR Manager', // target_role same as current role
+                'regular', // HR is regular employee by default
+                null, // No department/team assignment for HR
+                null,
+                'pending', // Profile status pending until enrichment
+              ]
+            );
+
+            hrEmployeeId = hrEmployeeResult.rows[0].id;
+            employeeMap.set(hrSettings.hr_email, hrEmployeeId);
+            console.log(`✅ HR employee profile created: ${hrEmployeeId} for ${hrSettings.hr_email}`);
+          } catch (insertError) {
+            // If insert fails due to duplicate (race condition), try to get existing
+            if (insertError.code === '23505' && insertError.constraint === 'employees_email_key') {
+              const retryCheck = await client.query(
+                `SELECT id FROM employees WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) AND company_id = $2`,
+                [hrSettings.hr_email, company.id]
+              );
+              if (retryCheck.rows.length > 0) {
+                hrEmployeeId = retryCheck.rows[0].id;
+                employeeMap.set(hrSettings.hr_email, hrEmployeeId);
+                console.log(`ℹ️ HR employee created by another process: ${hrEmployeeId}`);
+              } else {
+                throw insertError;
+              }
+            } else {
+              throw insertError;
+            }
+          }
         }
       }
 
