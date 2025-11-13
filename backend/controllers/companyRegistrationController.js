@@ -426,7 +426,6 @@ const registerCompanyStep4 = async (req, res, next) => {
         
         // If not found in employeeMap, check database
         if (!hrEmployeeId) {
-          const hrEmailNormalized = hrSettings.hr_email.trim().toLowerCase();
           const hrEmployeeCheck = await client.query(
             `SELECT id FROM employees WHERE LOWER(TRIM(email)) = $1 AND company_id = $2`,
             [hrEmailNormalized, company.id]
