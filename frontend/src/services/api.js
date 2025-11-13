@@ -46,8 +46,9 @@ api.interceptors.response.use(
           window.location.href = '/403';
           break;
         case HTTP_STATUS.NOT_FOUND:
-          // Redirect to 404 page
-          window.location.href = '/404';
+          // Don't auto-redirect to 404 - let components handle it
+          // Only redirect if it's a route-level 404, not API 404
+          // window.location.href = '/404';
           break;
         case HTTP_STATUS.INTERNAL_SERVER_ERROR:
           // Log error and show message

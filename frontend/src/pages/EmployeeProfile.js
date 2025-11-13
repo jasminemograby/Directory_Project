@@ -18,15 +18,31 @@ const EmployeeProfile = () => {
   const currentEmployeeId = employeeId || localStorage.getItem('currentEmployeeId');
 
   const fetchEmployeeData = useCallback(async () => {
+    if (!currentEmployeeId) {
+      setError('Please set an employee ID. For testing, you can set it in localStorage: localStorage.setItem("currentEmployeeId", "your-employee-uuid")');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      setError(null);
       const response = await apiService.getEmployee(currentEmployeeId);
       if (response.data && response.data.data) {
         setEmployee(response.data.data);
+      } else {
+        setError('Employee profile not found. Please check your employee ID.');
       }
     } catch (error) {
       console.error('Error fetching employee data:', error);
-      setError('Failed to load profile. Please try again.');
+      // Don't redirect to 404 - show error message instead
+      if (error.response?.status === 404) {
+        setError('Employee profile not found. Please check your employee ID.');
+      } else if (error.response?.status === 500) {
+        setError('Server error. Please try again later.');
+      } else {
+        setError('Failed to load profile. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -56,18 +72,18 @@ const EmployeeProfile = () => {
   }, [currentEmployeeId]);
 
   useEffect(() => {
-    // For testing: if no employee ID, use a mock ID or show message
+    // For testing: if no employee ID, show message
     // In production, this should redirect to login
     if (!currentEmployeeId) {
-      // For now, show a message asking to set employee ID
       setError('Please set an employee ID. For testing, you can set it in localStorage: localStorage.setItem("currentEmployeeId", "your-employee-uuid")');
       setLoading(false);
       return;
     }
 
+    // Only fetch if we have an employee ID
     fetchEmployeeData();
     checkEnrichmentStatus();
-  }, [currentEmployeeId, navigate, fetchEmployeeData, checkEnrichmentStatus]);
+  }, [currentEmployeeId, fetchEmployeeData, checkEnrichmentStatus]);
 
 
   const handleEnrichmentComplete = () => {
