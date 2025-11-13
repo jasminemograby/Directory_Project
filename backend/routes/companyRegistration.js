@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const companyRegistrationController = require('../controllers/companyRegistrationController');
+const companyController = require('../controllers/companyController');
 const {
   companyRegistrationStep1Validator,
   companyRegistrationStep4Validator,
@@ -23,6 +24,21 @@ router.post(
   validateRequest,
   companyRegistrationController.registerCompanyStep4
 );
+
+// Get company by HR email (must be before /:id to avoid route conflict)
+router.get('/', (req, res, next) => {
+  console.log(`[ROUTE] GET /api/company/ - Route matched for HR email lookup`);
+  console.log(`[ROUTE] Query params:`, req.query);
+  next();
+}, companyController.getCompanyByHrEmail);
+
+// Get company by ID (must be before /:id/verify to avoid route conflict)
+router.get('/:id', (req, res, next) => {
+  console.log(`[ROUTE] GET /api/company/:id - Route matched`);
+  console.log(`[ROUTE] Params:`, req.params);
+  console.log(`[ROUTE] Company ID from params: ${req.params.id}`);
+  next();
+}, companyController.getCompany);
 
 // Check Verification Status
 router.post(
