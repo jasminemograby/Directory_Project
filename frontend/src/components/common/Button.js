@@ -14,33 +14,57 @@ const Button = ({
   className = '',
   ...props
 }) => {
-  const { theme, getDesignToken } = useApp();
+  const { theme } = useApp();
   
-  // Get button styles from design system
+  // Get button styles from CSS variables (set by design system)
   const getButtonStyles = () => {
-    const buttonConfig = getDesignToken(`button.${variant}`);
-    if (!buttonConfig) return {};
-    
-    const isGradient = typeof buttonConfig.background === 'string' && buttonConfig.background.includes('gradient');
-    
-    return {
-      background: isGradient ? buttonConfig.background : buttonConfig.background,
-      color: buttonConfig.text,
-      border: buttonConfig.border || 'none',
-      boxShadow: buttonConfig.shadow || 'none',
-      transition: 'all var(--transition-fast) var(--transition-ease)',
+    // Use CSS variables that are set in index.css based on theme
+    const styles = {
+      primary: {
+        background: 'var(--btn-primary-bg)',
+        color: 'var(--btn-primary-text)',
+        boxShadow: 'var(--btn-primary-shadow)',
+      },
+      secondary: {
+        background: 'var(--btn-secondary-bg)',
+        color: 'var(--btn-secondary-text)',
+        border: theme === 'night-mode' ? 'var(--btn-secondary-border)' : 'none',
+      },
+      outline: {
+        background: 'var(--btn-outline-bg)',
+        color: 'var(--btn-outline-text)',
+        border: 'var(--btn-outline-border)',
+      },
+      ghost: {
+        background: 'transparent',
+        color: theme === 'day-mode' ? 'var(--text-primary)' : 'var(--text-primary)',
+      },
     };
+    
+    return styles[variant] || styles.primary;
   };
   
   const getHoverStyles = () => {
-    const buttonConfig = getDesignToken(`button.${variant}`);
-    if (!buttonConfig) return {};
-    
-    return {
-      background: buttonConfig.backgroundHover,
-      boxShadow: buttonConfig.shadowHover || buttonConfig.shadow,
-      transform: variant === 'primary' ? 'translateY(-1px)' : 'none',
+    const hoverStyles = {
+      primary: {
+        background: 'var(--btn-primary-bg-hover)',
+        boxShadow: 'var(--btn-primary-shadow-hover)',
+        transform: 'translateY(-1px)',
+      },
+      secondary: {
+        background: 'var(--btn-secondary-bg-hover)',
+      },
+      outline: {
+        background: 'var(--btn-outline-bg-hover)',
+        color: 'var(--btn-outline-text-hover)',
+        border: 'var(--btn-outline-border-hover)',
+      },
+      ghost: {
+        background: theme === 'day-mode' ? 'var(--btn-secondary-bg-hover)' : 'var(--btn-outline-bg-hover)',
+      },
     };
+    
+    return hoverStyles[variant] || hoverStyles.primary;
   };
   
   const baseStyles = {
