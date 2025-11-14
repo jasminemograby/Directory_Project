@@ -265,6 +265,11 @@ curl -X POST https://your-backend.railway.app/api/exchange -H "Content-Type: app
 
 ### בדיקה 3: Internal API (Production)
 
+**⚠️ חשוב:** לא ניתן לבדוק את זה בדפדפן!
+- דפדפן עושה **GET** request
+- ה-endpoint הזה דורש **POST** request
+- ה-endpoint דורש **Authentication** (Bearer token)
+
 **איפה להריץ:** PowerShell/Command Prompt או Postman
 
 **PowerShell (החלפי YOUR_INTERNAL_API_SECRET ב-secret האמיתי):**
@@ -272,21 +277,29 @@ curl -X POST https://your-backend.railway.app/api/exchange -H "Content-Type: app
 curl -X POST https://your-backend.railway.app/api/internal/skills-engine/update -H "Content-Type: application/json" -H "Authorization: Bearer YOUR_INTERNAL_API_SECRET" -d "{\"employee_id\":\"valid-uuid-here\",\"normalized_skills\":[]}"
 ```
 
-**או Postman/Thunder Client:**
-- Method: **POST**
-- URL: `https://your-backend.railway.app/api/internal/skills-engine/update`
-- Headers:
-  - `Content-Type: application/json`
-  - `Authorization: Bearer YOUR_INTERNAL_API_SECRET`
-- Body (raw JSON):
+**או Postman/Thunder Client (מומלץ):**
+1. פתחי Postman או Thunder Client
+2. Method: **POST** (חשוב!)
+3. URL: `https://your-backend.railway.app/api/internal/skills-engine/update`
+4. Headers:
+   - `Content-Type: application/json`
+   - `Authorization: Bearer YOUR_INTERNAL_API_SECRET` (החלפי ב-secret האמיתי)
+5. Body → raw → JSON:
 ```json
 {
   "employee_id": "valid-uuid-here",
   "normalized_skills": []
 }
 ```
+6. לחצי Send
 
-**צפוי:** `{"success": true, "message": "Skills updated successfully"}`
+**תגובות אפשריות:**
+- ✅ `200 OK` + `{"success": true, "message": "Skills updated successfully"}` = הכל עובד!
+- ❌ `401 Unauthorized` = ה-secret שגוי או חסר
+- ❌ `404 Not Found` = ה-endpoint לא נמצא (בדקי שה-deployment הצליח)
+- ❌ `400 Bad Request` = ה-body לא תקין (חסר employee_id)
+
+**אם מקבלת 404 בדפדפן - זה נורמלי!** דפדפן לא יכול לבדוק POST endpoints. השתמשי ב-Postman.
 
 ---
 
