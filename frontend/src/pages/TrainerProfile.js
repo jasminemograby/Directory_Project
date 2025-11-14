@@ -1,19 +1,30 @@
 // Trainer Profile Page - Employee Profile + Trainer-specific fields
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/common/Layout';
-import EmployeeProfile from './EmployeeProfile';
+import EnhanceProfile from '../components/Profile/EnhanceProfile';
+import CareerBlock from '../components/Profile/CareerBlock';
+import SkillsTree from '../components/Profile/SkillsTree';
+import CoursesSection from '../components/Profile/CoursesSection';
+import RequestsSection from '../components/Profile/RequestsSection';
+import TrainerInfoSection from '../components/Profile/TrainerInfoSection';
+import TeachingRequestsSection from '../components/Profile/TeachingRequestsSection';
 import Button from '../components/common/Button';
 import { apiService } from '../services/api';
+import { mockDataService } from '../services/mockData';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { ROUTES } from '../utils/constants';
 
 const TrainerProfile = () => {
   const { employeeId } = useParams();
   const navigate = useNavigate();
+  const [employee, setEmployee] = useState(null);
+  const [processedData, setProcessedData] = useState(null);
+  const [profileData, setProfileData] = useState(null);
   const [trainerData, setTrainerData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isEnriched, setIsEnriched] = useState(false);
 
   // Get employee ID from localStorage if not in URL
   const currentEmployeeId = useMemo(() => {
@@ -31,18 +42,42 @@ const TrainerProfile = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch trainer-specific data
-      // TODO: Replace with actual API call when trainer endpoints are ready
-      // For now, get from employee profile and check if type is trainer
+      // Fetch basic employee data
       const employeeResponse = await apiService.getEmployee(currentEmployeeId);
       if (employeeResponse.data && employeeResponse.data.data) {
-        const employee = employeeResponse.data.data;
+        const emp = employeeResponse.data.data;
         
         // Check if employee is a trainer
-        if (employee.type !== 'internal_instructor' && employee.type !== 'external_instructor') {
+        if (emp.type !== 'internal_instructor' && emp.type !== 'external_instructor') {
           setError('This employee is not a trainer.');
           setLoading(false);
           return;
+        }
+
+        setEmployee(emp);
+
+        // Fetch processed data (bio, projects, skills)
+        try {
+          const processedResponse = await apiService.getProcessedData(currentEmployeeId);
+          if (processedResponse.data && processedResponse.data.data) {
+            setProcessedData(processedResponse.data.data);
+            setIsEnriched(true);
+          }
+        } catch (processedError) {
+          console.warn('No processed data available yet:', processedError.message);
+        }
+
+        // Fetch additional profile data
+        try {
+          const profileResponse = await apiService.getEmployeeProfile(currentEmployeeId);
+          if (profileResponse.data && profileResponse.data.data) {
+            setProfileData(profileResponse.data.data);
+          } else {
+            setProfileData(mockDataService.getEmployeeProfile(currentEmployeeId));
+          }
+        } catch (profileError) {
+          console.warn('Profile API error, using mock data fallback:', profileError.message);
+          setProfileData(mockDataService.getEmployeeProfile(currentEmployeeId));
         }
 
         // Fetch courses taught from Content Studio
@@ -56,11 +91,11 @@ const TrainerProfile = () => {
           console.warn('Could not fetch taught courses:', coursesError.message);
         }
 
+        // Set trainer-specific data
         setTrainerData({
-          ...employee,
-          trainerStatus: employee.trainer_status || 'Active', // Invited → Active → Archived
-          aiEnabled: employee.ai_enabled !== undefined ? employee.ai_enabled : true,
-          publicPublishEnabled: employee.public_publish_enabled !== undefined ? employee.public_publish_enabled : false,
+          trainerStatus: emp.trainer_status || 'Active',
+          aiEnabled: emp.ai_enabled !== undefined ? emp.ai_enabled : true,
+          publicPublishEnabled: emp.public_publish_enabled !== undefined ? emp.public_publish_enabled : false,
           taughtCourses: taughtCourses
         });
       } else {
@@ -77,6 +112,11 @@ const TrainerProfile = () => {
       setLoading(false);
     }
   }, [currentEmployeeId]);
+
+  const handleEnrichmentComplete = useCallback(() => {
+    setIsEnriched(true);
+    fetchTrainerData();
+  }, [fetchTrainerData]);
 
   useEffect(() => {
     fetchTrainerData();
