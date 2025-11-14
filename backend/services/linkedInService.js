@@ -237,25 +237,32 @@ const fetchProfileData = async (employeeId) => {
   try {
     const accessToken = await getValidAccessToken(employeeId);
 
-    // LinkedIn API v2 endpoints
+    // LinkedIn OpenID Connect endpoints
+    // Note: userinfo endpoint returns both profile and email when using OpenID Connect
     const [profileResponse, emailResponse] = await Promise.all([
-      // Get basic profile
-      axios.get(`${LINKEDIN_API_BASE}/userinfo`, {
+      // Get user info (OpenID Connect - includes profile and email)
+      axios.get('https://api.linkedin.com/v2/userinfo', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
         timeout: 10000
-      }).catch(() => null), // Fallback if endpoint fails
+      }).catch((err) => {
+        console.warn('[LinkedIn] Failed to fetch userinfo:', err.message);
+        return null;
+      }),
       
-      // Get email (if available)
-      axios.get(`${LINKEDIN_API_BASE}/emailAddress?q=members&projection=(elements*(handle~))`, {
+      // Try legacy email endpoint as fallback (may not work with OpenID Connect)
+      axios.get('https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
         timeout: 10000
-      }).catch(() => null) // Optional, may not be available
+      }).catch((err) => {
+        console.warn('[LinkedIn] Failed to fetch email (optional fallback):', err.message);
+        return null;
+      })
     ]);
 
     const profileData = {
