@@ -268,48 +268,85 @@ const HRLanding = () => {
             fontSize: '36px',
             fontWeight: 700,
             marginBottom: '16px',
-            letterSpacing: '-0.02em'
+            letterSpacing: '-0.02em',
+            color: 'var(--text-inverse)'
           }}>
             Ready to Get Started?
           </h2>
           <p style={{
             fontSize: '20px',
             lineHeight: '1.6',
-            marginBottom: '40px',
-            opacity: 0.95
+            marginBottom: '48px',
+            opacity: 0.95,
+            color: 'var(--text-inverse)'
           }}>
             Register your company today and start managing your team's learning journey.
           </p>
           <div style={{
             display: 'flex',
-            gap: '16px',
+            gap: '20px',
             justifyContent: 'center',
-            flexWrap: 'wrap'
+            flexWrap: 'wrap',
+            alignItems: 'center'
           }}>
-            <Button
-              variant="secondary"
-              size="lg"
+            <button
               onClick={() => navigate(ROUTES.COMPANY_REGISTER_STEP1)}
               style={{
-                backgroundColor: 'white',
+                padding: '16px 32px',
+                fontSize: '18px',
+                fontWeight: 600,
+                borderRadius: 'var(--radius-lg)',
+                border: 'none',
+                background: 'white',
                 color: 'var(--primary-base)',
-                minWidth: '200px'
+                cursor: 'pointer',
+                minWidth: '240px',
+                transition: 'all var(--transition-fast) var(--transition-ease)',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+                e.currentTarget.style.backgroundColor = '#f8fafc';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.backgroundColor = 'white';
               }}
             >
               Register Your Company Now
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => navigate(ROUTES.LOGIN)}
-              style={{
-                borderColor: 'white',
-                color: 'white',
-                minWidth: '200px'
-              }}
-            >
-              Already Registered? Login
-            </Button>
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ color: 'var(--text-inverse)', opacity: 0.9 }}>Already Registered?</span>
+              <button
+                onClick={() => navigate(ROUTES.LOGIN)}
+                style={{
+                  padding: '16px 32px',
+                  fontSize: '18px',
+                  fontWeight: 600,
+                  borderRadius: 'var(--radius-lg)',
+                  border: '2px solid white',
+                  background: 'transparent',
+                  color: 'white',
+                  cursor: 'pointer',
+                  minWidth: '120px',
+                  transition: 'all var(--transition-fast) var(--transition-ease)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.8)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.borderColor = 'white';
+                }}
+              >
+                Login
+              </button>
+            </div>
           </div>
         </div>
       </section>
