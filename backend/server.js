@@ -134,6 +134,9 @@ app.use('/api/profile-approval', require('./routes/profileApproval'));
 app.use('/api/requests', require('./routes/requests'));
 app.use('/api/admin', require('./routes/admin'));
 
+// Logo endpoint (serve static logo files)
+app.use('/api/logo', require('./routes/logo'));
+
 // Cross-Microservice Exchange Protocol
 app.use('/api/exchange', require('./routes/exchange'));
 

@@ -81,9 +81,6 @@ function App() {
           {/* Company Profile */}
           <Route path={ROUTES.COMPANY_PROFILE} element={<CompanyProfile />} />
           
-          {/* Super Admin Profile */}
-          <Route path={ROUTES.ADMIN_DASHBOARD} element={<SuperAdminProfile />} />
-          
           {/* Company Registration Routes */}
           <Route path={ROUTES.COMPANY_REGISTER_STEP1} element={
             <Layout>
