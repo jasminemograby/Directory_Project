@@ -36,9 +36,9 @@ const generateValueProposition = async (employeeId, currentRole, targetRole) => 
 3. The value they bring and their career trajectory within the company
 
 Employee Information:
-- Name: ${employee.name || 'Employee'}
-- Current Role: ${currentRole}
-- Target Role: ${targetRole}
+- Name: ${name || 'Employee'}
+- Current Role: ${current_role}
+- Target Role: ${target_role}
 
 Generate a value proposition that:
 - Is professional and concise
@@ -87,7 +87,7 @@ const getValueProposition = async (employeeId) => {
       return null;
     }
 
-    const { current_role, target_role } = employeeResult.rows[0];
+    const { current_role, target_role, name } = employeeResult.rows[0];
 
     if (!current_role || !target_role) {
       console.warn(`[ValueProposition] Missing current_role or target_role for employee: ${employeeId}`);
