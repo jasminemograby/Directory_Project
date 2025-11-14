@@ -365,9 +365,15 @@ const registerCompanyStep4 = async (req, res, next) => {
                 ]
               );
             } catch (insertError) {
-              // If error is about current_role column not existing, try without it
-              if (insertError.message && insertError.message.includes('current_role')) {
-                console.log(`[Step4] current_role column not found, using role only for ${emp.email}`);
+              // If error is about current_role column (syntax error or column not found), try without it
+              const errorMessage = insertError.message || '';
+              const errorCode = insertError.code || '';
+              const isCurrentRoleError = 
+                errorMessage.includes('current_role') || 
+                (errorCode === '42601' && errorMessage.includes('syntax error'));
+              
+              if (isCurrentRoleError) {
+                console.log(`[Step4] current_role column error detected (${errorCode}), using role only for ${emp.email}`);
                 // Fallback: use role only (for databases without current_role column yet)
                 empResult = await client.query(
                   `INSERT INTO employees (
@@ -607,9 +613,15 @@ const registerCompanyStep4 = async (req, res, next) => {
                 ]
               );
             } catch (insertError) {
-              // If error is about current_role column not existing, try without it
-              if (insertError.message && insertError.message.includes('current_role')) {
-                console.log(`[Step4] current_role column not found, using role only for HR`);
+              // If error is about current_role column (syntax error or column not found), try without it
+              const errorMessage = insertError.message || '';
+              const errorCode = insertError.code || '';
+              const isCurrentRoleError = 
+                errorMessage.includes('current_role') || 
+                (errorCode === '42601' && errorMessage.includes('syntax error'));
+              
+              if (isCurrentRoleError) {
+                console.log(`[Step4] current_role column error detected (${errorCode}), using role only for HR`);
                 // Fallback: use role only
                 hrEmployeeResult = await client.query(
                   `INSERT INTO employees (
