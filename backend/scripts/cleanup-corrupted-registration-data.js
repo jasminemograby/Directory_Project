@@ -78,17 +78,36 @@ const cleanupCorruptedData = async () => {
   try {
     console.log('🔍 Starting cleanup of corrupted registration data...\n');
 
-    // 1. Find and remove specific corrupted employee
-    const corruptedEmail = 'yasmin_hitfield@hotmail.com';
+    // 1. Find and remove ALL employees from the corrupted company
     const corruptedCompanyId = '274f0a5a-8930-4060-a3da-e6553baeab85';
+    const corruptedEmail = 'yasmin_hitfield@hotmail.com'; // Specific email to check first
 
-    console.log(`📋 Step 1: Checking for employee with email: ${corruptedEmail}`);
-    const employeeCheck = await queryWithRetry(
+    console.log(`📋 Step 1: Checking for ALL employees from corrupted company: ${corruptedCompanyId}`);
+    
+    // First check the specific email
+    console.log(`   Checking for specific employee: ${corruptedEmail}`);
+    const specificEmployeeCheck = await queryWithRetry(
       `SELECT id, name, email, company_id, created_at 
        FROM employees 
        WHERE LOWER(TRIM(email)) = $1`,
       [corruptedEmail.toLowerCase()]
     );
+
+    // Then get ALL employees from the corrupted company
+    const allEmployeesCheck = await queryWithRetry(
+      `SELECT id, name, email, company_id, created_at 
+       FROM employees 
+       WHERE company_id = $1`,
+      [corruptedCompanyId]
+    );
+
+    console.log(`   Found ${allEmployeesCheck.rows.length} total employee(s) in corrupted company:`);
+    allEmployeesCheck.rows.forEach(emp => {
+      console.log(`   - ID: ${emp.id}, Name: ${emp.name}, Email: ${emp.email}, Created: ${emp.created_at}`);
+    });
+
+    // Use all employees from the corrupted company
+    const employeeCheck = allEmployeesCheck;
 
     if (employeeCheck.rows.length > 0) {
       console.log(`   Found ${employeeCheck.rows.length} employee(s) with this email:`);
@@ -236,10 +255,29 @@ const cleanupCorruptedData = async () => {
       console.log(`   ℹ️  No stale pending companies found`);
     }
 
-    // 4. Summary
+    // 4. Optionally delete the corrupted company itself (if it has no employees left)
+    if (employeeCheck.rows.length > 0 && deleteResult.rows.length > 0) {
+      console.log(`\n📋 Step 4: Checking if corrupted company should be deleted...`);
+      const remainingEmployees = await queryWithRetry(
+        `SELECT COUNT(*) as count FROM employees WHERE company_id = $1`,
+        [corruptedCompanyId]
+      );
+      const remainingCount = parseInt(remainingEmployees.rows[0].count, 10);
+      
+      if (remainingCount === 0) {
+        console.log(`   Company ${corruptedCompanyId} has no employees left.`);
+        console.log(`   ℹ️  You can manually delete this company if needed, or leave it for future use.`);
+      } else {
+        console.log(`   ⚠️  Company ${corruptedCompanyId} still has ${remainingCount} employee(s) - not deleting company`);
+      }
+    }
+
+    // 5. Summary
     console.log(`\n✅ Cleanup completed successfully!`);
     console.log(`\n📊 Summary:`);
-    console.log(`   - Checked for corrupted employee: ${corruptedEmail}`);
+    console.log(`   - Checked for corrupted company: ${corruptedCompanyId}`);
+    console.log(`   - Found and processed ${employeeCheck.rows.length} employee(s) from corrupted company`);
+    console.log(`   - Deleted ${deleteResult?.rows?.length || 0} employee(s)`);
     console.log(`   - Checked for orphaned employees`);
     console.log(`   - Checked for stale pending companies`);
 
