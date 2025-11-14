@@ -10,6 +10,7 @@ import { ROUTES, USER_ROLES } from './utils/constants';
 import Error404 from './pages/Error404';
 import Error403 from './pages/Error403';
 import Error500 from './pages/Error500';
+import Login from './pages/Login';
 import HRLanding from './pages/HRLanding';
 import HRDashboard from './pages/HRDashboard';
 import EmployeeProfile from './pages/EmployeeProfile';
@@ -31,14 +32,6 @@ const Home = () => (
   </Layout>
 );
 
-const Login = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="text-center">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Login Page</h1>
-      <p className="text-gray-600">Login functionality coming soon</p>
-    </div>
-  </div>
-);
 
 function App() {
   return (
