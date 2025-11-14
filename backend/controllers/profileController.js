@@ -60,7 +60,7 @@ const getEmployeeProfile = async (req, res) => {
           companyId: employee.company_id
         },
         career: {
-          currentRole: employee.current_role,
+          currentRole: employee.current_role || employee.role,
           targetRole: employee.target_role,
           valueProposition: valueProposition,
           relevanceScore: relevanceScore

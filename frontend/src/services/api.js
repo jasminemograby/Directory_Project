@@ -127,6 +127,14 @@ export const apiService = {
   getProcessedData: (employeeId) => api.get(`/external/processed/${employeeId}`),
   getConnectionStatus: (employeeId) => api.get(`/external/status/${employeeId}`),
   disconnectProvider: (employeeId, provider) => api.delete(`/external/disconnect/${employeeId}/${provider}`),
+
+  // Profile endpoints
+  getEmployeeProfile: (employeeId) => api.get(`/profile/employee/${employeeId}`),
+  getValueProposition: (employeeId) => api.get(`/profile/employee/${employeeId}/value-proposition`),
+  getCompletedCourses: (employeeId) => api.get(`/profile/employee/${employeeId}/courses/completed`),
+  getTaughtCourses: (trainerId) => api.get(`/profile/trainer/${trainerId}/courses/taught`),
+  getAssignedCourses: (employeeId) => api.get(`/profile/employee/${employeeId}/courses/assigned`),
+  getLearningCourses: (employeeId) => api.get(`/profile/employee/${employeeId}/courses/learning`),
   
   // Notifications endpoints
   getNotifications: (userEmail, params = {}) => 
