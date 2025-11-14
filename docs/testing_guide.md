@@ -14,7 +14,42 @@
 
 ## הכנה לבדיקה
 
-### 1. בדיקת סביבת הפיתוח
+### 🚀 בדיקה בענן (מומלץ - Production Environment)
+
+**הגרסה בענן היא הגרסה האמיתית שכל המשתמשים רואים!**
+
+#### URLs של המערכת בענן:
+- **Frontend (Vercel):** `https://directory-project-bice.vercel.app`
+- **Backend (Railway):** `https://directory-project-production.up.railway.app` (או URL שלך)
+- **Database (Supabase):** נגיש דרך Supabase Dashboard
+
+#### איך לבדוק בענן:
+1. **פתח את האפליקציה:** `https://directory-project-bice.vercel.app`
+2. **בדוק שהכל עובד:**
+   - רישום חברה
+   - התחברות
+   - פרופילים
+   - בקשות
+3. **בדוק את ה-Console בדפדפן (F12)** לשגיאות
+4. **בדוק את ה-Network tab** לראות קריאות API
+
+#### יתרונות בדיקה בענן:
+- ✅ זה הגרסה האמיתית שהמשתמשים רואים
+- ✅ כל השינויים כבר מועלים (GitHub → Vercel/Railway)
+- ✅ בדיקת סביבת Production האמיתית
+- ✅ בדיקת CORS, Environment Variables, וכל ההגדרות
+
+#### חסרונות:
+- ⚠️ כל שינוי דורש commit + push + deploy
+- ⚠️ קשה יותר לדבג (צריך לבדוק logs ב-Railway/Vercel)
+
+---
+
+### 💻 בדיקה מקומית (Development)
+
+**בדיקה מקומית טובה לפיתוח מהיר, אבל לא מייצגת את הגרסה הסופית!**
+
+#### איך להריץ מקומית:
 
 ```bash
 # Backend
@@ -28,14 +63,30 @@ npm install
 npm start  # או npm run dev
 ```
 
-### 2. בדיקת חיבור למסד הנתונים
+#### יתרונות בדיקה מקומית:
+- ✅ שינויים מיידיים (hot reload)
+- ✅ קל לדבג (console logs, breakpoints)
+- ✅ לא משפיע על Production
 
-```bash
-# בדוק שהמסד הנתונים פעיל
-# בדוק את ה-.env files
-# Backend: backend/.env
-# Frontend: frontend/.env
-```
+#### חסרונות:
+- ⚠️ לא מייצג את הגרסה הסופית
+- ⚠️ Environment Variables שונים
+- ⚠️ CORS יכול להיות שונה
+
+---
+
+### 📋 המלצה: בדוק בענן!
+
+**למה?**
+1. זה מה שהמשתמשים רואים
+2. כל השינויים כבר מועלים
+3. בדיקת סביבת Production האמיתית
+4. בדיקת כל ההגדרות (CORS, Environment Variables, וכו')
+
+**מתי להשתמש בבדיקה מקומית?**
+- רק כשאתה מפתח תכונה חדשה
+- כשאתה צריך לדבג בעיות ספציפיות
+- כשאתה רוצה לבדוק שינויים לפני commit
 
 ### 3. הכנת נתוני בדיקה
 
@@ -50,7 +101,7 @@ npm start  # או npm run dev
 ### תרחיש 1: רישום חברה → התחברות HR → אישור פרופילים
 
 **שלבים:**
-1. פתח את האפליקציה: `http://localhost:3000` (או URL של Vercel)
+1. פתח את האפליקציה: `https://directory-project-bice.vercel.app` (או URL של Vercel שלך)
 2. לחץ על "Register Your Company"
 3. מלא את פרטי החברה:
    - שם חברה
@@ -480,30 +531,42 @@ npm start  # או npm run dev
 ### בדיקה 1: Health Check
 
 ```bash
-# Backend Health Check
-curl http://localhost:5000/health
+# Backend Health Check (Production - Railway)
+curl https://directory-project-production.up.railway.app/health
+
+# או אם יש לך URL אחר:
+curl https://YOUR-RAILWAY-URL/health
 
 # Expected: {"status":"ok","timestamp":"..."}
 ```
+
+**או בדוק בדפדפן:**
+- פתח: `https://directory-project-production.up.railway.app/health`
+- צריך לראות: `{"status":"ok","timestamp":"..."}`
 
 ---
 
 ### בדיקה 2: Get Employee Profile
 
 ```bash
-# Get employee profile
+# Get employee profile (Production - Railway)
 curl -H "Authorization: Bearer {token}" \
-  http://localhost:5000/api/profile/employee/{employee-id}
+  https://directory-project-production.up.railway.app/api/profile/employee/{employee-id}
 
 # Expected: Full employee profile with all sections
 ```
+
+**או בדוק דרך Frontend:**
+- התחבר כ-Employee
+- עבור ל-`/profile`
+- בדוק שהפרופיל נטען
 
 ---
 
 ### בדיקה 3: Create Training Request
 
 ```bash
-# Create training request
+# Create training request (Production - Railway)
 curl -X POST \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
@@ -513,29 +576,40 @@ curl -X POST \
     "reason": "Need to learn JavaScript",
     "target_date": "2024-12-31"
   }' \
-  http://localhost:5000/api/requests/training/{employee-id}
+  https://directory-project-production.up.railway.app/api/requests/training/{employee-id}
 
 # Expected: Request created with status "pending"
 ```
+
+**או בדוק דרך Frontend:**
+- התחבר כ-Employee
+- עבור ל-`/profile`
+- לחץ על "Request Training"
+- מלא פרטים ושלח
 
 ---
 
 ### בדיקה 4: Get Pending Requests (HR)
 
 ```bash
-# Get pending requests
+# Get pending requests (Production - Railway)
 curl -H "Authorization: Bearer {hr-token}" \
-  http://localhost:5000/api/requests/pending
+  https://directory-project-production.up.railway.app/api/requests/pending
 
 # Expected: List of all pending requests
 ```
+
+**או בדוק דרך Frontend:**
+- התחבר כ-HR
+- עבור ל-HR Dashboard
+- בדוק את סעיף "Pending Requests"
 
 ---
 
 ### בדיקה 5: Approve Request
 
 ```bash
-# Approve training request
+# Approve training request (Production - Railway)
 curl -X PUT \
   -H "Authorization: Bearer {hr-token}" \
   -H "Content-Type: application/json" \
@@ -543,10 +617,16 @@ curl -X PUT \
     "status": "approved",
     "notes": "Approved for training"
   }' \
-  http://localhost:5000/api/requests/training/{request-id}
+  https://directory-project-production.up.railway.app/api/requests/training/{request-id}
 
 # Expected: Request status updated to "approved"
 ```
+
+**או בדוק דרך Frontend:**
+- התחבר כ-HR
+- עבור ל-HR Dashboard
+- לחץ על בקשה → "Approve"
+- בדוק שהסטטוס מתעדכן
 
 ---
 
