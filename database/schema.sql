@@ -60,13 +60,19 @@ CREATE TABLE IF NOT EXISTS employees (
 );
 
 -- Add foreign key for decision_maker_id (only if not exists)
+-- Use ON DELETE SET NULL to allow cleanup of corrupted data
 DO $$ 
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint WHERE conname = 'fk_decision_maker'
     ) THEN
         ALTER TABLE companies ADD CONSTRAINT fk_decision_maker 
-            FOREIGN KEY (decision_maker_id) REFERENCES employees(id);
+            FOREIGN KEY (decision_maker_id) REFERENCES employees(id) ON DELETE SET NULL;
+    ELSE
+        -- If constraint exists, drop and recreate with ON DELETE SET NULL
+        ALTER TABLE companies DROP CONSTRAINT IF EXISTS fk_decision_maker;
+        ALTER TABLE companies ADD CONSTRAINT fk_decision_maker 
+            FOREIGN KEY (decision_maker_id) REFERENCES employees(id) ON DELETE SET NULL;
     END IF;
 END $$;
 

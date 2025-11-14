@@ -96,7 +96,70 @@ const cleanupCorruptedData = async () => {
         console.log(`   - ID: ${emp.id}, Name: ${emp.name}, Company: ${emp.company_id}, Created: ${emp.created_at}`);
       });
 
-      // Remove employees from the corrupted company
+      // First, check if this employee is a decision_maker for any company
+      // If so, we need to remove that reference first
+      console.log(`   Checking for foreign key constraints...`);
+      const decisionMakerCheck = await queryWithRetry(
+        `SELECT id, name, decision_maker_id 
+         FROM companies 
+         WHERE decision_maker_id IN (
+           SELECT id FROM employees 
+           WHERE LOWER(TRIM(email)) = $1 AND company_id = $2
+         )`,
+        [corruptedEmail.toLowerCase(), corruptedCompanyId]
+      );
+
+      if (decisionMakerCheck.rows.length > 0) {
+        console.log(`   ⚠️  Found ${decisionMakerCheck.rows.length} company/companies using this employee as decision_maker`);
+        for (const comp of decisionMakerCheck.rows) {
+          console.log(`   - Company: ${comp.name} (ID: ${comp.id})`);
+          // Remove decision_maker reference
+          await queryWithRetry(
+            `UPDATE companies SET decision_maker_id = NULL WHERE id = $1`,
+            [comp.id]
+          );
+          console.log(`   ✅ Removed decision_maker reference from company ${comp.id}`);
+        }
+      }
+
+      // Also check if employee is a department or team manager
+      const managerCheck = await queryWithRetry(
+        `SELECT 'department' as type, id, name, manager_id 
+         FROM departments 
+         WHERE manager_id IN (
+           SELECT id FROM employees 
+           WHERE LOWER(TRIM(email)) = $1 AND company_id = $2
+         )
+         UNION ALL
+         SELECT 'team' as type, id, name, manager_id 
+         FROM teams 
+         WHERE manager_id IN (
+           SELECT id FROM employees 
+           WHERE LOWER(TRIM(email)) = $1 AND company_id = $2
+         )`,
+        [corruptedEmail.toLowerCase(), corruptedCompanyId]
+      );
+
+      if (managerCheck.rows.length > 0) {
+        console.log(`   ⚠️  Found ${managerCheck.rows.length} department(s)/team(s) using this employee as manager`);
+        for (const mgr of managerCheck.rows) {
+          if (mgr.type === 'department') {
+            await queryWithRetry(
+              `UPDATE departments SET manager_id = NULL WHERE id = $1`,
+              [mgr.id]
+            );
+            console.log(`   ✅ Removed manager from department ${mgr.name} (ID: ${mgr.id})`);
+          } else {
+            await queryWithRetry(
+              `UPDATE teams SET manager_id = NULL WHERE id = $1`,
+              [mgr.id]
+            );
+            console.log(`   ✅ Removed manager from team ${mgr.name} (ID: ${mgr.id})`);
+          }
+        }
+      }
+
+      // Now safe to delete the employee
       const deleteResult = await queryWithRetry(
         `DELETE FROM employees 
          WHERE LOWER(TRIM(email)) = $1 
