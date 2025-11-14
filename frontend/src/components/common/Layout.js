@@ -88,7 +88,18 @@ const Layout = ({ children }) => {
                     <div className="flex items-center space-x-4">
                       {/* User Menu */}
                       <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                        <div style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: 'var(--radius-full)',
+                          background: 'var(--gradient-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontSize: '14px',
+                          fontWeight: 500
+                        }}>
                           {userEmail.charAt(0).toUpperCase()}
                         </div>
                         <span className="hidden md:block text-sm" style={{ color: 'var(--text-primary)' }}>{userEmail}</span>
