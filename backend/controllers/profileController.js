@@ -41,11 +41,12 @@ const getEmployeeProfile = async (req, res) => {
     // TODO: Replace with actual Skills Engine API call
     const competencies = null; // Will be fetched from Skills Engine
 
-    // Get courses
-    const [completedCourses, learningCourses, assignedCourses] = await Promise.all([
-      getCompletedCoursesFromDB(employeeId),
-      getLearningCoursesFromDB(employeeId),
-      getAssignedCoursesFromDB(employeeId)
+    // Get courses from external microservices
+    const [completedCourses, learningCourses, assignedCourses, taughtCourses] = await Promise.all([
+      getCompletedCoursesFromAPI(employeeId),
+      getLearningCoursesFromAPI(employeeId),
+      getAssignedCoursesFromAPI(employeeId),
+      getTaughtCoursesFromAPI(employeeId) // Only if employee is a trainer
     ]);
 
     res.json({
