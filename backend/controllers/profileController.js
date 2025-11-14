@@ -1,6 +1,9 @@
 // Profile Controller - Handles all profile-related requests
 const { query } = require('../config/database');
 const valuePropositionService = require('../services/valuePropositionService');
+const mockSkillsEngineService = require('../services/mockSkillsEngineService');
+const mockCourseBuilderService = require('../services/mockCourseBuilderService');
+const mockContentStudioService = require('../services/mockContentStudioService');
 const axios = require('axios'); // For external microservice calls
 
 /**
@@ -34,12 +37,18 @@ const getEmployeeProfile = async (req, res) => {
     }
 
     // Get relevance score from Skills Engine (mock for now)
-    // TODO: Replace with actual Skills Engine API call
-    const relevanceScore = null; // Will be fetched from Skills Engine
+    const relevanceScoreData = await mockSkillsEngineService.getRelevanceScore(
+      employeeId,
+      employee.current_role,
+      employee.target_role
+    );
+    const relevanceScore = relevanceScoreData?.score || null;
 
     // Get competencies/skills from Skills Engine (mock for now)
-    // TODO: Replace with actual Skills Engine API call
-    const competencies = null; // Will be fetched from Skills Engine
+    const competencies = await mockSkillsEngineService.getNormalizedSkills(
+      employeeId,
+      employee.type
+    );
 
     // Get courses from external microservices
     const [completedCourses, learningCourses, assignedCourses, taughtCourses] = await Promise.all([
@@ -460,7 +469,8 @@ const getLearningCoursesFromAPI = async (employeeId) => {
   const COURSE_BUILDER_URL = process.env.COURSE_BUILDER_URL;
   
   if (!COURSE_BUILDER_URL) {
-    return [];
+    console.warn('[ProfileController] COURSE_BUILDER_URL not configured, using mock data');
+    return await mockCourseBuilderService.getLearningCourses(employeeId);
   }
 
   try {
@@ -469,15 +479,29 @@ const getLearningCoursesFromAPI = async (employeeId) => {
     });
     return response.data.courses || [];
   } catch (error) {
-    console.warn('[ProfileController] Course Builder API not available for learning courses');
-    return [];
+    console.warn('[ProfileController] Course Builder API not available, using mock data fallback');
+    return await mockCourseBuilderService.getLearningCourses(employeeId);
   }
 };
 
 const getAssignedCoursesFromAPI = async (employeeId) => {
-  // This will be implemented when company profile functionality is complete
-  // For now, return empty array
-  return [];
+  // Get from Course Builder
+  const COURSE_BUILDER_URL = process.env.COURSE_BUILDER_URL;
+  
+  if (!COURSE_BUILDER_URL) {
+    console.warn('[ProfileController] COURSE_BUILDER_URL not configured, using mock data');
+    return await mockCourseBuilderService.getAssignedCourses(employeeId);
+  }
+
+  try {
+    const response = await axios.get(`${COURSE_BUILDER_URL}/api/courses/assigned/${employeeId}`, {
+      timeout: 5000
+    });
+    return response.data.courses || [];
+  } catch (error) {
+    console.warn('[ProfileController] Course Builder API not available, using mock data fallback');
+    return await mockCourseBuilderService.getAssignedCourses(employeeId);
+  }
 };
 
 const getTaughtCoursesFromAPI = async (employeeId) => {
@@ -487,7 +511,7 @@ const getTaughtCoursesFromAPI = async (employeeId) => {
   
   // Check if employee is a trainer
   const employeeResult = await query(
-    `SELECT type FROM employees WHERE id = $1`,
+    `SELECT type, name FROM employees WHERE id = $1`,
     [employeeId]
   );
 
@@ -498,8 +522,13 @@ const getTaughtCoursesFromAPI = async (employeeId) => {
   }
 
   if (!CONTENT_STUDIO_URL) {
-    console.warn('[ProfileController] CONTENT_STUDIO_URL not configured');
-    return [];
+    console.warn('[ProfileController] CONTENT_STUDIO_URL not configured, using mock data');
+    const mockCourses = await mockContentStudioService.getTaughtCourses(employeeId);
+    // Update trainer_name with actual name
+    return mockCourses.map(course => ({
+      ...course,
+      trainer_name: employeeResult.rows[0].name
+    }));
   }
 
   try {
@@ -508,8 +537,13 @@ const getTaughtCoursesFromAPI = async (employeeId) => {
     });
     return response.data.courses || [];
   } catch (error) {
-    console.warn('[ProfileController] Content Studio API not available, using fallback');
-    return [];
+    console.warn('[ProfileController] Content Studio API not available, using mock data fallback');
+    const mockCourses = await mockContentStudioService.getTaughtCourses(employeeId);
+    // Update trainer_name with actual name
+    return mockCourses.map(course => ({
+      ...course,
+      trainer_name: employeeResult.rows[0].name
+    }));
   }
 };
 
