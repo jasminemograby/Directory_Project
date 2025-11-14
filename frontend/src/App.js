@@ -41,13 +41,9 @@ function App() {
         <Router>
           <Routes>
           {/* Public Routes */}
-          <Route path={ROUTES.HOME} element={<Home />} />
+          <Route path={ROUTES.HOME} element={<HRLanding />} />
           <Route path={ROUTES.LOGIN} element={<Login />} />
-          <Route path={ROUTES.HR_LANDING} element={
-            <Layout>
-              <HRLanding />
-            </Layout>
-          } />
+          <Route path={ROUTES.HR_LANDING} element={<HRLanding />} />
           
           {/* HR Dashboard */}
           <Route path={ROUTES.HR_DASHBOARD} element={

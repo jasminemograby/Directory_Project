@@ -1,157 +1,390 @@
-// HR Landing Page
+// HR Landing Page - Redesigned
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
+import Header from '../components/common/Header';
 import { ROUTES } from '../utils/constants';
 
 const HRLanding = () => {
   const navigate = useNavigate();
 
   return (
-    <div>
-      {/* Hero Section */}
-      <div className="bg-gradient-primary text-white py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Welcome to Directory
-          </h1>
-          <p className="text-xl mb-8 text-gray-100">
-            Central hub for managing your company's employees, training, and learning paths
-          </p>
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={() => navigate(ROUTES.COMPANY_REGISTER_STEP1)}
-            className="bg-white text-primary-cyan hover:bg-gray-100"
-          >
-            Register Your Company
-          </Button>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-body)' }}>
+      {/* Single Header with Logo, Theme Toggle, and Home */}
+      <div style={{ position: 'relative', zIndex: 10 }}>
+        <Header />
+        <div style={{ 
+          height: '64px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '0 24px',
+          borderBottom: '1px solid var(--border-default)',
+          backgroundColor: 'var(--bg-card)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <button
+              onClick={() => navigate(ROUTES.HOME)}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 'var(--radius-md)',
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text-primary)',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: 500,
+                transition: 'all var(--transition-fast) var(--transition-ease)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--bg-section)';
+                e.currentTarget.style.color = 'var(--primary-base)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }}
+            >
+              Home
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Benefits Section */}
-      <div className="py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+      {/* Welcome Section */}
+      <section style={{
+        padding: '80px 24px',
+        background: 'var(--gradient-primary)',
+        color: 'var(--text-inverse)',
+        textAlign: 'center'
+      }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h1 style={{
+            fontSize: '48px',
+            fontWeight: 700,
+            lineHeight: '1.2',
+            marginBottom: '24px',
+            letterSpacing: '-0.02em'
+          }}>
+            Welcome to Directory
+          </h1>
+          <p style={{
+            fontSize: '20px',
+            lineHeight: '1.6',
+            marginBottom: '40px',
+            opacity: 0.95
+          }}>
+            Your central hub for managing employees, skills, training, and learning paths. 
+            Empower your team with AI-enhanced profiles and comprehensive learning analytics.
+          </p>
+        </div>
+      </section>
+
+      {/* Why Choose Directory Section */}
+      <section style={{
+        padding: '80px 24px',
+        backgroundColor: 'var(--bg-body)'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '36px',
+            fontWeight: 700,
+            textAlign: 'center',
+            marginBottom: '48px',
+            color: 'var(--text-primary)',
+            letterSpacing: '-0.02em'
+          }}>
             Why Choose Directory?
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="w-12 h-12 bg-primary-cyan rounded-lg flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '32px'
+          }}>
+            {/* Feature 1 */}
+            <div style={{
+              padding: '32px',
+              borderRadius: 'var(--radius-lg)',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-default)',
+              boxShadow: 'var(--shadow-md)',
+              transition: 'all var(--transition-normal) var(--transition-ease)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+            }}
+            >
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: 'var(--radius-lg)',
+                background: 'var(--gradient-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '24px'
+              }}>
+                <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'white' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Employee Management</h3>
-              <p className="text-gray-600">
-                Easily manage employee profiles, skills, and career paths in one central location.
+              <h3 style={{
+                fontSize: '24px',
+                fontWeight: 600,
+                marginBottom: '12px',
+                color: 'var(--text-primary)'
+              }}>
+                Employee Management
+              </h3>
+              <p style={{
+                fontSize: '16px',
+                lineHeight: '1.6',
+                color: 'var(--text-secondary)'
+              }}>
+                Easily manage employee profiles, skills, and career paths in one central location. 
+                AI-enhanced profiles provide deep insights into each team member's capabilities.
               </p>
             </div>
 
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="w-12 h-12 bg-primary-cyan rounded-lg flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Feature 2 */}
+            <div style={{
+              padding: '32px',
+              borderRadius: 'var(--radius-lg)',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-default)',
+              boxShadow: 'var(--shadow-md)',
+              transition: 'all var(--transition-normal) var(--transition-ease)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+            }}
+            >
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: 'var(--radius-lg)',
+                background: 'var(--gradient-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '24px'
+              }}>
+                <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'white' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Training Coordination</h3>
-              <p className="text-gray-600">
-                Coordinate training requests, manage instructors, and track learning progress.
+              <h3 style={{
+                fontSize: '24px',
+                fontWeight: 600,
+                marginBottom: '12px',
+                color: 'var(--text-primary)'
+              }}>
+                Training Coordination
+              </h3>
+              <p style={{
+                fontSize: '16px',
+                lineHeight: '1.6',
+                color: 'var(--text-secondary)'
+              }}>
+                Coordinate training requests, manage instructors, and track learning progress. 
+                Streamline your organization's learning and development initiatives.
               </p>
             </div>
 
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <div className="w-12 h-12 bg-primary-cyan rounded-lg flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Feature 3 */}
+            <div style={{
+              padding: '32px',
+              borderRadius: 'var(--radius-lg)',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-default)',
+              boxShadow: 'var(--shadow-md)',
+              transition: 'all var(--transition-normal) var(--transition-ease)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+            }}
+            >
+              <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: 'var(--radius-lg)',
+                background: 'var(--gradient-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '24px'
+              }}>
+                <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'white' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Learning Analytics</h3>
-              <p className="text-gray-600">
-                Track learning paths, skill development, and training effectiveness.
+              <h3 style={{
+                fontSize: '24px',
+                fontWeight: 600,
+                marginBottom: '12px',
+                color: 'var(--text-primary)'
+              }}>
+                Learning Analytics
+              </h3>
+              <p style={{
+                fontSize: '16px',
+                lineHeight: '1.6',
+                color: 'var(--text-secondary)'
+              }}>
+                Track learning paths, skill development, and training effectiveness. 
+                Make data-driven decisions to optimize your team's growth.
               </p>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Process Overview */}
-      <div className="bg-white py-16 px-4">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-            Registration Process
-          </h2>
-          <div className="space-y-6">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-primary-cyan text-white rounded-full flex items-center justify-center font-bold">
-                1
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Basic Information</h3>
-                <p className="text-gray-600">Provide company name, industry, and HR contact information.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-primary-cyan text-white rounded-full flex items-center justify-center font-bold">
-                2
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Domain Verification</h3>
-                <p className="text-gray-600">We verify your company domain to ensure legitimacy.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-primary-cyan text-white rounded-full flex items-center justify-center font-bold">
-                3
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Verification Result</h3>
-                <p className="text-gray-600">Review verification status and proceed to setup.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-primary-cyan text-white rounded-full flex items-center justify-center font-bold">
-                4
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Complete Setup</h3>
-                <p className="text-gray-600">Add employees, departments, teams, and configure settings.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
 
       {/* CTA Section */}
-      <div className="bg-primary-cyan text-white py-12 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
-          <p className="text-xl mb-8 text-gray-100">
+      <section style={{
+        padding: '80px 24px',
+        background: 'var(--gradient-primary)',
+        color: 'var(--text-inverse)',
+        textAlign: 'center'
+      }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '36px',
+            fontWeight: 700,
+            marginBottom: '16px',
+            letterSpacing: '-0.02em'
+          }}>
+            Ready to Get Started?
+          </h2>
+          <p style={{
+            fontSize: '20px',
+            lineHeight: '1.6',
+            marginBottom: '40px',
+            opacity: 0.95
+          }}>
             Register your company today and start managing your team's learning journey.
           </p>
-          <div className="flex gap-4 justify-center">
+          <div style={{
+            display: 'flex',
+            gap: '16px',
+            justifyContent: 'center',
+            flexWrap: 'wrap'
+          }}>
             <Button
               variant="secondary"
               size="lg"
               onClick={() => navigate(ROUTES.COMPANY_REGISTER_STEP1)}
-              className="bg-white text-primary-cyan hover:bg-gray-100"
+              style={{
+                backgroundColor: 'white',
+                color: 'var(--primary-base)',
+                minWidth: '200px'
+              }}
             >
-              Register Your Company
+              Register Your Company Now
             </Button>
             <Button
-              variant="tertiary"
+              variant="outline"
               size="lg"
               onClick={() => navigate(ROUTES.LOGIN)}
-              className="border-white text-white hover:bg-white hover:text-primary-cyan"
+              style={{
+                borderColor: 'white',
+                color: 'white',
+                minWidth: '200px'
+              }}
             >
               Already Registered? Login
             </Button>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Registration Process Overview */}
+      <section style={{
+        padding: '80px 24px',
+        backgroundColor: 'var(--bg-body)'
+      }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <h2 style={{
+            fontSize: '32px',
+            fontWeight: 700,
+            textAlign: 'center',
+            marginBottom: '48px',
+            color: 'var(--text-primary)',
+            letterSpacing: '-0.02em'
+          }}>
+            How It Works
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {[
+              { step: 1, title: 'Basic Information', desc: 'Provide company name, industry, and HR contact information.' },
+              { step: 2, title: 'Domain Verification', desc: 'We verify your company domain to ensure legitimacy.' },
+              { step: 3, title: 'Verification Result', desc: 'Review verification status and proceed to setup.' },
+              { step: 4, title: 'Complete Setup', desc: 'Add employees, departments, teams, and configure settings.' }
+            ].map((item) => (
+              <div key={item.step} style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '20px',
+                padding: '24px',
+                borderRadius: 'var(--radius-lg)',
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-default)'
+              }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-full)',
+                  background: 'var(--gradient-primary)',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: '18px',
+                  flexShrink: 0
+                }}>
+                  {item.step}
+                </div>
+                <div>
+                  <h3 style={{
+                    fontSize: '20px',
+                    fontWeight: 600,
+                    marginBottom: '8px',
+                    color: 'var(--text-primary)'
+                  }}>
+                    {item.title}
+                  </h3>
+                  <p style={{
+                    fontSize: '16px',
+                    lineHeight: '1.6',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    {item.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
 
 export default HRLanding;
-

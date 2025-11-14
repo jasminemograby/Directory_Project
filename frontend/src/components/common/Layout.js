@@ -8,38 +8,46 @@ import { authService } from '../../utils/auth';
 const Layout = ({ children }) => {
   const location = useLocation();
   
-  // Get user email from multiple sources (priority order):
-  // 1. Auth service (if logged in)
-  // 2. localStorage (from company registration)
-  // 3. Fallback for testing
+  // Get user email only if actually logged in
   const getUserEmail = () => {
+    // Check if user is actually authenticated
+    const token = authService.getToken();
+    if (!token) return null;
+    
     // Try auth service first
     const authEmail = authService.getUserEmail();
     if (authEmail) return authEmail;
     
-    // Try localStorage (from company registration)
+    // Try localStorage (from company registration) only if authenticated
     const storedHrEmail = localStorage.getItem('hrEmail');
     if (storedHrEmail) return storedHrEmail;
     
-    // Fallback for testing
-    return 'hr@example.com';
+    return null;
   };
   
   const userEmail = getUserEmail();
+  const isAuthenticated = !!userEmail;
 
+  // Don't show Layout navigation on landing page - it has its own header
+  const isLandingPage = location.pathname === ROUTES.HOME || location.pathname === ROUTES.HR_LANDING;
+  
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Global Header */}
-      <Header />
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>
+      {/* Global Header - only show if not landing page */}
+      {!isLandingPage && <Header />}
       
-      {/* Navigation Bar */}
-      <nav className="bg-white shadow-sm border-b border-gray-200 mt-16">
+      {/* Navigation Bar - only show if not landing page */}
+      {!isLandingPage && (
+      <nav className="shadow-sm border-b mt-16" style={{ 
+        backgroundColor: 'var(--bg-card)', 
+        borderColor: 'var(--border-default)' 
+      }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo / Brand */}
             <div className="flex items-center">
               <Link to={ROUTES.HOME} className="flex items-center space-x-2">
-                <span className="text-xl font-bold text-green-600">Directory</span>
+                <span className="text-xl font-bold" style={{ color: 'var(--primary-base)' }}>Directory</span>
               </Link>
             </div>
 
@@ -47,42 +55,53 @@ const Layout = ({ children }) => {
             <div className="hidden md:flex items-center space-x-4">
               <Link
                 to={ROUTES.HOME}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  location.pathname === ROUTES.HOME
-                    ? 'text-green-600 bg-green-50'
-                    : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
-                }`}
+                className="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                style={{
+                  color: location.pathname === ROUTES.HOME 
+                    ? 'var(--primary-base)' 
+                    : 'var(--text-primary)',
+                  backgroundColor: location.pathname === ROUTES.HOME 
+                    ? 'var(--bg-section)' 
+                    : 'transparent'
+                }}
               >
                 Home
               </Link>
               <Link
                 to={ROUTES.COMPANY_REGISTER_STEP1}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  location.pathname.startsWith('/company/register')
-                    ? 'text-green-600 bg-green-50'
-                    : 'text-gray-700 hover:text-green-600 hover:bg-gray-50'
-                }`}
+                className="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                style={{
+                  color: location.pathname.startsWith('/company/register')
+                    ? 'var(--primary-base)'
+                    : 'var(--text-primary)',
+                  backgroundColor: location.pathname.startsWith('/company/register')
+                    ? 'var(--bg-section)'
+                    : 'transparent'
+                }}
               >
                 Register Company
               </Link>
             </div>
 
-                  {/* Right Side - User */}
-                  <div className="flex items-center space-x-4">
-                    {/* User Menu (placeholder) */}
-                    <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                        {userEmail.charAt(0).toUpperCase()}
+                  {/* Right Side - User (only if authenticated) */}
+                  {isAuthenticated && (
+                    <div className="flex items-center space-x-4">
+                      {/* User Menu */}
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                          {userEmail.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="hidden md:block text-sm" style={{ color: 'var(--text-primary)' }}>{userEmail}</span>
                       </div>
-                      <span className="hidden md:block text-sm text-gray-700">{userEmail}</span>
                     </div>
-                  </div>
+                  )}
           </div>
         </div>
       </nav>
+      )}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className={isLandingPage ? '' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'}>
         {children}
       </main>
     </div>
