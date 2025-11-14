@@ -57,6 +57,103 @@ const registerCompanyStep4 = async (req, res, next) => {
 
     const { registrationId, employees, departments = [], learningPathPolicy, decisionMakerId = null, primaryKPI, exerciseLimit, passingGrade, maxAttempts } = req.body;
 
+    // ==========================================
+    // PRE-VALIDATION: Validate ALL data BEFORE any database writes
+    // ==========================================
+    console.log(`[Step4] Starting PRE-VALIDATION phase...`);
+
+    // Validate employees array
+    if (!employees || !Array.isArray(employees) || employees.length === 0) {
+      throw new Error('At least one employee is required');
+    }
+
+    // Normalize and validate all employee emails BEFORE transaction
+    const normalizedEmails = new Map();
+    const emailToEmployee = new Map();
+    
+    for (const emp of employees) {
+      if (!emp.email || !emp.email.trim()) {
+        throw new Error(`Employee ${emp.name || 'Unknown'} has invalid email`);
+      }
+      
+      const normalizedEmail = emp.email.trim().toLowerCase();
+      
+      // Check for duplicates in the same request
+      if (normalizedEmails.has(normalizedEmail)) {
+        throw new Error(`Duplicate email in request: ${emp.email}. Each employee must have a unique email.`);
+      }
+      normalizedEmails.set(normalizedEmail, true);
+      emailToEmployee.set(normalizedEmail, emp);
+    }
+
+    // Check ALL emails against database BEFORE starting transaction
+    // This prevents partial inserts if validation fails
+    console.log(`[Step4] Pre-validating ${normalizedEmails.size} employee email(s) against database...`);
+    const emailList = Array.from(normalizedEmails.keys());
+    
+    // Check for existing employees with these emails (case-insensitive)
+    const existingEmployeesCheck = await query(
+      `SELECT id, email, company_id, name 
+       FROM employees 
+       WHERE LOWER(TRIM(email)) = ANY($1::text[])`,
+      [emailList]
+    );
+
+    if (existingEmployeesCheck.rows.length > 0) {
+      const conflicts = existingEmployeesCheck.rows.map(emp => ({
+        email: emp.email,
+        companyId: emp.company_id,
+        name: emp.name
+      }));
+      
+      console.error(`[Step4] ❌ PRE-VALIDATION FAILED: Found existing employees:`, conflicts);
+      
+      // Build detailed error message
+      const conflictMessages = conflicts.map(c => 
+        `Email ${c.email} (${c.name}) already exists in company ${c.company_id}`
+      ).join('; ');
+      
+      throw new Error(`Cannot register: ${conflictMessages}. Please use different email addresses or remove existing employees first.`);
+    }
+
+    console.log(`[Step4] ✅ PRE-VALIDATION PASSED: All ${normalizedEmails.size} email(s) are unique`);
+
+    // Validate departments structure
+    if (departments && departments.length > 0) {
+      for (const dept of departments) {
+        if (!dept.name || !dept.name.trim()) {
+          throw new Error('Department name is required');
+        }
+        // Manager validation happens later (optional)
+      }
+    }
+
+    // Validate learning path policy
+    if (!learningPathPolicy) {
+      throw new Error('Learning path approval policy is required');
+    }
+
+    if (learningPathPolicy === 'manual' && !decisionMakerId) {
+      throw new Error('Decision maker is required for manual approval policy');
+    }
+
+    // Validate decision maker email exists in employees list (if manual)
+    if (learningPathPolicy === 'manual' && decisionMakerId) {
+      const decisionMakerEmail = typeof decisionMakerId === 'string' && !decisionMakerId.includes('@')
+        ? decisionMakerId // It's already an email
+        : decisionMakerId;
+      
+      const normalizedDecisionMakerEmail = decisionMakerEmail.trim().toLowerCase();
+      if (!normalizedEmails.has(normalizedDecisionMakerEmail)) {
+        throw new Error(`Decision maker email ${decisionMakerEmail} not found in employees list`);
+      }
+    }
+
+    console.log(`[Step4] ✅ All pre-validation checks passed. Starting transaction...`);
+
+    // ==========================================
+    // TRANSACTION: All database writes happen here
+    // ==========================================
     const result = await transaction(async (client) => {
       // Get company
       console.log(`[Step4] Looking for company with ID: ${registrationId}`);
@@ -206,8 +303,8 @@ const registerCompanyStep4 = async (req, res, next) => {
           continue; // Skip creating this employee - HR will be created separately
         }
 
-        // Check if employee with this email already exists (email is UNIQUE globally)
-        // Use case-insensitive comparison
+        // At this point, we've already validated emails in pre-validation phase
+        // But double-check within transaction for safety (race condition protection)
         const existingEmp = await client.query(
           `SELECT id, company_id, email FROM employees WHERE LOWER(TRIM(email)) = $1`,
           [normalizedEmail]
@@ -215,8 +312,11 @@ const registerCompanyStep4 = async (req, res, next) => {
 
         let employeeId;
         if (existingEmp.rows.length > 0) {
+          // This should NOT happen due to pre-validation, but handle it anyway
           const existingEmployee = existingEmp.rows[0];
-          // If employee exists in the same company, use existing ID
+          console.error(`[Step4] ⚠️  RACE CONDITION: Employee ${normalizedEmail} was created between pre-validation and transaction!`);
+          
+          // If employee exists in the same company, use existing ID (might be from previous failed attempt)
           if (existingEmployee.company_id === company.id) {
             employeeId = existingEmployee.id;
             employeeMap.set(normalizedEmail, employeeId);
@@ -226,6 +326,7 @@ const registerCompanyStep4 = async (req, res, next) => {
             // Continue to the manager update section below
           } else {
             // Employee exists in a different company - this is an error (email must be unique globally)
+            // This should have been caught in pre-validation, but throw anyway
             throw new Error(`Employee with email ${existingEmployee.email} already exists in another company (ID: ${existingEmployee.company_id}). Email must be unique across all companies.`);
           }
         } else {
@@ -269,38 +370,17 @@ const registerCompanyStep4 = async (req, res, next) => {
               message: insertError.message,
               detail: insertError.detail
             });
-            // If insert fails due to duplicate, check again (race condition)
+            // If insert fails due to duplicate, this means pre-validation missed it (race condition)
+            // Since we're in a transaction, we MUST rollback - don't try to recover
             if (insertError.code === '23505' && insertError.constraint === 'employees_email_key') {
-              try {
-                // Use case-insensitive comparison
-                const retryCheck = await client.query(
-                  `SELECT id, company_id, email FROM employees WHERE LOWER(TRIM(email)) = $1`,
-                  [normalizedEmail]
-                );
-                if (retryCheck.rows.length > 0) {
-                  const retryEmployee = retryCheck.rows[0];
-                  if (retryEmployee.company_id === company.id) {
-                    employeeId = retryEmployee.id;
-                    employeeMap.set(normalizedEmail, employeeId);
-                    console.log(`[Step4] Employee found after duplicate error: ${employeeId} (${retryEmployee.email})`);
-                    // Don't continue - we still need to update managers
-                  } else {
-                    throw new Error(`Employee with email ${retryEmployee.email} already exists in another company (ID: ${retryEmployee.company_id}). Email must be unique across all companies.`);
-                  }
-                } else {
-                  // This shouldn't happen, but if it does, re-throw the error
-                  console.error(`[Step4] Duplicate constraint error but employee not found: ${normalizedEmail}`);
-                  throw insertError;
-                }
-              } catch (retryError) {
-                // If retry query fails (transaction might be aborted), re-throw original error
-                if (retryError.message?.includes('aborted') || retryError.code === '25P02') {
-                  throw insertError; // Re-throw original error to trigger rollback
-                }
-                throw retryError;
-              }
+              console.error(`[Step4] ❌ CRITICAL: Duplicate email constraint violation for ${normalizedEmail}`);
+              console.error(`[Step4] This should have been caught in pre-validation. Transaction will rollback.`);
+              
+              // Re-throw to trigger transaction rollback
+              // DO NOT try to recover - the entire registration must fail
+              throw new Error(`Email ${emp.email} already exists in the database. This may be from a previous failed registration. Please use a different email or contact support to clean up corrupted data.`);
             } else {
-              // Not a duplicate email error, re-throw
+              // Not a duplicate email error, re-throw to trigger rollback
               throw insertError;
             }
           }
