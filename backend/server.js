@@ -134,6 +134,12 @@ app.use('/api/profile-approval', require('./routes/profileApproval'));
 app.use('/api/requests', require('./routes/requests'));
 app.use('/api/admin', require('./routes/admin'));
 
+// Cross-Microservice Exchange Protocol
+app.use('/api/exchange', require('./routes/exchange'));
+
+// Internal API endpoints (for other microservices)
+app.use('/api/internal', require('./routes/internal'));
+
 // 404 handler (must be after all routes)
 app.use(notFound);
 

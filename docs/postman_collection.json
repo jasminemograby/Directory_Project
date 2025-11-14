@@ -1,0 +1,245 @@
+{
+  "info": {
+    "name": "Directory Microservice - Cross-Microservice Exchange",
+    "description": "Postman collection for testing Directory microservice exchange protocol and internal endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "internal_api_secret",
+      "value": "your-secret-token-here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Exchange Protocol",
+      "item": [
+        {
+          "name": "POST /api/exchange - SkillsEngine Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requester_service\": \"SkillsEngine\",\n  \"payload\": \"{\\\"employee_id\\\":\\\"ae39378a-61bb-4b13-9cbd-d97991603598\\\",\\\"employee_type\\\":\\\"regular\\\",\\\"fields\\\":[\\\"competencies\\\",\\\"relevance_score\\\"]}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/exchange",
+              "host": ["{{base_url}}"],
+              "path": ["api", "exchange"]
+            },
+            "description": "Request skills data from Skills Engine via exchange protocol"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/exchange - CourseBuilder Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requester_service\": \"CourseBuilder\",\n  \"payload\": \"{\\\"learner_id\\\":\\\"ae39378a-61bb-4b13-9cbd-d97991603598\\\",\\\"fields\\\":[\\\"completed_courses\\\",\\\"learning_courses\\\"]}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/exchange",
+              "host": ["{{base_url}}"],
+              "path": ["api", "exchange"]
+            },
+            "description": "Request course data from Course Builder"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/exchange - Invalid Service",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requester_service\": \"UnauthorizedService\",\n  \"payload\": \"{\\\"test\\\":\\\"data\\\"}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/exchange",
+              "host": ["{{base_url}}"],
+              "path": ["api", "exchange"]
+            },
+            "description": "Test unauthorized service rejection"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Internal API",
+      "item": [
+        {
+          "name": "POST /api/internal/skills-engine/update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{internal_api_secret}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": \"ae39378a-61bb-4b13-9cbd-d97991603598\",\n  \"normalized_skills\": [\n    {\n      \"skill_name\": \"React\",\n      \"level\": \"intermediate\"\n    }\n  ],\n  \"verified_skills\": [\n    {\n      \"skill_name\": \"JavaScript\",\n      \"level\": \"advanced\"\n    }\n  ],\n  \"relevance_scores\": {\n    \"score\": 85,\n    \"maxScore\": 100\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/internal/skills-engine/update",
+              "host": ["{{base_url}}"],
+              "path": ["api", "internal", "skills-engine", "update"]
+            },
+            "description": "Receive skill updates from Skills Engine"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/internal/content-studio/update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{internal_api_secret}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_id\": \"course-123\",\n  \"course_name\": \"React Fundamentals\",\n  \"trainer_id\": \"ae39378a-61bb-4b13-9cbd-d97991603598\",\n  \"trainer_name\": \"John Trainer\",\n  \"status\": \"active\",\n  \"completed_for\": [\n    \"learner-id-1\",\n    \"learner-id-2\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/internal/content-studio/update",
+              "host": ["{{base_url}}"],
+              "path": ["api", "internal", "content-studio", "update"]
+            },
+            "description": "Receive course updates from Content Studio"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/internal/course-builder/feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{internal_api_secret}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_id\": \"course-123\",\n  \"course_name\": \"React Fundamentals\",\n  \"learner_id\": \"ae39378a-61bb-4b13-9cbd-d97991603598\",\n  \"feedback\": \"Great course! Learned a lot about React hooks.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/internal/course-builder/feedback",
+              "host": ["{{base_url}}"],
+              "path": ["api", "internal", "course-builder", "feedback"]
+            },
+            "description": "Receive course feedback from Course Builder"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/internal/* - Unauthorized",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid-token"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": \"test-id\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/internal/skills-engine/update",
+              "host": ["{{base_url}}"],
+              "path": ["api", "internal", "skills-engine", "update"]
+            },
+            "description": "Test unauthorized access rejection"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
+
