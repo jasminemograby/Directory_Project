@@ -1,5 +1,5 @@
 // Company Registration Step 2 - Verification Status
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../common/LoadingSpinner';
 import Button from '../common/Button';
@@ -13,35 +13,17 @@ const CompanyRegistrationVerification = () => {
   const [registrationId, setRegistrationId] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Get registration ID from localStorage
-    const regId = localStorage.getItem('companyRegistrationId');
-    if (!regId) {
-      navigate(ROUTES.COMPANY_REGISTER_STEP1);
-      return;
-    }
-    setRegistrationId(regId);
-    checkVerificationStatus(regId);
-    
-    // Poll for status updates every 10 seconds - but only if not already verified
-    const interval = setInterval(() => {
-      // Only poll if status is still verifying/pending
-      if (status === 'verifying' || status === 'pending') {
-        checkVerificationStatus(regId);
-      }
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [navigate, status]);
-
-  const checkVerificationStatus = async (regId) => {
+  const checkVerificationStatus = useCallback(async (regId) => {
     if (!regId) return;
     
     // Don't check again if already verified
-    if (status === 'verified') {
-      setLoading(false);
-      return;
-    }
+    setStatus((currentStatus) => {
+      if (currentStatus === 'verified') {
+        setLoading(false);
+        return currentStatus;
+      }
+      return currentStatus;
+    });
     
     setLoading(true);
     try {
@@ -56,11 +38,39 @@ const CompanyRegistrationVerification = () => {
       console.error('Status check error:', error);
       setLoading(false);
       // Only set error if not already verified
-      if (status !== 'verified') {
-        setStatus('error');
-      }
+      setStatus((currentStatus) => {
+        if (currentStatus !== 'verified') {
+          return 'error';
+        }
+        return currentStatus;
+      });
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Get registration ID from localStorage
+    const regId = localStorage.getItem('companyRegistrationId');
+    if (!regId) {
+      navigate(ROUTES.COMPANY_REGISTER_STEP1);
+      return;
+    }
+    setRegistrationId(regId);
+    checkVerificationStatus(regId);
+    
+    // Poll for status updates every 10 seconds - but only if not already verified
+    const interval = setInterval(() => {
+      // Check current status before polling
+      setStatus((currentStatus) => {
+        // Only poll if status is still verifying/pending
+        if (currentStatus === 'verifying' || currentStatus === 'pending') {
+          checkVerificationStatus(regId);
+        }
+        return currentStatus; // Return unchanged
+      });
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [navigate, checkVerificationStatus]);
 
   const handleEmailUpdate = async () => {
     if (!registrationId) return;
