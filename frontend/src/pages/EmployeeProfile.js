@@ -1,7 +1,6 @@
 // Employee Profile Page - Main profile page with Navigation Tabs
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Layout from '../components/common/Layout';
 import Header from '../components/common/Header';
 import EnhanceProfile from '../components/Profile/EnhanceProfile';
 import ProfileBasicInfoCard from '../components/Profile/ProfileBasicInfoCard';
@@ -177,56 +176,109 @@ const EmployeeProfile = () => {
 
   if (loading) {
     return (
-      <Layout>
-        <div className="flex justify-center items-center min-h-screen">
+      <>
+        <Header />
+        <div className="flex justify-center items-center min-h-screen pt-16">
           <LoadingSpinner />
         </div>
-      </Layout>
+      </>
     );
   }
 
   if (error) {
     return (
-      <Layout>
-        <div className="max-w-4xl mx-auto p-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6">My Profile</h1>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-yellow-800 mb-3">⚠️ Profile Setup Required</h2>
-            <p className="text-yellow-700 mb-4">{error}</p>
-            {!currentEmployeeId && (
-              <div className="mt-4 p-4 bg-white rounded border border-yellow-300">
-                <p className="text-sm text-gray-700 mb-2">To test the profile page, open your browser console and run:</p>
-                <code className="block p-2 bg-gray-100 rounded text-sm text-gray-800">
-                  localStorage.setItem('currentEmployeeId', 'your-employee-uuid-here')
-                </code>
-                <p className="text-xs text-gray-600 mt-2">Replace 'your-employee-uuid-here' with an actual employee ID from your database.</p>
-              </div>
-            )}
+      <>
+        <Header />
+        <div className={`min-h-screen pt-16 ${
+          theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
+        }`}>
+          <div className="max-w-4xl mx-auto p-6">
+            <h1 className={`text-3xl font-bold mb-6 ${
+              theme === 'day-mode' ? 'text-gray-800' : 'text-gray-200'
+            }`}>
+              My Profile
+            </h1>
+            <div className={`rounded-lg p-6 border ${
+              theme === 'day-mode' 
+                ? 'bg-yellow-50 border-yellow-200' 
+                : 'bg-yellow-900/20 border-yellow-800'
+            }`}>
+              <h2 className={`text-xl font-semibold mb-3 ${
+                theme === 'day-mode' ? 'text-yellow-800' : 'text-yellow-300'
+              }`}>
+                ⚠️ Profile Setup Required
+              </h2>
+              <p className={theme === 'day-mode' ? 'text-yellow-700' : 'text-yellow-400'}>
+                {error}
+              </p>
+              {!currentEmployeeId && (
+                <div className={`mt-4 p-4 rounded border ${
+                  theme === 'day-mode' 
+                    ? 'bg-white border-yellow-300' 
+                    : 'bg-slate-800 border-yellow-700'
+                }`}>
+                  <p className={`text-sm mb-2 ${
+                    theme === 'day-mode' ? 'text-gray-700' : 'text-gray-300'
+                  }`}>
+                    To test the profile page, open your browser console and run:
+                  </p>
+                  <code className={`block p-2 rounded text-sm ${
+                    theme === 'day-mode' 
+                      ? 'bg-gray-100 text-gray-800' 
+                      : 'bg-slate-700 text-gray-300'
+                  }`}>
+                    localStorage.setItem('currentEmployeeId', 'your-employee-uuid-here')
+                  </code>
+                  <p className={`text-xs mt-2 ${
+                    theme === 'day-mode' ? 'text-gray-600' : 'text-gray-400'
+                  }`}>
+                    Replace 'your-employee-uuid-here' with an actual employee ID from your database.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
+  // Tab navigation items
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'learning-path', label: 'Learning Path' },
+    { id: 'requests', label: 'Requests' },
+    { id: 'courses', label: 'Courses' },
+  ];
+
   return (
-    <Layout>
-      <div className="max-w-4xl mx-auto p-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">My Profile</h1>
+    <>
+      <Header />
+      <div className={`min-h-screen pt-16 ${
+        theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
+      }`}>
 
         {/* Mandatory Profile Enrichment Section */}
         {!isEnriched && (
-          <div className="mb-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <EnhanceProfile 
               employeeId={currentEmployeeId} 
               onEnrichmentComplete={handleEnrichmentComplete}
             />
             
             {/* Blocking Message */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
-              <p className="text-yellow-800 font-medium">
+            <div className={`rounded-lg p-4 mt-4 border ${
+              theme === 'day-mode' 
+                ? 'bg-yellow-50 border-yellow-200' 
+                : 'bg-yellow-900/20 border-yellow-800'
+            }`}>
+              <p className={theme === 'day-mode' ? 'text-yellow-800' : 'text-yellow-300'}>
                 ⚠️ Please connect your GitHub account to enrich your profile before continuing.
               </p>
-              <p className="text-yellow-700 text-sm mt-2">
+              <p className={`text-sm mt-2 ${
+                theme === 'day-mode' ? 'text-yellow-700' : 'text-yellow-400'
+              }`}>
                 GitHub connection is required to generate your skill profile and enable access to assessments and learning paths.
                 LinkedIn connection is optional but recommended for a more complete profile.
               </p>
@@ -234,202 +286,96 @@ const EmployeeProfile = () => {
           </div>
         )}
 
-        {/* Profile Content - Only show processed data (NOT raw data) */}
+        {/* Profile Content with Tabs */}
         {isEnriched && employee && (
-          <div className="space-y-6">
-            {/* Top Section - Name, Email, Actions */}
-            <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                    {employee.name || 'Employee Name'}
-                  </h1>
-                  <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
-                    {employee.email || 'email@example.com'}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => navigate(ROUTES.PROFILE_EDIT_ME)}
-                  >
-                    Edit Profile
-                  </Button>
-                  <Button
-                    variant="primary"
-                    onClick={() => navigate(ROUTES.EMPLOYEE_DASHBOARD)}
-                  >
-                    Dashboard
-                  </Button>
-                </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Left Sidebar - Basic Info Card */}
+              <div className="lg:col-span-1">
+                <ProfileBasicInfoCard 
+                  employee={employee}
+                  onEditClick={() => navigate(ROUTES.PROFILE_EDIT_ME)}
+                />
               </div>
 
-                  {/* External Data Icons - Only show if data exists */}
-                  {(processedData?.linkedin || processedData?.github) && (
-                    <div className="flex items-center gap-4 mt-4 pt-4 border-t" style={{ borderColor: 'var(--bg-secondary)' }}>
-                      <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>External Data:</span>
-                      <div className="flex gap-2">
-                        {/* LinkedIn - Only show if data exists */}
-                        {processedData?.linkedin && (
-                          <div 
-                            className="w-8 h-8 rounded flex items-center justify-center"
-                            style={{ backgroundColor: 'var(--bg-secondary)' }}
-                            title="LinkedIn data available"
-                          >
-                            <span className="text-xs">in</span>
-                          </div>
-                        )}
-                        {/* GitHub - Only show if data exists */}
-                        {processedData?.github && (
-                          <div 
-                            className="w-8 h-8 rounded flex items-center justify-center"
-                            style={{ backgroundColor: 'var(--bg-secondary)' }}
-                            title="GitHub data available"
-                          >
-                            <span className="text-xs">GH</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+              {/* Main Content Area */}
+              <div className="lg:col-span-3">
+                {/* Navigation Tabs */}
+                <div className={`rounded-t-lg border-b ${
+                  theme === 'day-mode' 
+                    ? 'bg-white border-gray-200' 
+                    : 'bg-slate-800 border-gray-700'
+                }`}>
+                  <div className="flex space-x-1 overflow-x-auto">
+                    {tabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-6 py-3 text-sm font-medium transition-all duration-300 border-b-2 ${
+                          activeTab === tab.id
+                            ? theme === 'day-mode'
+                              ? 'border-emerald-600 text-emerald-600'
+                              : 'border-emerald-400 text-emerald-400'
+                            : theme === 'day-mode'
+                              ? 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
+                              : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tab Content */}
+                <div className={`rounded-b-lg p-6 ${
+                  theme === 'day-mode' 
+                    ? 'bg-white border border-gray-200 border-t-0' 
+                    : 'bg-slate-800 border border-gray-700 border-t-0'
+                }`}>
+                  {activeTab === 'overview' && (
+                    <ProfileOverviewTab
+                      employee={employee}
+                      processedData={processedData}
+                      profileData={profileData}
+                    />
                   )}
+
+                  {activeTab === 'dashboard' && (
+                    <ProfileDashboardView employeeId={currentEmployeeId} />
+                  )}
+
+                  {activeTab === 'learning-path' && (
+                    <ProfileLearningPathView employeeId={currentEmployeeId} />
+                  )}
+
+                  {activeTab === 'requests' && (
+                    <RequestsSection employeeId={currentEmployeeId} />
+                  )}
+
+                  {activeTab === 'courses' && profileData && profileData.courses && (
+                    <ProfileCoursesTab
+                      assignedCourses={profileData.courses.assigned || []}
+                      learningCourses={profileData.courses.learning || []}
+                      completedCourses={profileData.courses.completed || []}
+                      taughtCourses={profileData.courses.taught || []}
+                    />
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* AI-Generated Bio (Processed Data) */}
-            {processedData?.bio && (
-              <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
-                <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Professional Bio</h2>
-                <p className="text-gray-700 leading-relaxed" style={{ color: 'var(--text-primary)' }}>{processedData.bio}</p>
-                {processedData.processedAt && (
-                  <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-                    Generated on {new Date(processedData.processedAt).toLocaleDateString()}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Projects (Processed Data) */}
-            {processedData?.projects && processedData.projects.length > 0 && (
-              <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
-                <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Projects</h2>
-                <div className="space-y-4">
-                  {processedData.projects.map((project) => (
-                    <div key={project.id} className="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
-                      <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{project.title}</h3>
-                      <p className="text-gray-600" style={{ color: 'var(--text-secondary)' }}>{project.summary}</p>
-                      {project.source && (
-                        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                          Source: {project.source}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Career Block */}
-            {profileData && profileData.career && (
-              <CareerBlock
-                currentRole={profileData.career.currentRole || profileData.career.current_role}
-                targetRole={profileData.career.targetRole || profileData.career.target_role}
-                valueProposition={profileData.career.valueProposition || profileData.career.value_proposition}
-                relevanceScore={profileData.career.relevanceScore || profileData.career.relevance_score}
+            {/* Show enrichment section even if enriched (for re-connection) */}
+            <div className="mt-6">
+              <EnhanceProfile 
+                employeeId={currentEmployeeId} 
+                onEnrichmentComplete={handleEnrichmentComplete}
               />
-            )}
-
-            {/* Skills Tree */}
-            {profileData && (
-              <SkillsTree
-                competencies={profileData.competencies || profileData.skills}
-                onVerifySkills={async () => {
-                  // TODO: Implement skill verification request to Skills Engine
-                  console.log('Requesting skill verification...');
-                  // POST to Skills Engine
-                  try {
-                    // await apiService.requestSkillVerification(currentEmployeeId);
-                    alert('Skill verification request submitted!');
-                  } catch (error) {
-                    console.error('Error requesting skill verification:', error);
-                    alert('Failed to submit skill verification request.');
-                  }
-                }}
-              />
-            )}
-
-            {/* Courses Section */}
-            {profileData && profileData.courses && (
-              <CoursesSection
-                assignedCourses={profileData.courses.assigned || []}
-                learningCourses={profileData.courses.learning || []}
-                completedCourses={profileData.courses.completed || []}
-                taughtCourses={profileData.courses.taught || []}
-              />
-            )}
-
-            {/* Show taught courses if employee is a trainer */}
-            {employee && (employee.type === 'internal_instructor' || employee.type === 'external_instructor') && profileData && profileData.courses && profileData.courses.taught && profileData.courses.taught.length > 0 && (
-              <div className="rounded-lg p-6" style={{ 
-                backgroundColor: 'var(--bg-card)', 
-                boxShadow: 'var(--shadow-card)', 
-                borderColor: 'var(--bg-secondary)', 
-                borderWidth: '1px', 
-                borderStyle: 'solid' 
-              }}>
-                <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Courses Taught</h2>
-                <div className="space-y-2">
-                  {profileData.courses.taught.map((course, idx) => (
-                    <div 
-                      key={course.course_id || idx}
-                      className="p-4 rounded border"
-                      style={{ 
-                        backgroundColor: 'var(--bg-secondary)',
-                        borderColor: course.status === 'archived' ? 'var(--text-muted)' : 'var(--accent-orange)'
-                      }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                          {course.course_name || course.name}
-                        </p>
-                        <span className="px-2 py-1 text-xs rounded capitalize" style={{ 
-                          backgroundColor: course.status === 'archived' ? 'var(--text-muted)' : 'var(--accent-orange)', 
-                          color: 'white' 
-                        }}>
-                          {course.status || 'Active'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Requests Section */}
-            {employee && currentEmployeeId && (
-              <RequestsSection employeeId={currentEmployeeId} />
-            )}
-
-            {/* Message if no processed data yet */}
-            {!processedData?.bio && !processedData?.projects?.length && !processedData?.skills?.length && (
-              <div className="rounded-lg p-6 border border-yellow-200" style={{ backgroundColor: '#fef3c7' }}>
-                <p className="text-yellow-800">
-                  Profile enrichment in progress. Your bio, projects, and skills will appear here once processing is complete.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Show enrichment section even if enriched (for re-connection) */}
-        {isEnriched && (
-          <div className="mt-6">
-            <EnhanceProfile 
-              employeeId={currentEmployeeId} 
-              onEnrichmentComplete={handleEnrichmentComplete}
-            />
+            </div>
           </div>
         )}
       </div>
-    </Layout>
+    </>
   );
 };
 
