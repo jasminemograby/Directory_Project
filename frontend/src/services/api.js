@@ -135,10 +135,10 @@ export const apiService = {
   verifySkills: (data) => api.post('/skills/verify', data),
   updateSkills: (employeeId, data) => api.put(`/skills/${employeeId}`, data),
   
-  // Request endpoints
+  // Request endpoints (alternative naming)
   createLearningRequest: (data) => api.post('/requests/learning', data),
   getLearningRequests: (params) => api.get('/requests/learning', { params }),
-  createExtraAttemptRequest: (data) => api.post('/requests/extra-attempts', data),
+  createExtraAttemptRequestAlt: (data) => api.post('/requests/extra-attempts', data),
   getExtraAttemptRequests: (params) => api.get('/requests/extra-attempts', { params }),
   approveRequest: (requestId, data) => api.post(`/requests/${requestId}/approve`, data),
   

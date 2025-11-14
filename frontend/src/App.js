@@ -2,10 +2,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ErrorBoundary from './components/common/ErrorBoundary';
-import ProtectedRoute from './components/common/ProtectedRoute';
 import Layout from './components/common/Layout';
 import { AppProvider } from './contexts/AppContext';
-import { ROUTES, USER_ROLES } from './utils/constants';
+import { ROUTES } from './utils/constants';
 
 // Pages
 import Error404 from './pages/Error404';

@@ -1,13 +1,10 @@
 // Basic Info Card - Sidebar component
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import Button from '../common/Button';
-import { ROUTES } from '../../utils/constants';
 
 const ProfileBasicInfoCard = ({ employee, onEditClick }) => {
   const { theme } = useApp();
-  const navigate = useNavigate();
 
   if (!employee) return null;
 

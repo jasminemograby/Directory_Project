@@ -26,16 +26,6 @@ const ProfileEdit = () => {
   // Get current employee ID (from URL or localStorage)
   const currentEmployeeId = employeeId || localStorage.getItem('currentEmployeeId');
 
-  useEffect(() => {
-    if (!currentEmployeeId) {
-      setError('Employee ID not found');
-      setLoading(false);
-      return;
-    }
-
-    fetchEmployeeData();
-  }, [currentEmployeeId]);
-
   const fetchEmployeeData = async () => {
     try {
       setLoading(true);
@@ -62,6 +52,17 @@ const ProfileEdit = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!currentEmployeeId) {
+      setError('Employee ID not found');
+      setLoading(false);
+      return;
+    }
+
+    fetchEmployeeData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEmployeeId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

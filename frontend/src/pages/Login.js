@@ -6,7 +6,7 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import { apiService } from '../services/api';
 import { authService } from '../utils/auth';
-import { ROUTES, USER_ROLES } from '../utils/constants';
+import { ROUTES } from '../utils/constants';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const Login = () => {
