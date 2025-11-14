@@ -1,5 +1,5 @@
 // Profile Enrichment Service - Processes raw external data through Gemini AI
-const { query } = require('../config/database');
+const { query, transaction } = require('../config/database');
 const geminiService = require('./geminiService');
 
 /**
@@ -97,6 +97,7 @@ const getProcessedData = async (employeeId) => {
 /**
  * Enrich employee profile with AI-generated bio and projects
  * Process flow: Raw data → Gemini AI → Processed data → Mark as processed
+ * Uses TRANSACTION to ensure atomicity - all operations succeed or all rollback
  * @param {string} employeeId - Employee UUID
  * @returns {Promise<Object>} Enriched profile data (bio and projects)
  */
@@ -104,7 +105,7 @@ const enrichProfile = async (employeeId) => {
   try {
     console.log(`[Enrichment] Starting profile enrichment for employee: ${employeeId}`);
 
-    // Step 1: Get raw external data (only unprocessed)
+    // Step 1: Get raw external data (only unprocessed) - OUTSIDE transaction (read-only)
     const rawData = await getRawExternalData(employeeId);
 
     // Check if we have any data to process
@@ -120,7 +121,7 @@ const enrichProfile = async (employeeId) => {
 
     console.log(`[Enrichment] Found raw data - LinkedIn: ${!!rawData.linkedin}, GitHub: ${!!rawData.github}`);
 
-    // Step 2: Send to Gemini API securely (with input validation and sanitization)
+    // Step 2: Send to Gemini API securely (with input validation and sanitization) - OUTSIDE transaction
     console.log(`[Enrichment] Sending data to Gemini API for processing...`);
     const [bio, projects] = await Promise.all([
       geminiService.generateBio(rawData),
@@ -129,67 +130,94 @@ const enrichProfile = async (employeeId) => {
 
     console.log(`[Enrichment] Gemini processing complete - Bio: ${!!bio}, Projects: ${projects?.length || 0}`);
 
-    // Step 3: Store processed data in external_data_processed table
-    if (bio) {
-      await query(
-        `INSERT INTO external_data_processed (employee_id, bio, processed_at, updated_at)
-         VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-         ON CONFLICT (employee_id) 
-         DO UPDATE SET bio = $2, updated_at = CURRENT_TIMESTAMP, processed_at = CURRENT_TIMESTAMP`,
-        [employeeId, bio]
-      );
-      console.log(`[Enrichment] Bio stored in external_data_processed`);
-    }
+    // Step 3-8: All database operations in TRANSACTION for atomicity
+    const result = await transaction(async (client) => {
+      // Step 3: Store processed data in external_data_processed table
+      if (bio) {
+        await client.query(
+          `INSERT INTO external_data_processed (employee_id, bio, processed_at, updated_at)
+           VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+           ON CONFLICT (employee_id) 
+           DO UPDATE SET bio = $2, updated_at = CURRENT_TIMESTAMP, processed_at = CURRENT_TIMESTAMP`,
+          [employeeId, bio]
+        );
+        console.log(`[Enrichment] Bio stored in external_data_processed`);
+      }
 
-    // Step 4: Store projects in projects table (cleaned and processed)
-    if (projects && projects.length > 0) {
-      // Delete existing projects from this enrichment source (to avoid duplicates)
-      await query(
-        `DELETE FROM projects WHERE employee_id = $1 AND source = 'gemini_ai'`,
-        [employeeId]
-      );
+      // Step 4: Store projects in projects table (cleaned and processed) - BATCH INSERT for efficiency
+      if (projects && projects.length > 0) {
+        // Delete existing projects from this enrichment source (to avoid duplicates)
+        await client.query(
+          `DELETE FROM projects WHERE employee_id = $1 AND source = 'gemini_ai'`,
+          [employeeId]
+        );
 
-      // Insert new processed projects
-      for (const project of projects) {
-        // Sanitize project data (remove any potentially unsafe content)
-        const cleanTitle = (project.title || '').trim().substring(0, 255);
-        const cleanSummary = (project.summary || '').trim().substring(0, 5000);
-        
-        if (cleanTitle) {
-          await query(
+        // Batch insert projects for efficiency (instead of loop)
+        const validProjects = projects
+          .map(p => ({
+            title: (p.title || '').trim().substring(0, 255),
+            summary: (p.summary || '').trim().substring(0, 5000)
+          }))
+          .filter(p => p.title); // Only include projects with valid titles
+
+        if (validProjects.length > 0) {
+          // Use batch insert with VALUES clause
+          const values = validProjects.map((_, i) => 
+            `($1, $${i * 2 + 2}, $${i * 2 + 3}, 'gemini_ai', CURRENT_TIMESTAMP)`
+          ).join(', ');
+          
+          const params = [
+            employeeId,
+            ...validProjects.flatMap(p => [p.title, p.summary])
+          ];
+
+          await client.query(
             `INSERT INTO projects (employee_id, title, summary, source, created_at)
-             VALUES ($1, $2, $3, 'gemini_ai', CURRENT_TIMESTAMP)`,
-            [employeeId, cleanTitle, cleanSummary]
+             VALUES ${values}`,
+            params
           );
+          console.log(`[Enrichment] ${validProjects.length} projects stored (batch insert)`);
         }
       }
-      console.log(`[Enrichment] ${projects.length} projects stored`);
-    }
 
-    // Step 5: Update employee profile with bio (for backward compatibility)
-    if (bio) {
-      await query(
-        `UPDATE employees 
-         SET bio = $1, updated_at = CURRENT_TIMESTAMP 
-         WHERE id = $2`,
-        [bio, employeeId]
-      );
-    }
+      // Step 5: Update employee profile with bio (for backward compatibility)
+      if (bio) {
+        await client.query(
+          `UPDATE employees 
+           SET bio = $1, updated_at = CURRENT_TIMESTAMP 
+           WHERE id = $2`,
+          [bio, employeeId]
+        );
+      }
 
-    // Step 6: Mark raw data as processed (processed = true) - ONLY if we got results
-    if (bio || (projects && projects.length > 0)) {
-      await query(
-        `UPDATE external_data_raw 
-         SET processed = true, updated_at = CURRENT_TIMESTAMP 
-         WHERE employee_id = $1 AND processed = false`,
-        [employeeId]
-      );
-      console.log(`[Enrichment] Raw data marked as processed`);
-    } else {
-      console.warn(`[Enrichment] ⚠️ No bio or projects generated - NOT marking as processed. Will retry next time.`);
-    }
+      // Step 6: Mark raw data as processed (processed = true) - ONLY if we got results
+      if (bio || (projects && projects.length > 0)) {
+        await client.query(
+          `UPDATE external_data_raw 
+           SET processed = true, updated_at = CURRENT_TIMESTAMP 
+           WHERE employee_id = $1 AND processed = false`,
+          [employeeId]
+        );
+        console.log(`[Enrichment] Raw data marked as processed`);
+      } else {
+        console.warn(`[Enrichment] ⚠️ No bio or projects generated - NOT marking as processed. Will retry next time.`);
+      }
 
-    // Step 7: Send data to Skills Engine for normalization (if we have data)
+      // Step 8: Auto-approve profile after successful enrichment
+      if (bio || (projects && projects.length > 0)) {
+        await client.query(
+          `UPDATE employees 
+           SET profile_status = 'approved', updated_at = CURRENT_TIMESTAMP 
+           WHERE id = $1 AND profile_status = 'pending'`,
+          [employeeId]
+        );
+        console.log(`[Enrichment] ✅ Profile auto-approved after enrichment`);
+      }
+
+      return { bio, projects };
+    });
+
+    // Step 7: Send data to Skills Engine for normalization (if we have data) - OUTSIDE transaction (external API)
     let skillsEngineResult = null;
     if (bio || (projects && projects.length > 0)) {
       try {
@@ -234,25 +262,9 @@ const enrichProfile = async (employeeId) => {
       }
     }
 
-    // Step 8: Auto-approve profile after successful enrichment
-    if (bio || (projects && projects.length > 0)) {
-      try {
-        await query(
-          `UPDATE employees 
-           SET profile_status = 'approved', updated_at = CURRENT_TIMESTAMP 
-           WHERE id = $1 AND profile_status = 'pending'`,
-          [employeeId]
-        );
-        console.log(`[Enrichment] ✅ Profile auto-approved after enrichment`);
-      } catch (error) {
-        console.error(`[Enrichment] ⚠️ Error auto-approving profile:`, error.message);
-        // Don't fail enrichment if approval update fails
-      }
-    }
-
     return {
-      bio: bio || null,
-      projects: projects || [],
+      bio: result.bio || null,
+      projects: result.projects || [],
       skills: skillsEngineResult?.normalized_skills || skillsEngineResult?.competencies || []
     };
   } catch (error) {
