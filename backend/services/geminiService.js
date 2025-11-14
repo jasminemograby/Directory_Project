@@ -6,8 +6,17 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 // v1 API has gemini-2.5-flash, but v1beta has more options
 const GEMINI_API_BASE = process.env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com/v1beta';
 // Use gemini-2.0-flash (confirmed working with v1beta API)
-// Alternative: gemini-2.5-flash, gemini-2.0-flash-lite, or gemini-pro-latest
+// CRITICAL: If you have GEMINI_MODEL in Railway Variables, remove it or set it to 'gemini-2.0-flash'
+// The old 'gemini-pro' model no longer exists and will cause 404 errors
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+
+// Log the actual model being used (for debugging)
+console.log(`[Gemini] Initialized with model: ${GEMINI_MODEL}, API base: ${GEMINI_API_BASE}`);
+if (process.env.GEMINI_MODEL) {
+  console.log(`[Gemini] ⚠️  Using GEMINI_MODEL from environment: ${process.env.GEMINI_MODEL}`);
+} else {
+  console.log(`[Gemini] Using default model: ${GEMINI_MODEL}`);
+}
 
 /**
  * Sanitize input data to prevent injection attacks
