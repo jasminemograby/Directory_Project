@@ -5,7 +5,8 @@ const mockSkillsEngineService = require('../services/mockSkillsEngineService');
 const mockCourseBuilderService = require('../services/mockCourseBuilderService');
 const mockContentStudioService = require('../services/mockContentStudioService');
 const profileVisibilityService = require('../services/profileVisibilityService');
-const axios = require('axios'); // For external microservice calls
+const { sendRequest } = require('../services/microserviceIntegrationService');
+const axios = require('axios'); // For external microservice calls (legacy - will be replaced)
 
 /**
  * Get complete employee profile with all sections
@@ -273,21 +274,45 @@ const getLearningCourses = async (req, res) => {
 // Helper functions - Fetch from external microservices with fallback
 const getCompletedCoursesFromAPI = async (employeeId) => {
   // Course Builder sends: feedback, course_id, course_name, learner_id
-  const COURSE_BUILDER_URL = process.env.COURSE_BUILDER_URL;
-  
-  if (!COURSE_BUILDER_URL) {
-    console.warn('[ProfileController] COURSE_BUILDER_URL not configured');
-    return [];
-  }
-
+  // Use microserviceIntegrationService with fallback to mock data
   try {
-    const response = await axios.get(`${COURSE_BUILDER_URL}/api/courses/completed/${employeeId}`, {
-      timeout: 5000
-    });
-    return response.data.courses || [];
+    const payload = {
+      learner_id: employeeId,
+      fields: ['completed_courses']
+    };
+    
+    const response = await sendRequest('CourseBuilder', payload);
+    
+    // Parse response payload
+    let courses = [];
+    if (response.payload) {
+      const parsedPayload = typeof response.payload === 'string' 
+        ? JSON.parse(response.payload) 
+        : response.payload;
+      
+      // Handle different response structures
+      if (Array.isArray(parsedPayload)) {
+        courses = parsedPayload;
+      } else if (parsedPayload.completed_courses && Array.isArray(parsedPayload.completed_courses)) {
+        courses = parsedPayload.completed_courses;
+      } else if (parsedPayload.courses && Array.isArray(parsedPayload.courses)) {
+        courses = parsedPayload.courses;
+      }
+    }
+    
+    // If using fallback, ensure courses have employee_id
+    if (response.source && response.source.includes('fallback')) {
+      courses = courses.map(course => ({
+        ...course,
+        learner_id: employeeId
+      }));
+    }
+    
+    return courses;
   } catch (error) {
-    console.warn('[ProfileController] Course Builder API not available, using fallback');
-    return [];
+    console.warn('[ProfileController] Error fetching completed courses, using mock data:', error.message);
+    // Fallback to mock service
+    return await mockCourseBuilderService.getCompletedCourses(employeeId);
   }
 };
 
@@ -480,40 +505,84 @@ const getDepartmentHierarchy = async (req, res) => {
 
 const getLearningCoursesFromAPI = async (employeeId) => {
   // Get from Course Builder or Learning Analytics
-  const COURSE_BUILDER_URL = process.env.COURSE_BUILDER_URL;
-  
-  if (!COURSE_BUILDER_URL) {
-    console.warn('[ProfileController] COURSE_BUILDER_URL not configured, using mock data');
-    return await mockCourseBuilderService.getLearningCourses(employeeId);
-  }
-
+  // Use microserviceIntegrationService with fallback to mock data
   try {
-    const response = await axios.get(`${COURSE_BUILDER_URL}/api/courses/learning/${employeeId}`, {
-      timeout: 5000
-    });
-    return response.data.courses || [];
+    const payload = {
+      learner_id: employeeId,
+      fields: ['learning_courses']
+    };
+    
+    const response = await sendRequest('CourseBuilder', payload);
+    
+    // Parse response payload
+    let courses = [];
+    if (response.payload) {
+      const parsedPayload = typeof response.payload === 'string' 
+        ? JSON.parse(response.payload) 
+        : response.payload;
+      
+      if (Array.isArray(parsedPayload)) {
+        courses = parsedPayload;
+      } else if (parsedPayload.learning_courses && Array.isArray(parsedPayload.learning_courses)) {
+        courses = parsedPayload.learning_courses;
+      } else if (parsedPayload.courses && Array.isArray(parsedPayload.courses)) {
+        courses = parsedPayload.courses;
+      }
+    }
+    
+    // If using fallback, ensure courses have employee_id
+    if (response.source && response.source.includes('fallback')) {
+      courses = courses.map(course => ({
+        ...course,
+        learner_id: employeeId
+      }));
+    }
+    
+    return courses;
   } catch (error) {
-    console.warn('[ProfileController] Course Builder API not available, using mock data fallback');
+    console.warn('[ProfileController] Error fetching learning courses, using mock data:', error.message);
     return await mockCourseBuilderService.getLearningCourses(employeeId);
   }
 };
 
 const getAssignedCoursesFromAPI = async (employeeId) => {
   // Get from Course Builder
-  const COURSE_BUILDER_URL = process.env.COURSE_BUILDER_URL;
-  
-  if (!COURSE_BUILDER_URL) {
-    console.warn('[ProfileController] COURSE_BUILDER_URL not configured, using mock data');
-    return await mockCourseBuilderService.getAssignedCourses(employeeId);
-  }
-
+  // Use microserviceIntegrationService with fallback to mock data
   try {
-    const response = await axios.get(`${COURSE_BUILDER_URL}/api/courses/assigned/${employeeId}`, {
-      timeout: 5000
-    });
-    return response.data.courses || [];
+    const payload = {
+      learner_id: employeeId,
+      fields: ['assigned_courses']
+    };
+    
+    const response = await sendRequest('CourseBuilder', payload);
+    
+    // Parse response payload
+    let courses = [];
+    if (response.payload) {
+      const parsedPayload = typeof response.payload === 'string' 
+        ? JSON.parse(response.payload) 
+        : response.payload;
+      
+      if (Array.isArray(parsedPayload)) {
+        courses = parsedPayload;
+      } else if (parsedPayload.assigned_courses && Array.isArray(parsedPayload.assigned_courses)) {
+        courses = parsedPayload.assigned_courses;
+      } else if (parsedPayload.courses && Array.isArray(parsedPayload.courses)) {
+        courses = parsedPayload.courses;
+      }
+    }
+    
+    // If using fallback, ensure courses have employee_id
+    if (response.source && response.source.includes('fallback')) {
+      courses = courses.map(course => ({
+        ...course,
+        learner_id: employeeId
+      }));
+    }
+    
+    return courses;
   } catch (error) {
-    console.warn('[ProfileController] Course Builder API not available, using mock data fallback');
+    console.warn('[ProfileController] Error fetching assigned courses, using mock data:', error.message);
     return await mockCourseBuilderService.getAssignedCourses(employeeId);
   }
 };
