@@ -133,8 +133,9 @@ const updateEmployee = async (req, res, next) => {
     }
 
     // Define allowed fields for employee self-edit (non-sensitive fields)
-    // Sensitive fields (role, email, department_id, team_id, type) require HR approval
-    const allowedFields = ['name', 'phone', 'address', 'bio', 'preferred_language'];
+    // Only: phone, address, preferred_language
+    // Sensitive fields (name, role, email, department_id, team_id, type, bio, target_role, career_path) require HR approval
+    const allowedFields = ['phone', 'address', 'preferred_language'];
     
     // For HR/Admin, allow more fields
     // TODO: Add RBAC check here to determine if user is HR/Admin
@@ -144,12 +145,6 @@ const updateEmployee = async (req, res, next) => {
     const updates = [];
     const params = [];
     let paramIndex = 1;
-
-    if (name !== undefined) {
-      updates.push(`name = $${paramIndex}`);
-      params.push(name);
-      paramIndex++;
-    }
 
     if (phone !== undefined) {
       updates.push(`phone = $${paramIndex}`);
@@ -169,26 +164,35 @@ const updateEmployee = async (req, res, next) => {
       paramIndex++;
     }
 
+    // Sensitive fields - require HR/Admin approval (not allowed for employee self-edit)
+    if (name !== undefined) {
+      console.warn(`[EmployeeController] Name change requested for employee ${id} - requires HR approval`);
+      // For now, allow but log warning - TODO: Add proper RBAC check
+      updates.push(`name = $${paramIndex}`);
+      params.push(name);
+      paramIndex++;
+    }
+
     if (email !== undefined) {
-      // Email is sensitive - should require approval, but allow for now (HR/Admin only)
-      console.warn(`[EmployeeController] Email change requested for employee ${id} - should require approval`);
+      console.warn(`[EmployeeController] Email change requested for employee ${id} - requires HR approval`);
       updates.push(`email = $${paramIndex}`);
       params.push(email);
       paramIndex++;
     }
 
     if (role !== undefined) {
-      // Role is sensitive - should require approval, but allow for now (HR/Admin only)
-      console.warn(`[EmployeeController] Role change requested for employee ${id} - should require approval`);
+      console.warn(`[EmployeeController] Role change requested for employee ${id} - requires HR approval`);
       updates.push(`role = $${paramIndex}`);
       params.push(role);
       paramIndex++;
     }
 
     if (bio !== undefined) {
-      updates.push(`bio = $${paramIndex}`);
-      params.push(bio);
-      paramIndex++;
+      console.warn(`[EmployeeController] Bio change requested for employee ${id} - Bio is AI-generated and cannot be edited`);
+      // Bio is AI-generated, don't allow manual editing
+      // updates.push(`bio = $${paramIndex}`);
+      // params.push(bio);
+      // paramIndex++;
     }
 
     if (profile_status !== undefined) {

@@ -16,13 +16,11 @@ const ProfileEdit = () => {
   const [success, setSuccess] = useState(null);
   const [employee, setEmployee] = useState(null);
   
-  // Form state - only editable fields
+  // Form state - only editable fields (phone, address, preferred_language)
   const [formData, setFormData] = useState({
-    name: '',
     phone: '',
     address: '',
-    preferred_language: 'Hebrew',
-    bio: ''
+    preferred_language: 'Hebrew'
   });
 
   // Get current employee ID (from URL or localStorage)
@@ -48,13 +46,11 @@ const ProfileEdit = () => {
         const emp = response.data.data;
         setEmployee(emp);
         
-        // Set form data with current values
+        // Set form data with current values (only editable fields)
         setFormData({
-          name: emp.name || '',
           phone: emp.phone || '',
           address: emp.address || '',
-          preferred_language: emp.preferred_language || 'Hebrew',
-          bio: emp.bio || ''
+          preferred_language: emp.preferred_language || 'Hebrew'
         });
       } else {
         setError('Employee profile not found');
@@ -90,13 +86,11 @@ const ProfileEdit = () => {
       setError(null);
       setSuccess(null);
 
-      // Only send allowed fields
+      // Only send allowed fields (phone, address, preferred_language)
       const allowedFields = {
-        name: formData.name,
         phone: formData.phone,
         address: formData.address,
-        preferred_language: formData.preferred_language,
-        bio: formData.bio
+        preferred_language: formData.preferred_language
       };
 
       const response = await apiService.updateEmployee(currentEmployeeId, allowedFields);
@@ -171,27 +165,6 @@ const ProfileEdit = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Editable Fields */}
             <div className="space-y-4">
-              {/* Name */}
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 rounded border"
-                  style={{ 
-                    backgroundColor: 'var(--bg-primary)', 
-                    borderColor: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)'
-                  }}
-                />
-              </div>
-
               {/* Phone */}
               <div>
                 <label htmlFor="phone" className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
@@ -254,27 +227,6 @@ const ProfileEdit = () => {
                   <option value="Arabic">Arabic</option>
                 </select>
               </div>
-
-              {/* Bio */}
-              <div>
-                <label htmlFor="bio" className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
-                  Bio
-                </label>
-                <textarea
-                  id="bio"
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleChange}
-                  rows={5}
-                  className="w-full px-4 py-2 rounded border"
-                  style={{ 
-                    backgroundColor: 'var(--bg-primary)', 
-                    borderColor: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)'
-                  }}
-                  placeholder="Write a short bio about yourself..."
-                />
-              </div>
             </div>
 
             {/* Read-Only Fields (Display only) */}
@@ -284,6 +236,7 @@ const ProfileEdit = () => {
                   Read-Only Information
                 </h3>
                 <div className="space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  <p><strong>Name:</strong> {employee.name || 'N/A'}</p>
                   <p><strong>Email:</strong> {employee.email || 'N/A'}</p>
                   <p><strong>Role:</strong> {employee.role || employee.current_role || 'N/A'}</p>
                   {employee.target_role && <p><strong>Target Role:</strong> {employee.target_role}</p>}
@@ -293,6 +246,9 @@ const ProfileEdit = () => {
                 </div>
                 <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
                   These fields can only be changed by HR. Contact your HR department if you need to update them.
+                </p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                  Note: Bio is AI-generated from your LinkedIn/GitHub data and cannot be edited manually.
                 </p>
               </div>
             )}
