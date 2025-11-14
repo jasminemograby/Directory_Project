@@ -3,6 +3,8 @@ const axios = require('axios');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+// Use gemini-1.5-pro or gemini-1.5-flash (gemini-pro is deprecated)
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
 /**
  * Sanitize input data to prevent injection attacks
@@ -243,7 +245,7 @@ Return the results as a JSON array of objects with "title" and "summary" fields.
 Return ONLY the JSON array, no additional text.`;
 
     const response = await axios.post(
-      `${GEMINI_API_BASE}/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      `${GEMINI_API_BASE}/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
       {
         contents: [{
           parts: [{
