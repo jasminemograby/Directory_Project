@@ -340,20 +340,10 @@ const registerCompanyStep4 = async (req, res, next) => {
           try {
             console.log(`[Step4] Creating employee: ${emp.email} for company ${company.id}`);
             // Use normalized email for insert
-            // Check if current_role column exists, if not use role only
-            const checkColumnResult = await client.query(
-              `SELECT column_name 
-               FROM information_schema.columns 
-               WHERE table_name = 'employees' 
-               AND column_name = 'current_role' 
-               AND table_schema = 'public'`
-            );
-            
-            const hasCurrentRoleColumn = checkColumnResult.rows.length > 0;
-            
+            // Try to insert with current_role first, fallback to role only if it fails
             let empResult;
-            if (hasCurrentRoleColumn) {
-              // Use both role and current_role columns
+            try {
+              // Try with current_role column
               empResult = await client.query(
                 `INSERT INTO employees (
                   company_id, name, email, role, current_role, target_role, type,
@@ -374,27 +364,34 @@ const registerCompanyStep4 = async (req, res, next) => {
                   'pending',
                 ]
               );
-            } else {
-              // Fallback: use role only (for databases without current_role column yet)
-              empResult = await client.query(
-                `INSERT INTO employees (
-                  company_id, name, email, role, target_role, type,
-                  department_id, team_id, profile_status, created_at, updated_at
-                )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                RETURNING id`,
-                [
-                  company.id,
-                  emp.name,
-                  normalizedEmail,
-                  emp.currentRole || null, // role field
-                  emp.targetRole || null,
-                  emp.type,
-                  departmentId,
-                  teamId,
-                  'pending',
-                ]
-              );
+            } catch (insertError) {
+              // If error is about current_role column not existing, try without it
+              if (insertError.message && insertError.message.includes('current_role')) {
+                console.log(`[Step4] current_role column not found, using role only for ${emp.email}`);
+                // Fallback: use role only (for databases without current_role column yet)
+                empResult = await client.query(
+                  `INSERT INTO employees (
+                    company_id, name, email, role, target_role, type,
+                    department_id, team_id, profile_status, created_at, updated_at
+                  )
+                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                  RETURNING id`,
+                  [
+                    company.id,
+                    emp.name,
+                    normalizedEmail,
+                    emp.currentRole || null, // role field
+                    emp.targetRole || null,
+                    emp.type,
+                    departmentId,
+                    teamId,
+                    'pending',
+                  ]
+                );
+              } else {
+                // Re-throw if it's a different error
+                throw insertError;
+              }
             }
             
             employeeId = empResult.rows[0].id;
@@ -585,19 +582,10 @@ const registerCompanyStep4 = async (req, res, next) => {
         if (!hrEmployeeId) {
           try {
             const hrEmailNormalized = hrSettings.hr_email.trim().toLowerCase();
-            // Check if current_role column exists
-            const checkHrColumnResult = await client.query(
-              `SELECT column_name 
-               FROM information_schema.columns 
-               WHERE table_name = 'employees' 
-               AND column_name = 'current_role' 
-               AND table_schema = 'public'`
-            );
-            
-            const hasHrCurrentRoleColumn = checkHrColumnResult.rows.length > 0;
-            
+            // Try to insert with current_role first, fallback to role only if it fails
             let hrEmployeeResult;
-            if (hasHrCurrentRoleColumn) {
+            try {
+              // Try with current_role column
               hrEmployeeResult = await client.query(
                 `INSERT INTO employees (
                   company_id, name, email, role, current_role, target_role, type,
@@ -618,27 +606,34 @@ const registerCompanyStep4 = async (req, res, next) => {
                   'pending',
                 ]
               );
-            } else {
-              // Fallback: use role only
-              hrEmployeeResult = await client.query(
-                `INSERT INTO employees (
-                  company_id, name, email, role, target_role, type,
-                  department_id, team_id, profile_status, created_at, updated_at
-                )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                RETURNING id`,
-                [
-                  company.id,
-                  hrSettings.hr_name || 'HR Manager',
-                  hrEmailNormalized,
-                  hrSettings.hr_role || 'HR Manager', // role field
-                  hrSettings.hr_role || 'HR Manager', // target_role same as current role
-                  'regular',
-                  null,
-                  null,
-                  'pending',
-                ]
-              );
+            } catch (insertError) {
+              // If error is about current_role column not existing, try without it
+              if (insertError.message && insertError.message.includes('current_role')) {
+                console.log(`[Step4] current_role column not found, using role only for HR`);
+                // Fallback: use role only
+                hrEmployeeResult = await client.query(
+                  `INSERT INTO employees (
+                    company_id, name, email, role, target_role, type,
+                    department_id, team_id, profile_status, created_at, updated_at
+                  )
+                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                  RETURNING id`,
+                  [
+                    company.id,
+                    hrSettings.hr_name || 'HR Manager',
+                    hrEmailNormalized,
+                    hrSettings.hr_role || 'HR Manager', // role field
+                    hrSettings.hr_role || 'HR Manager', // target_role same as current role
+                    'regular',
+                    null,
+                    null,
+                    'pending',
+                  ]
+                );
+              } else {
+                // Re-throw if it's a different error
+                throw insertError;
+              }
             }
 
             hrEmployeeId = hrEmployeeResult.rows[0].id;
