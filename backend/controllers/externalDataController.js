@@ -316,14 +316,21 @@ const collectAllData = async (req, res, next) => {
     let enrichmentResult = null;
     if (results.linkedin || results.github) {
       try {
+        console.log(`[Collect] Starting Gemini enrichment for employee: ${employeeId}`);
         const profileEnrichmentService = require('../services/profileEnrichmentService');
         enrichmentResult = await profileEnrichmentService.enrichProfile(employeeId);
-        console.log('[Collect] Profile enrichment completed');
+        console.log('[Collect] ✅ Profile enrichment completed:', {
+          hasBio: !!enrichmentResult.bio,
+          projectsCount: enrichmentResult.projects?.length || 0
+        });
       } catch (error) {
-        console.error('[Collect] Error enriching profile:', error.message);
+        console.error('[Collect] ❌ Error enriching profile:', error.message);
+        console.error('[Collect] Error stack:', error.stack);
         // Don't fail the entire request if enrichment fails
         enrichmentResult = { error: error.message };
       }
+    } else {
+      console.log('[Collect] ⚠️ No data to enrich (no LinkedIn or GitHub data fetched)');
     }
 
     res.json({

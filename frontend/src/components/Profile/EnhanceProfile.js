@@ -168,9 +168,20 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
     try {
       setLoading(true);
       setError(null);
+      console.log('[EnhanceProfile] Starting data collection for employee:', employeeId);
 
-      // Collect all external data
+      // Collect all external data (this also triggers Gemini enrichment)
       const response = await apiService.collectAllExternalData(employeeId);
+      console.log('[EnhanceProfile] Collect response:', {
+        success: response.data?.success,
+        hasLinkedIn: !!response.data?.data?.linkedin,
+        hasGitHub: !!response.data?.data?.github,
+        enrichment: response.data?.enrichment ? {
+          hasBio: !!response.data.enrichment.bio,
+          projectsCount: response.data.enrichment.projects?.length || 0,
+          error: response.data.enrichment.error
+        } : null
+      });
       
       if (response.data && response.data.data) {
         const { linkedin, github } = response.data.data;
@@ -185,24 +196,40 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
           setGithubData(github);
         }
 
-        // Show success message and trigger enrichment callback
-        if ((linkedin && !linkedin.error) || (github && !github.error)) {
-          setSuccessMessage('Profile enriched successfully! Your LinkedIn and GitHub data has been imported.');
-          setTimeout(() => setSuccessMessage(null), 5000);
-          
-          // Trigger enrichment complete callback if both are connected
-          if (linkedInStatus === 'connected' && githubStatus === 'connected' && onEnrichmentComplete) {
-            onEnrichmentComplete();
+        // Check enrichment result
+        const enrichment = response.data.enrichment;
+        if (enrichment) {
+          if (enrichment.error) {
+            console.error('[EnhanceProfile] Enrichment error:', enrichment.error);
+            setError(`Enrichment failed: ${enrichment.error}. Please try again.`);
+          } else {
+            console.log('[EnhanceProfile] Enrichment successful:', {
+              hasBio: !!enrichment.bio,
+              projectsCount: enrichment.projects?.length || 0
+            });
+            setSuccessMessage('Profile enriched successfully! Your data has been processed and is ready to view.');
+            setTimeout(() => setSuccessMessage(null), 5000);
           }
+        }
+
+        // Trigger enrichment complete callback if GitHub is connected (required)
+        if (githubStatus === 'connected' || (github && !github.error)) {
+          // Wait a bit for processed data to be available
+          setTimeout(() => {
+            if (onEnrichmentComplete) {
+              console.log('[EnhanceProfile] Triggering enrichment complete callback');
+              onEnrichmentComplete();
+            }
+          }, 2000);
         }
       }
     } catch (error) {
-      console.error('Error fetching external data:', error);
+      console.error('[EnhanceProfile] Error fetching external data:', error);
       setError('Failed to fetch profile data. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [employeeId]);
+  }, [employeeId, githubStatus, onEnrichmentComplete]);
 
   // Check URL params for OAuth callback success
   useEffect(() => {
