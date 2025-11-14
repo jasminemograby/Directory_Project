@@ -108,16 +108,12 @@ const cleanupCorruptedData = async () => {
 
     // Use all employees from the corrupted company
     const employeeCheck = allEmployeesCheck;
+    let deleteResult = { rows: [] }; // Initialize deleteResult to avoid undefined error
 
     if (employeeCheck.rows.length > 0) {
-      console.log(`   Found ${employeeCheck.rows.length} employee(s) with this email:`);
-      employeeCheck.rows.forEach(emp => {
-        console.log(`   - ID: ${emp.id}, Name: ${emp.name}, Company: ${emp.company_id}, Created: ${emp.created_at}`);
-      });
-
       // First, get the employee ID(s) we're about to delete
       const employeeIds = employeeCheck.rows.map(emp => emp.id);
-      console.log(`   Found employee ID(s) to delete: ${employeeIds.join(', ')}`);
+      console.log(`   Found ${employeeIds.length} employee ID(s) to delete: ${employeeIds.join(', ')}`);
 
       // Check if this employee is a decision_maker for any company
       // If so, we need to remove that reference first
@@ -175,7 +171,7 @@ const cleanupCorruptedData = async () => {
 
       // Now safe to delete the employee(s)
       // Use employee IDs directly for more reliable deletion
-      const deleteResult = await queryWithRetry(
+      deleteResult = await queryWithRetry(
         `DELETE FROM employees 
          WHERE id = ANY($1::uuid[])
          RETURNING id, name, email`,
@@ -188,10 +184,10 @@ const cleanupCorruptedData = async () => {
           console.log(`      - Deleted: ${emp.name} (${emp.email})`);
         });
       } else {
-        console.log(`   ⚠️  No employees found in the specified company`);
+        console.log(`   ⚠️  Failed to delete employees (may have been deleted already)`);
       }
     } else {
-      console.log(`   ℹ️  No employees found with email: ${corruptedEmail}`);
+      console.log(`   ℹ️  No employees found in corrupted company: ${corruptedCompanyId}`);
     }
 
     // 2. Find orphaned employees (employees without valid company)
