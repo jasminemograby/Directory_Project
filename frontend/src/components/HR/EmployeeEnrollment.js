@@ -1,7 +1,6 @@
 // Employee Enrollment Component - HR enrolls employees to learning paths
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../services/api';
-import { authService } from '../../utils/auth';
 import Button from '../common/Button';
 import LoadingSpinner from '../common/LoadingSpinner';
 
