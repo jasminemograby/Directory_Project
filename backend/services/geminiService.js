@@ -281,25 +281,36 @@ const identifyProjects = async (rawData) => {
     const linkedInData = sanitizedData.linkedin?.profile || {};
     const githubRepos = sanitizedData.github?.repositories || [];
 
-    // Build context
+    // Build context - include all available data
     let context = '';
+    let hasAnyData = false;
     
-    if (linkedInData.positions?.values) {
+    if (linkedInData.positions?.values && linkedInData.positions.values.length > 0) {
       context += 'LinkedIn Positions:\n';
       linkedInData.positions.values.forEach(pos => {
         context += `- ${pos.title} at ${pos.companyName || 'Unknown'}: ${pos.description || 'No description'}\n`;
       });
+      hasAnyData = true;
     }
     
     if (githubRepos.length > 0) {
       context += '\nGitHub Repositories:\n';
       githubRepos.slice(0, 20).forEach(repo => {
-        context += `- ${repo.name}: ${repo.description || 'No description'} (${repo.language || 'Unknown language'})\n`;
+        context += `- ${repo.name}: ${repo.description || 'No description'} (${repo.language || 'Unknown language'}, ${repo.stargazers_count || 0} stars, ${repo.forks_count || 0} forks)\n`;
       });
+      hasAnyData = true;
     }
 
-    if (!context.trim()) {
-      console.warn('No data available for project identification');
+    // Log what we're sending to Gemini
+    console.log(`[Gemini] Context for project identification:`, {
+      hasLinkedIn: !!rawData.linkedin,
+      hasGitHub: !!rawData.github,
+      reposCount: githubRepos.length,
+      contextLength: context.length
+    });
+
+    if (!hasAnyData && !context.trim()) {
+      console.warn('[Gemini] No data available for project identification');
       return [];
     }
 
