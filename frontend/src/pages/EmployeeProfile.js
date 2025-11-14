@@ -164,15 +164,27 @@ const EmployeeProfile = () => {
     if (enrichmentCompleteCalled.current) return;
     enrichmentCompleteCalled.current = true;
     
-    setIsEnriched(true);
-    // Refresh employee data and processed data to show updated profile
+    console.log('[EmployeeProfile] Enrichment complete - refreshing profile data...');
+    
+    // Wait a moment for backend to complete processing
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Refresh employee data to get updated profile status
     await fetchEmployeeData();
+    
+    // Check enrichment status again
+    await checkEnrichmentStatus();
+    
+    // Mark as enriched - this will hide EnhanceProfile and show full profile
+    setIsEnriched(true);
+    
+    console.log('[EmployeeProfile] ✅ Profile enriched - showing complete profile');
     
     // Reset after a delay to allow re-triggering if needed
     setTimeout(() => {
       enrichmentCompleteCalled.current = false;
     }, 5000);
-  }, [fetchEmployeeData]);
+  }, [fetchEmployeeData, checkEnrichmentStatus]);
 
   if (loading) {
     return (
