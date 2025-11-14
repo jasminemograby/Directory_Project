@@ -270,10 +270,10 @@ const collectAllData = async (req, res, next) => {
       });
     }
 
-    // Check which external links exist for this employee
-    const linksResult = await query(
-      `SELECT link_type, url FROM external_data_links 
-       WHERE employee_id = $1 AND link_type IN ('linkedin', 'github')`,
+    // Check which OAuth tokens exist for this employee (not external_data_links)
+    const tokensResult = await query(
+      `SELECT provider FROM oauth_tokens 
+       WHERE employee_id = $1 AND provider IN ('linkedin', 'github')`,
       [employeeId]
     );
 
@@ -282,26 +282,34 @@ const collectAllData = async (req, res, next) => {
       github: null
     };
 
-    // Fetch LinkedIn data if link exists
-    const linkedInLink = linksResult.rows.find(r => r.link_type === 'linkedin');
-    if (linkedInLink) {
+    // Fetch LinkedIn data if token exists
+    const hasLinkedInToken = tokensResult.rows.some(r => r.provider === 'linkedin');
+    if (hasLinkedInToken) {
       try {
+        console.log(`[Collect] Fetching LinkedIn data for employee: ${employeeId}`);
         results.linkedin = await linkedInService.fetchProfileData(employeeId);
+        console.log(`[Collect] LinkedIn data fetched successfully`);
       } catch (error) {
-        console.error('Error fetching LinkedIn data:', error.message);
+        console.error('[Collect] Error fetching LinkedIn data:', error.message);
         results.linkedin = { error: error.message };
       }
+    } else {
+      console.log(`[Collect] No LinkedIn token found for employee: ${employeeId}`);
     }
 
-    // Fetch GitHub data if link exists
-    const githubLink = linksResult.rows.find(r => r.link_type === 'github');
-    if (githubLink) {
+    // Fetch GitHub data if token exists
+    const hasGitHubToken = tokensResult.rows.some(r => r.provider === 'github');
+    if (hasGitHubToken) {
       try {
+        console.log(`[Collect] Fetching GitHub data for employee: ${employeeId}`);
         results.github = await githubService.fetchProfileData(employeeId);
+        console.log(`[Collect] GitHub data fetched successfully`);
       } catch (error) {
-        console.error('Error fetching GitHub data:', error.message);
+        console.error('[Collect] Error fetching GitHub data:', error.message);
         results.github = { error: error.message };
       }
+    } else {
+      console.log(`[Collect] No GitHub token found for employee: ${employeeId}`);
     }
 
     // Process data through Gemini AI (enrichment)
