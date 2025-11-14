@@ -26,14 +26,6 @@ import CompanyRegistrationStep1 from './components/CompanyRegistration/CompanyRe
 import CompanyRegistrationVerification from './components/CompanyRegistration/CompanyRegistrationVerification';
 import CompanyRegistrationStep4 from './components/CompanyRegistration/CompanyRegistrationStep4';
 
-// Home page - merged with HR Landing
-const Home = () => (
-  <Layout>
-    <HRLanding />
-  </Layout>
-);
-
-
 function App() {
   return (
     <AppProvider>
