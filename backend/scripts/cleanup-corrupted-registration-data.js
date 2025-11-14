@@ -1,7 +1,72 @@
 // Script to clean up corrupted registration data
 // Run this to remove employees/companies created by failed registration attempts
-const { query } = require('../config/database');
+const { Pool } = require('pg');
 require('dotenv').config();
+
+// Create a dedicated connection pool for this script
+// Use direct connection instead of the shared pool for better reliability
+let connectionString;
+if (process.env.SUPABASE_URL) {
+  if (process.env.DATABASE_URL) {
+    connectionString = process.env.DATABASE_URL;
+  } else if (process.env.SUPABASE_CONNECTION_POOLER_URL) {
+    connectionString = process.env.SUPABASE_CONNECTION_POOLER_URL;
+  } else {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const projectRef = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1];
+    if (projectRef && process.env.SUPABASE_DB_PASSWORD) {
+      connectionString = `postgresql://postgres:${process.env.SUPABASE_DB_PASSWORD}@db.${projectRef}.supabase.co:5432/postgres`;
+    } else {
+      throw new Error('Missing database connection configuration');
+    }
+  }
+} else {
+  connectionString = process.env.DATABASE_URL;
+}
+
+if (!connectionString) {
+  throw new Error('No database connection string found. Please set DATABASE_URL or SUPABASE_URL + SUPABASE_DB_PASSWORD');
+}
+
+const pool = new Pool({
+  connectionString: connectionString,
+  ssl: process.env.SUPABASE_URL ? { rejectUnauthorized: false } : false,
+  max: 1, // Use single connection for script
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+});
+
+// Query helper with retry
+const queryWithRetry = async (text, params, maxRetries = 5) => {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const client = await pool.connect();
+      try {
+        const result = await client.query(text, params);
+        return result;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      const isConnectionError = 
+        error.code === 'ECONNREFUSED' || 
+        error.code === 'ETIMEDOUT' || 
+        error.code === 'ENOTFOUND' || 
+        error.code === 'ECONNRESET' ||
+        error.message?.includes('Connection terminated') ||
+        error.message?.includes('timeout');
+      
+      if (isConnectionError && attempt < maxRetries) {
+        const delay = (attempt + 1) * 2000; // 2s, 4s, 6s, etc.
+        console.log(`   ⚠️  Connection error (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      throw error;
+    }
+  }
+};
 
 /**
  * Clean up corrupted registration data
@@ -18,7 +83,7 @@ const cleanupCorruptedData = async () => {
     const corruptedCompanyId = '274f0a5a-8930-4060-a3da-e6553baeab85';
 
     console.log(`📋 Step 1: Checking for employee with email: ${corruptedEmail}`);
-    const employeeCheck = await query(
+    const employeeCheck = await queryWithRetry(
       `SELECT id, name, email, company_id, created_at 
        FROM employees 
        WHERE LOWER(TRIM(email)) = $1`,
@@ -32,7 +97,7 @@ const cleanupCorruptedData = async () => {
       });
 
       // Remove employees from the corrupted company
-      const deleteResult = await query(
+      const deleteResult = await queryWithRetry(
         `DELETE FROM employees 
          WHERE LOWER(TRIM(email)) = $1 
          AND company_id = $2
@@ -54,7 +119,7 @@ const cleanupCorruptedData = async () => {
 
     // 2. Find orphaned employees (employees without valid company)
     console.log(`\n📋 Step 2: Checking for orphaned employees...`);
-    const orphanedEmployees = await query(
+    const orphanedEmployees = await queryWithRetry(
       `SELECT e.id, e.name, e.email, e.company_id, e.created_at
        FROM employees e
        LEFT JOIN companies c ON e.company_id = c.id
@@ -67,7 +132,7 @@ const cleanupCorruptedData = async () => {
         console.log(`   - ID: ${emp.id}, Name: ${emp.name}, Email: ${emp.email}, Company ID: ${emp.company_id}`);
       });
 
-      const deleteOrphaned = await query(
+      const deleteOrphaned = await queryWithRetry(
         `DELETE FROM employees 
          WHERE company_id NOT IN (SELECT id FROM companies)
          RETURNING id, name, email`
@@ -82,7 +147,7 @@ const cleanupCorruptedData = async () => {
 
     // 3. Find companies with verification_status = 'pending' that are old (more than 24 hours)
     console.log(`\n📋 Step 3: Checking for stale pending companies...`);
-    const staleCompanies = await query(
+    const staleCompanies = await queryWithRetry(
       `SELECT id, name, domain, verification_status, created_at
        FROM companies
        WHERE verification_status = 'pending'
@@ -97,7 +162,7 @@ const cleanupCorruptedData = async () => {
 
       // Check if they have employees
       for (const comp of staleCompanies.rows) {
-        const employeesCount = await query(
+        const employeesCount = await queryWithRetry(
           `SELECT COUNT(*) as count FROM employees WHERE company_id = $1`,
           [comp.id]
         );
@@ -123,6 +188,10 @@ const cleanupCorruptedData = async () => {
   } catch (error) {
     console.error('❌ Error during cleanup:', error);
     throw error;
+  } finally {
+    // Close the connection pool
+    await pool.end();
+    console.log('\n🔌 Database connection closed');
   }
 };
 
