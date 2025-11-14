@@ -1,12 +1,14 @@
-// Company Profile Page - HR view with overview, KPIs, hierarchy, requests, employee list
+// Company Profile Page - HR/Company Creator view with company overview, hierarchy, employees, requests
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/common/Layout';
-import HierarchyTree from '../components/Profile/HierarchyTree';
 import Button from '../components/common/Button';
 import { apiService } from '../services/api';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { ROUTES } from '../utils/constants';
+import { authService } from '../utils/auth';
+import PendingProfilesApproval from '../components/HR/PendingProfilesApproval';
+import PendingRequestsApproval from '../components/HR/PendingRequestsApproval';
 
 const CompanyProfile = () => {
   const { companyId } = useParams();
@@ -14,343 +16,411 @@ const CompanyProfile = () => {
   const [company, setCompany] = useState(null);
   const [hierarchy, setHierarchy] = useState(null);
   const [employees, setEmployees] = useState([]);
-  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const currentCompanyId = companyId || localStorage.getItem('companyId');
+  const [expandedNodes, setExpandedNodes] = useState({});
 
   const fetchCompanyData = useCallback(async () => {
-    if (!currentCompanyId) {
-      setError('Please set a company ID.');
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
-      // Fetch company data
-      const companyResponse = await apiService.getCompany(currentCompanyId);
-      if (companyResponse.data && companyResponse.data.data) {
-        setCompany(companyResponse.data.data);
-      } else {
-        // Try fetching by HR email
-        const hrEmail = localStorage.getItem('hrEmail');
+      const id = companyId || localStorage.getItem('companyId');
+      if (!id) {
+        // Try to get from HR email
+        const hrEmail = authService.getUserEmail() || localStorage.getItem('hrEmail');
         if (hrEmail) {
-          const companyByEmailResponse = await apiService.getCompany(null, hrEmail);
-          if (companyByEmailResponse.data && companyByEmailResponse.data.data) {
-            setCompany(companyByEmailResponse.data.data);
+          const response = await apiService.getCompanyByHrEmail(hrEmail);
+          if (response.data && response.data.success) {
+            setCompany(response.data.data);
+            if (response.data.data.id) {
+              localStorage.setItem('companyId', response.data.data.id);
+            }
           }
+        } else {
+          setError('Company ID or HR email is required');
+          setLoading(false);
+          return;
         }
-      }
-
-      // Fetch company hierarchy
-      try {
-        const hierarchyResponse = await apiService.getCompanyHierarchy(currentCompanyId);
-        if (hierarchyResponse.data && hierarchyResponse.data.data) {
-          setHierarchy(hierarchyResponse.data.data.hierarchy);
-        }
-      } catch (hierarchyError) {
-        console.warn('Could not fetch company hierarchy:', hierarchyError.message);
-      }
-
-      // Fetch employees list
-      try {
-        const employeesResponse = await apiService.getEmployees({ company_id: currentCompanyId });
-        if (employeesResponse.data && employeesResponse.data.data) {
-          setEmployees(employeesResponse.data.data.employees || []);
-        }
-      } catch (employeesError) {
-        console.warn('Could not fetch employees:', employeesError.message);
-      }
-
-      // Fetch pending requests
-      try {
-        // TODO: Replace with actual API call
-        // const requestsResponse = await apiService.getCompanyRequests(currentCompanyId);
-        // setRequests(requestsResponse.data.data.requests || []);
-        setRequests([]); // Mock for now
-      } catch (requestsError) {
-        console.warn('Could not fetch requests:', requestsError.message);
-      }
-    } catch (error) {
-      console.error('Error fetching company data:', error);
-      if (error.response?.status === 404) {
-        setError('Company profile not found.');
       } else {
-        setError('Failed to load company profile. Please try again.');
+        const response = await apiService.getCompany(id);
+        if (response.data && response.data.success) {
+          setCompany(response.data.data);
+        } else {
+          setError(response.data?.error || 'Company not found');
+        }
+      }
+
+      // Fetch employees
+      if (company?.id || id) {
+        try {
+          const employeesResponse = await apiService.getEmployees({ companyId: company?.id || id });
+          if (employeesResponse.data && employeesResponse.data.success) {
+            setEmployees(employeesResponse.data.data || []);
+          }
+        } catch (empError) {
+          console.warn('Error fetching employees:', empError);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching company data:', err);
+      if (err.response?.status === 404) {
+        setError('Company not found. Please complete company registration first.');
+      } else {
+        setError(err.response?.data?.error || 'Failed to load company data');
       }
     } finally {
       setLoading(false);
     }
-  }, [currentCompanyId]);
+  }, [companyId, company?.id]);
 
   useEffect(() => {
     fetchCompanyData();
   }, [fetchCompanyData]);
 
+  const buildHierarchy = () => {
+    if (!company || !employees.length) return null;
+
+    const deptMap = new Map();
+    const teamMap = new Map();
+
+    // Group employees by department and team
+    employees.forEach(emp => {
+      if (emp.department_id) {
+        if (!deptMap.has(emp.department_id)) {
+          deptMap.set(emp.department_id, {
+            id: emp.department_id,
+            name: emp.department_name || 'Unknown Department',
+            teams: new Map(),
+            employees: []
+          });
+        }
+        const dept = deptMap.get(emp.department_id);
+
+        if (emp.team_id) {
+          if (!dept.teams.has(emp.team_id)) {
+            dept.teams.set(emp.team_id, {
+              id: emp.team_id,
+              name: emp.team_name || 'Unknown Team',
+              employees: []
+            });
+          }
+          dept.teams.get(emp.team_id).employees.push(emp);
+        } else {
+          dept.employees.push(emp);
+        }
+      } else {
+        // Employees without department
+        if (!deptMap.has('no-dept')) {
+          deptMap.set('no-dept', {
+            id: 'no-dept',
+            name: 'Unassigned',
+            teams: new Map(),
+            employees: []
+          });
+        }
+        deptMap.get('no-dept').employees.push(emp);
+      }
+    });
+
+    return {
+      id: company.id,
+      name: company.name,
+      type: 'Company',
+      departments: Array.from(deptMap.values()).map(dept => ({
+        ...dept,
+        teams: Array.from(dept.teams.values())
+      }))
+    };
+  };
+
+  const toggleNode = (nodeId) => {
+    setExpandedNodes(prev => ({
+      ...prev,
+      [nodeId]: !prev[nodeId]
+    }));
+  };
+
+  const handleViewEmployee = (employeeId) => {
+    navigate(`${ROUTES.PROFILE}/${employeeId}`);
+  };
+
   if (loading) {
     return (
       <Layout>
-        <div className="max-w-7xl mx-auto p-6">
+        <div className="flex items-center justify-center min-h-screen">
           <LoadingSpinner />
         </div>
       </Layout>
     );
   }
 
-  if (error || !company) {
+  if (error) {
     return (
       <Layout>
-        <div className="max-w-7xl mx-auto p-6">
-          <div className="rounded-lg p-6 border border-red-200" style={{ backgroundColor: '#fee2e2' }}>
-            <p className="text-red-800 font-medium">{error || 'Company profile not found.'}</p>
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="border border-red-300 rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)' }}>
+            <h2 className="text-xl font-semibold text-red-600 mb-2">Error</h2>
+            <p style={{ color: 'var(--text-secondary)' }}>{error}</p>
+            <Button
+              variant="primary"
+              onClick={() => navigate(ROUTES.HOME)}
+              className="mt-4"
+            >
+              Go to Home
+            </Button>
           </div>
         </div>
       </Layout>
     );
   }
 
+  const companyHierarchy = buildHierarchy();
+
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>Company Profile</h1>
-
-        {/* Overview Section */}
-        <div className="rounded-lg p-6 mb-6" style={{ 
-          backgroundColor: 'var(--bg-card)', 
-          boxShadow: 'var(--shadow-card)', 
-          borderColor: 'var(--bg-secondary)', 
-          borderWidth: '1px', 
-          borderStyle: 'solid' 
-        }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Company Overview</h2>
-            <Button
-              variant="primary"
-              onClick={() => navigate(ROUTES.HR_DASHBOARD)}
-            >
-              HR Dashboard
-            </Button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                {company?.name || 'Company Profile'}
+              </h1>
+              <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>
+                Company Management Dashboard
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="primary"
+                onClick={() => navigate(ROUTES.HR_DASHBOARD)}
+              >
+                HR Dashboard
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => navigate(ROUTES.HOME)}
+              >
+                Home
+              </Button>
+            </div>
           </div>
+        </div>
 
+        {/* Company Overview */}
+        <div className="mb-6 rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+          <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Company Overview</h2>
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Company Information</h3>
-              <div className="space-y-2">
-                <p style={{ color: 'var(--text-primary)' }}>
-                  <span className="font-medium" style={{ color: 'var(--text-accent)' }}>Name:</span> {company.name}
-                </p>
-                <p style={{ color: 'var(--text-primary)' }}>
-                  <span className="font-medium" style={{ color: 'var(--text-accent)' }}>Industry:</span> {company.industry || 'N/A'}
-                </p>
-                <p style={{ color: 'var(--text-primary)' }}>
-                  <span className="font-medium" style={{ color: 'var(--text-accent)' }}>Domain:</span> {company.domain || 'N/A'}
-                </p>
-                <p style={{ color: 'var(--text-primary)' }}>
-                  <span className="font-medium" style={{ color: 'var(--text-accent)' }}>Status:</span>
-                  <span className={`ml-2 px-2 py-1 rounded text-sm font-medium ${
-                    company.verification_status === 'verified' 
+              <div className="space-y-2 text-sm">
+                <p style={{ color: 'var(--text-primary)' }}><strong>Name:</strong> {company?.name}</p>
+                <p style={{ color: 'var(--text-primary)' }}><strong>Industry:</strong> {company?.industry || 'N/A'}</p>
+                <p style={{ color: 'var(--text-primary)' }}><strong>Domain:</strong> {company?.domain || 'N/A'}</p>
+                <p style={{ color: 'var(--text-primary)' }}><strong>Status:</strong> 
+                  <span className={`ml-2 px-2 py-1 rounded text-xs font-medium ${
+                    company?.verification_status === 'verified' 
                       ? 'bg-accent-green text-white' 
-                      : company.verification_status === 'pending'
+                      : company?.verification_status === 'pending'
                       ? 'bg-accent-orange text-white'
                       : 'bg-red-500 text-white'
                   }`}>
-                    {company.verification_status || 'pending'}
+                    {company?.verification_status || 'pending'}
                   </span>
                 </p>
               </div>
             </div>
-
             <div>
-              <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Primary KPIs</h3>
-              <div className="space-y-2">
-                {company.primary_kpi ? (
-                  <p style={{ color: 'var(--text-primary)' }}>{company.primary_kpi}</p>
-                ) : (
-                  <p style={{ color: 'var(--text-muted)' }}>No KPIs defined yet</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Statistics */}
-          <div className="grid md:grid-cols-3 gap-4 mt-6">
-            <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-              <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Departments</p>
-              <p className="text-2xl font-bold mt-2" style={{ color: 'var(--text-primary)' }}>
-                {company.statistics?.departments || 0}
-              </p>
-            </div>
-            <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-              <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Teams</p>
-              <p className="text-2xl font-bold mt-2" style={{ color: 'var(--text-primary)' }}>
-                {company.statistics?.teams || 0}
-              </p>
-            </div>
-            <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-              <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Employees</p>
-              <p className="text-2xl font-bold mt-2" style={{ color: 'var(--text-primary)' }}>
-                {company.statistics?.employees || employees.length || 0}
-              </p>
-            </div>
-          </div>
-
-          {/* Approval Mode */}
-          <div className="mt-6 pt-6 border-t" style={{ borderColor: 'var(--bg-secondary)' }}>
-            <p style={{ color: 'var(--text-primary)' }}>
-              <span className="font-medium" style={{ color: 'var(--text-accent)' }}>Learning Path Approval:</span>
-              <span className={`ml-2 px-2 py-1 rounded text-sm font-medium ${
-                company.learning_path_approval_policy === 'auto' 
-                  ? 'bg-accent-green text-white' 
-                  : 'bg-accent-orange text-white'
-              }`}>
-                {company.learning_path_approval_policy === 'auto' ? 'Auto-Approval' : 'Manual Approval'}
-              </span>
-            </p>
-            {company.decision_makers && company.decision_makers.length > 0 && (
-              <div className="mt-2">
-                <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Decision Makers:</p>
-                <div className="flex flex-wrap gap-2">
-                  {company.decision_makers.map((dm, idx) => (
-                    <span key={idx} className="px-2 py-1 rounded text-sm" style={{ 
-                      backgroundColor: 'var(--bg-tertiary)', 
-                      color: 'var(--text-primary)' 
-                    }}>
-                      {dm.name || dm.email}
-                    </span>
-                  ))}
+              <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>KPIs</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Departments</p>
+                  <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                    {company?.statistics?.departments || companyHierarchy?.departments?.length || 0}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Teams</p>
+                  <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                    {company?.statistics?.teams || companyHierarchy?.departments?.reduce((sum, dept) => sum + (dept.teams?.length || 0), 0) || 0}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Employees</p>
+                  <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                    {company?.statistics?.employees || employees.length || 0}
+                  </p>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
-        {/* Hierarchy Tree */}
-        {hierarchy && (
-          <div className="mb-6">
-            <HierarchyTree
-              hierarchy={hierarchy}
-              onEmployeeClick={(employeeId) => {
-                navigate(`${ROUTES.PROFILE}/${employeeId}`);
-              }}
-            />
+        {/* Company Hierarchy Tree */}
+        {companyHierarchy && (
+          <div className="mb-6 rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+            <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Company Hierarchy</h2>
+            <div className="space-y-2">
+              <div
+                className="p-3 rounded cursor-pointer hover:bg-opacity-50 transition-colors"
+                style={{ backgroundColor: 'var(--bg-secondary)' }}
+                onClick={() => toggleNode(companyHierarchy.id)}
+              >
+                <div className="flex items-center gap-2">
+                  <span style={{ color: 'var(--text-secondary)' }}>
+                    {expandedNodes[companyHierarchy.id] ? '▼' : '▶'}
+                  </span>
+                  <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {companyHierarchy.name}
+                  </span>
+                </div>
+              </div>
+
+              {expandedNodes[companyHierarchy.id] && companyHierarchy.departments && (
+                <div className="ml-6 space-y-2">
+                  {companyHierarchy.departments.map((dept) => (
+                    <div key={dept.id}>
+                      <div
+                        className="p-3 rounded cursor-pointer hover:bg-opacity-50 transition-colors"
+                        style={{ backgroundColor: 'var(--bg-tertiary)' }}
+                        onClick={() => toggleNode(dept.id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span style={{ color: 'var(--text-secondary)' }}>
+                              {expandedNodes[dept.id] ? '▼' : '▶'}
+                            </span>
+                            <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                              {dept.name}
+                            </span>
+                          </div>
+                          <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                            {dept.teams?.length || 0} teams, {dept.employees?.length || 0} employees
+                          </span>
+                        </div>
+                      </div>
+
+                      {expandedNodes[dept.id] && (
+                        <div className="ml-6 space-y-2">
+                          {/* Teams */}
+                          {dept.teams && dept.teams.map((team) => (
+                            <div key={team.id}>
+                              <div
+                                className="p-3 rounded cursor-pointer hover:bg-opacity-50 transition-colors"
+                                style={{ backgroundColor: 'var(--bg-secondary)' }}
+                                onClick={() => toggleNode(team.id)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span style={{ color: 'var(--text-secondary)' }}>
+                                      {expandedNodes[team.id] ? '▼' : '▶'}
+                                    </span>
+                                    <span style={{ color: 'var(--text-primary)' }}>
+                                      {team.name}
+                                    </span>
+                                  </div>
+                                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                    {team.employees?.length || 0} employees
+                                  </span>
+                                </div>
+                              </div>
+
+                              {expandedNodes[team.id] && team.employees && (
+                                <div className="ml-6 space-y-1">
+                                  {team.employees.map((emp) => (
+                                    <div
+                                      key={emp.id}
+                                      className="p-2 rounded cursor-pointer hover:bg-opacity-50 transition-colors"
+                                      style={{ backgroundColor: 'var(--bg-tertiary)' }}
+                                      onClick={() => handleViewEmployee(emp.id)}
+                                    >
+                                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                                        {emp.name} ({emp.email})
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+
+                          {/* Employees without team */}
+                          {dept.employees && dept.employees.length > 0 && (
+                            <div className="space-y-1">
+                              {dept.employees.map((emp) => (
+                                <div
+                                  key={emp.id}
+                                  className="p-2 rounded cursor-pointer hover:bg-opacity-50 transition-colors"
+                                  style={{ backgroundColor: 'var(--bg-secondary)' }}
+                                  onClick={() => handleViewEmployee(emp.id)}
+                                >
+                                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                                    {emp.name} ({emp.email})
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Requests Section */}
-        <div className="rounded-lg p-6 mb-6" style={{ 
-          backgroundColor: 'var(--bg-card)', 
-          boxShadow: 'var(--shadow-card)', 
-          borderColor: 'var(--bg-secondary)', 
-          borderWidth: '1px', 
-          borderStyle: 'solid' 
-        }}>
-          <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Pending Requests</h2>
-          
-          {requests && requests.length > 0 ? (
-            <div className="space-y-2">
-              {requests.map((request, idx) => (
-                <div 
-                  key={idx}
-                  className="p-4 rounded border"
-                  style={{ 
-                    backgroundColor: 'var(--bg-secondary)',
-                    borderColor: 'var(--bg-tertiary)'
-                  }}
-                >
-                  <p className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {request.type || 'Request'}
-                  </p>
-                  <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                    {request.description || request.message}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p style={{ color: 'var(--text-secondary)' }}>No pending requests.</p>
-          )}
+        {/* Pending Profiles Approval */}
+        <div className="mb-6">
+          <PendingProfilesApproval />
+        </div>
+
+        {/* Pending Requests Approval */}
+        <div className="mb-6">
+          <PendingRequestsApproval />
         </div>
 
         {/* Employee List */}
-        <div className="rounded-lg p-6" style={{ 
-          backgroundColor: 'var(--bg-card)', 
-          boxShadow: 'var(--shadow-card)', 
-          borderColor: 'var(--bg-secondary)', 
-          borderWidth: '1px', 
-          borderStyle: 'solid' 
-        }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Employees</h2>
-            <Button
-              variant="primary"
-              onClick={() => navigate(`${ROUTES.COMPANY_EMPLOYEES_NEW.replace(':companyId', currentCompanyId)}`)}
-            >
-              Add Employee
-            </Button>
-          </div>
-
-          {employees && employees.length > 0 ? (
+        <div className="mb-6 rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+          <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>All Employees</h2>
+          {employees.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr style={{ borderBottom: '2px solid var(--bg-secondary)' }}>
-                    <th className="text-left py-3 px-4 font-medium" style={{ color: 'var(--text-primary)' }}>Name</th>
-                    <th className="text-left py-3 px-4 font-medium" style={{ color: 'var(--text-primary)' }}>Email</th>
-                    <th className="text-left py-3 px-4 font-medium" style={{ color: 'var(--text-primary)' }}>Role Type</th>
-                    <th className="text-left py-3 px-4 font-medium" style={{ color: 'var(--text-primary)' }}>Status</th>
-                    <th className="text-left py-3 px-4 font-medium" style={{ color: 'var(--text-primary)' }}>Skills Summary</th>
-                    <th className="text-left py-3 px-4 font-medium" style={{ color: 'var(--text-primary)' }}>Actions</th>
+                  <tr style={{ borderBottom: '1px solid var(--bg-secondary)' }}>
+                    <th className="text-left py-2 px-4" style={{ color: 'var(--text-secondary)' }}>Name</th>
+                    <th className="text-left py-2 px-4" style={{ color: 'var(--text-secondary)' }}>Email</th>
+                    <th className="text-left py-2 px-4" style={{ color: 'var(--text-secondary)' }}>Role</th>
+                    <th className="text-left py-2 px-4" style={{ color: 'var(--text-secondary)' }}>Type</th>
+                    <th className="text-left py-2 px-4" style={{ color: 'var(--text-secondary)' }}>Status</th>
+                    <th className="text-left py-2 px-4" style={{ color: 'var(--text-secondary)' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {employees.map((employee) => (
-                    <tr 
-                      key={employee.id}
-                      className="hover:bg-opacity-50 cursor-pointer transition-colors"
-                      style={{ 
-                        borderBottom: '1px solid var(--bg-secondary)',
-                        backgroundColor: 'transparent'
-                      }}
-                      onClick={() => navigate(`${ROUTES.PROFILE}/${employee.id}`)}
-                    >
-                      <td className="py-3 px-4" style={{ color: 'var(--text-primary)' }}>{employee.name}</td>
-                      <td className="py-3 px-4" style={{ color: 'var(--text-secondary)' }}>{employee.email}</td>
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-1 rounded text-xs" style={{ 
-                          backgroundColor: 'var(--bg-tertiary)', 
-                          color: 'var(--text-primary)' 
-                        }}>
-                          {employee.type === 'internal_instructor' ? 'Internal Instructor' : 
-                           employee.type === 'external_instructor' ? 'External Instructor' : 
-                           'Regular'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          employee.profile_status === 'approved' 
+                  {employees.map((emp) => (
+                    <tr key={emp.id} style={{ borderBottom: '1px solid var(--bg-tertiary)' }}>
+                      <td className="py-2 px-4" style={{ color: 'var(--text-primary)' }}>{emp.name}</td>
+                      <td className="py-2 px-4" style={{ color: 'var(--text-primary)' }}>{emp.email}</td>
+                      <td className="py-2 px-4" style={{ color: 'var(--text-primary)' }}>{emp.role || 'N/A'}</td>
+                      <td className="py-2 px-4" style={{ color: 'var(--text-primary)' }}>{emp.type || 'regular'}</td>
+                      <td className="py-2 px-4">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          emp.profile_status === 'approved' 
                             ? 'bg-accent-green text-white' 
-                            : employee.profile_status === 'pending'
+                            : emp.profile_status === 'pending'
                             ? 'bg-accent-orange text-white'
-                            : 'bg-gray-400 text-white'
+                            : 'bg-red-500 text-white'
                         }`}>
-                          {employee.profile_status || 'pending'}
+                          {emp.profile_status || 'pending'}
                         </span>
                       </td>
-                      <td className="py-3 px-4" style={{ color: 'var(--text-secondary)' }}>
-                        {employee.skills_summary || 'N/A'}
-                      </td>
-                      <td className="py-3 px-4">
+                      <td className="py-2 px-4">
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`${ROUTES.PROFILE}/${employee.id}`);
-                          }}
+                          onClick={() => handleViewEmployee(emp.id)}
                         >
                           View Profile
                         </Button>
@@ -361,21 +431,21 @@ const CompanyProfile = () => {
               </table>
             </div>
           ) : (
-            <p style={{ color: 'var(--text-secondary)' }}>No employees found.</p>
+            <p style={{ color: 'var(--text-secondary)' }}>No employees found</p>
           )}
         </div>
 
-        {/* Company Dashboard Button */}
-        <div className="mt-6">
+        {/* Company Dashboard Link */}
+        <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+          <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Company Dashboard</h2>
           <Button
             variant="primary"
             onClick={() => {
-              // Redirect to Learning Analytics microservice
-              const learningAnalyticsUrl = process.env.REACT_APP_LEARNING_ANALYTICS_URL || 'https://learning-analytics.example.com';
-              window.location.href = `${learningAnalyticsUrl}/company/${currentCompanyId}`;
+              // TODO: Navigate to Learning Analytics dashboard
+              alert('Learning Analytics dashboard coming soon!');
             }}
           >
-            Company Dashboard (Learning Analytics)
+            Go to Learning Analytics
           </Button>
         </div>
       </div>
@@ -384,4 +454,3 @@ const CompanyProfile = () => {
 };
 
 export default CompanyProfile;
-
