@@ -83,6 +83,7 @@ const cleanupCorruptedData = async () => {
     const corruptedEmail = 'yasmin_hitfield@hotmail.com'; // Specific email to check first
 
     console.log(`📋 Step 1: Checking for ALL employees from corrupted company: ${corruptedCompanyId}`);
+    console.log(`   This will find and delete ALL employees from this company, not just specific emails.`);
     
     // First check the specific email
     console.log(`   Checking for specific employee: ${corruptedEmail}`);
