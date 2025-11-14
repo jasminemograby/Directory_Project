@@ -12,30 +12,31 @@ const ProtectedRoute = ({ children, allowedRoles = [], requireAuth = true }) => 
     return <Navigate to={ROUTES.LOGIN} replace />;
   }
   
-  // If specific roles are required
+  // If specific RBAC types are required
+  // IMPORTANT: This checks employee.type (RBAC level), NOT employee.role (job title)
   if (allowedRoles.length > 0) {
-    const userRole = authService.getUserRole();
+    const userType = authService.getUserType(); // RBAC level, not job title
     
-    // Map role strings to USER_ROLES constants
-    const roleMap = {
+    // Map RBAC type strings to USER_ROLES constants
+    const typeMap = {
       'hr': USER_ROLES.HR,
       'employee': USER_ROLES.EMPLOYEE,
       'trainer': USER_ROLES.TRAINER,
-      'team_leader': USER_ROLES.TEAM_MANAGER,
+      'team_manager': USER_ROLES.TEAM_MANAGER, // Note: backend returns 'team_manager', not 'team_leader'
       'department_manager': USER_ROLES.DEPARTMENT_MANAGER,
       'admin': USER_ROLES.ADMIN
     };
     
-    const mappedRole = roleMap[userRole] || userRole;
+    const mappedType = typeMap[userType] || userType;
     
-    // Check if user has any of the allowed roles
+    // Check if user has any of the allowed RBAC types
     const hasAccess = allowedRoles.some(allowedRole => {
       // Direct match
-      if (mappedRole === allowedRole) return true;
+      if (mappedType === allowedRole) return true;
       
-      // Check role aliases
+      // Check role aliases (for backward compatibility)
       if (allowedRole === USER_ROLES.MANAGER && 
-          (mappedRole === USER_ROLES.TEAM_MANAGER || mappedRole === USER_ROLES.DEPARTMENT_MANAGER)) {
+          (mappedType === USER_ROLES.TEAM_MANAGER || mappedType === USER_ROLES.DEPARTMENT_MANAGER)) {
         return true;
       }
       

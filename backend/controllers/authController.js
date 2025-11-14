@@ -51,10 +51,12 @@ const login = async (req, res) => {
 
     const employee = employeeResult.rows[0];
 
-    // Determine role based on employee data
-    let userRole = 'employee'; // Default
+    // Determine RBAC role based on employee TYPE (NOT role - role is just job title)
+    // employee.type determines system permissions (RBAC level)
+    // employee.role is just professional job title (QA, Developer, etc.) - NOT used for permissions
+    let userType = 'employee'; // Default RBAC level
 
-    // Check if HR (from company_settings)
+    // Check if HR (from company_settings) - HR is special, not stored in employee.type
     const hrCheck = await query(
       `SELECT company_id 
        FROM company_settings 
@@ -65,30 +67,41 @@ const login = async (req, res) => {
     );
 
     if (hrCheck.rows.length > 0) {
-      userRole = 'hr';
-    } else if (employee.type === 'internal_instructor' || employee.type === 'external_instructor') {
-      // Check if trainer
-      userRole = 'trainer';
-    } else if (employee.team_id) {
-      // Check if team manager
-      const teamCheck = await query(
-        `SELECT manager_id FROM teams WHERE id = $1 AND manager_id = $2`,
-        [employee.team_id, employee.id]
-      );
-      if (teamCheck.rows.length > 0) {
-        userRole = 'team_leader';
+      userType = 'hr';
+    } else {
+      // Use employee.type for RBAC (NOT employee.role)
+      // employee.type can be: 'regular', 'internal_instructor', 'external_instructor'
+      // But we also need to check if they are managers
+      
+      // Check if team manager first (takes precedence)
+      if (employee.team_id) {
+        const teamCheck = await query(
+          `SELECT manager_id FROM teams WHERE id = $1 AND manager_id = $2`,
+          [employee.team_id, employee.id]
+        );
+        if (teamCheck.rows.length > 0) {
+          userType = 'team_manager';
+        }
       }
-    }
 
-    if (userRole === 'employee' && employee.department_id) {
-      // Check if department manager
-      const deptCheck = await query(
-        `SELECT manager_id FROM departments WHERE id = $1 AND manager_id = $2`,
-        [employee.department_id, employee.id]
-      );
-      if (deptCheck.rows.length > 0) {
-        userRole = 'department_manager';
+      // Check if department manager (takes precedence over team manager)
+      if (employee.department_id) {
+        const deptCheck = await query(
+          `SELECT manager_id FROM departments WHERE id = $1 AND manager_id = $2`,
+          [employee.department_id, employee.id]
+        );
+        if (deptCheck.rows.length > 0) {
+          userType = 'department_manager';
+        }
       }
+
+      // If not a manager, check if trainer
+      if (userType === 'employee' && 
+          (employee.type === 'internal_instructor' || employee.type === 'external_instructor')) {
+        userType = 'trainer';
+      }
+      
+      // Otherwise, userType remains 'employee' (regular employee)
     }
 
     // TODO: Check if admin (for now, no admin check - will be added later)
@@ -105,8 +118,10 @@ const login = async (req, res) => {
           id: employee.id,
           name: employee.name,
           email: employee.email,
-          role: userRole,
-          employeeType: employee.type,
+          // RBAC: Use 'type' for system permissions (NOT 'role' - role is just job title)
+          type: userType, // RBAC level: 'hr', 'department_manager', 'team_manager', 'trainer', 'employee'
+          employeeRole: employee.role, // Professional job title (QA, Developer, etc.) - NOT used for permissions
+          employeeType: employee.type, // Original employee.type from DB (regular, internal_instructor, external_instructor)
           companyId: employee.company_id,
           companyName: employee.company_name,
           profileStatus: employee.profile_status
@@ -171,8 +186,8 @@ const getCurrentUser = async (req, res) => {
 
       const employee = employeeResult.rows[0];
 
-      // Determine role (same logic as login)
-      let userRole = 'employee';
+      // Determine RBAC type (same logic as login) - based on employee.type, NOT employee.role
+      let userType = 'employee';
       
       const normalizedEmail = employee.email.trim().toLowerCase();
       const hrCheck = await query(
@@ -185,9 +200,35 @@ const getCurrentUser = async (req, res) => {
       );
 
       if (hrCheck.rows.length > 0) {
-        userRole = 'hr';
-      } else if (employee.type === 'internal_instructor' || employee.type === 'external_instructor') {
-        userRole = 'trainer';
+        userType = 'hr';
+      } else {
+        // Check if team manager
+        if (employee.team_id) {
+          const teamCheck = await query(
+            `SELECT manager_id FROM teams WHERE id = $1 AND manager_id = $2`,
+            [employee.team_id, employee.id]
+          );
+          if (teamCheck.rows.length > 0) {
+            userType = 'team_manager';
+          }
+        }
+
+        // Check if department manager
+        if (employee.department_id) {
+          const deptCheck = await query(
+            `SELECT manager_id FROM departments WHERE id = $1 AND manager_id = $2`,
+            [employee.department_id, employee.id]
+          );
+          if (deptCheck.rows.length > 0) {
+            userType = 'department_manager';
+          }
+        }
+
+        // If not a manager, check if trainer
+        if (userType === 'employee' && 
+            (employee.type === 'internal_instructor' || employee.type === 'external_instructor')) {
+          userType = 'trainer';
+        }
       }
 
       res.json({
@@ -197,8 +238,10 @@ const getCurrentUser = async (req, res) => {
             id: employee.id,
             name: employee.name,
             email: employee.email,
-            role: userRole,
-            employeeType: employee.type,
+            // RBAC: Use 'type' for system permissions (NOT 'role' - role is just job title)
+            type: userType, // RBAC level: 'hr', 'department_manager', 'team_manager', 'trainer', 'employee'
+            employeeRole: employee.role, // Professional job title (QA, Developer, etc.) - NOT used for permissions
+            employeeType: employee.type, // Original employee.type from DB (regular, internal_instructor, external_instructor)
             companyId: employee.company_id,
             companyName: employee.company_name,
             profileStatus: employee.profile_status

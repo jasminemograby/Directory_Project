@@ -38,17 +38,19 @@ const Login = () => {
           localStorage.setItem('hrEmail', user.email);
         }
 
-        // Redirect based on role
-        const role = user.role;
+        // Redirect based on RBAC type (NOT role - role is just job title)
+        // user.type is the RBAC level (system permissions)
+        // user.employeeRole is just professional job title (QA, Developer, etc.) - NOT used for navigation
+        const userType = user.type; // RBAC level: 'hr', 'department_manager', 'team_manager', 'trainer', 'employee'
         
-        switch (role) {
+        switch (userType) {
           case 'hr':
             navigate(ROUTES.HR_DASHBOARD);
             break;
           case 'trainer':
             navigate('/trainer/profile');
             break;
-          case 'team_leader':
+          case 'team_manager':
             navigate('/team-leader/profile');
             break;
           case 'department_manager':

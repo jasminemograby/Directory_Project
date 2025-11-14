@@ -35,10 +35,23 @@ export const authService = {
     return !!localStorage.getItem('authToken');
   },
   
-  // Get user role
+  // Get user RBAC type (system permissions level) - NOT employee.role (job title)
+  // employee.role is just professional job title (QA, Developer, etc.) - NOT used for permissions
+  getUserType: () => {
+    const user = authService.getCurrentUser();
+    return user?.type || null; // RBAC level: 'hr', 'department_manager', 'team_manager', 'trainer', 'employee'
+  },
+  
+  // Get user role (for backward compatibility, but should use getUserType instead)
   getUserRole: () => {
     const user = authService.getCurrentUser();
-    return user?.role || null;
+    return user?.type || null; // Return type (RBAC level), not role (job title)
+  },
+  
+  // Get employee professional role (job title) - NOT used for permissions
+  getEmployeeRole: () => {
+    const user = authService.getCurrentUser();
+    return user?.employeeRole || null; // Professional job title (QA, Developer, etc.)
   },
   
   // Get user email
@@ -47,42 +60,53 @@ export const authService = {
     return user?.email || null;
   },
   
-  // Check if user has specific role
-  hasRole: (role) => {
-    const userRole = authService.getUserRole();
-    return userRole === role;
+  // Check if user has specific RBAC type (system permissions level)
+  // IMPORTANT: This checks employee.type (RBAC), NOT employee.role (job title)
+  hasType: (type) => {
+    const userType = authService.getUserType();
+    return userType === type;
   },
   
-  // Check if user has any of the specified roles
+  // Check if user has any of the specified RBAC types
+  hasAnyType: (types) => {
+    const userType = authService.getUserType();
+    return types.includes(userType);
+  },
+  
+  // Check if user has specific role (for backward compatibility - uses type)
+  hasRole: (role) => {
+    return authService.hasType(role);
+  },
+  
+  // Check if user has any of the specified roles (for backward compatibility - uses type)
   hasAnyRole: (roles) => {
-    const userRole = authService.getUserRole();
-    return roles.includes(userRole);
+    return authService.hasAnyType(roles);
   },
   
   // Check if user is admin
   isAdmin: () => {
-    return authService.hasRole(USER_ROLES.ADMIN);
+    return authService.hasType(USER_ROLES.ADMIN);
   },
   
   // Check if user is HR
   isHR: () => {
-    return authService.hasRole(USER_ROLES.HR);
+    return authService.hasType(USER_ROLES.HR);
   },
   
-  // Check if user is manager
+  // Check if user is manager (department or team)
   isManager: () => {
-    const userRole = authService.getUserRole();
-    return userRole === USER_ROLES.DEPARTMENT_MANAGER || userRole === USER_ROLES.TEAM_MANAGER;
+    const userType = authService.getUserType();
+    return userType === USER_ROLES.DEPARTMENT_MANAGER || userType === USER_ROLES.TEAM_MANAGER;
   },
   
-  // Check if user is employee
+  // Check if user is employee (regular employee, not manager/trainer)
   isEmployee: () => {
-    return authService.hasRole(USER_ROLES.EMPLOYEE);
+    return authService.hasType(USER_ROLES.EMPLOYEE);
   },
   
   // Check if user is trainer
   isTrainer: () => {
-    return authService.hasRole(USER_ROLES.TRAINER);
+    return authService.hasType(USER_ROLES.TRAINER);
   },
 };
 
