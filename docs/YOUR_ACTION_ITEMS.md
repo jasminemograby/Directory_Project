@@ -67,16 +67,16 @@ psql $DATABASE_URL -f database/migrations/add_external_api_calls_log_table.sql
 
 #### משתנים חובה (Required):
 
-1. **INTERNAL_API_SECRET**
+1. **INTERNAL_API_SECRET** ⚠️ **חשוב מאוד!**
    - **Name:** `INTERNAL_API_SECRET`
-   - **Value:** צרי secret חזק (ראה למטה)
-   - **Generate Secret:**
-     ```bash
-     openssl rand -hex 32
-     ```
-     או השתמשי ב: https://www.random.org/strings/
-     - **אורך מינימלי:** 32 תווים
+   - **Value:** העתיקי את ה-secret שקיבלת (או צרי חדש - ראה למטה)
+   - **⚠️ אזהרה:** אל תשתפי את ה-secret הזה בפומבי! רק עם צוותי המיקרוסרבסים.
    - **לחצי:** Add
+   
+   **אם צריך ליצור secret חדש:**
+   - PowerShell: `[Convert]::ToBase64String((1..64 | ForEach-Object { Get-Random -Maximum 256 }))`
+   - או באתר: https://www.random.org/strings/
+   - **אורך מומלץ:** לפחות 64 תווים
 
 2. **Microservices URLs** (הוסף את כולם):
 
@@ -292,19 +292,45 @@ curl -X POST https://your-backend.railway.app/api/internal/skills-engine/update 
 
 ## שלב 6: שיתוף INTERNAL_API_SECRET
 
+### ⚠️ אזהרת אבטחה:
+**אל תשתפי את ה-secret בפומבי!** (GitHub, Email רגיל, וכו')
+**רק עם צוותי המיקרוסרבסים** שצריכים גישה.
+
 ### עם מי לשתף:
 - צוות Skills Engine
 - צוות Course Builder
 - צוות Content Studio
 - כל מיקרוסרבס שצריך לשלוח עדכונים ל-Directory
 
-### איך לשתף:
-1. העתיקי את ה-`INTERNAL_API_SECRET` מ-Railway Variables
-2. שלחי בצורה מאובטחת (לא ב-email רגיל, השתמשי ב-Slack/Discord/Password Manager)
-3. הסבירי שזה עבור:
+### איך לשתף בצורה מאובטחת:
+1. **העתיקי את ה-`INTERNAL_API_SECRET` מ-Railway Variables:**
+   - Railway Dashboard → Settings → Variables
+   - מצאי `INTERNAL_API_SECRET`
+   - לחצי על העין (👁️) כדי לראות את הערך
+   - העתיקי
+
+2. **שלחי בצורה מאובטחת:**
+   - ✅ **Slack/Discord** (ערוץ פרטי)
+   - ✅ **Password Manager** (1Password, LastPass)
+   - ✅ **Encrypted Email**
+   - ❌ **לא ב-Email רגיל**
+   - ❌ **לא ב-GitHub Issues/Comments**
+   - ❌ **לא ב-Chat פומבי**
+
+3. **הסבירי שזה עבור:**
    - `POST /api/internal/skills-engine/update`
    - `POST /api/internal/content-studio/update`
    - `POST /api/internal/course-builder/feedback`
+   - **Header:** `Authorization: Bearer <SECRET>`
+
+### אם ה-secret נחשף:
+אם חשדת שהסוד נחשף, צרי secret חדש:
+1. Railway → Settings → Variables
+2. מצאי `INTERNAL_API_SECRET`
+3. לחצי על **...** → **Edit**
+4. החלפי בערך חדש
+5. לחצי **Save**
+6. עדכני את כל המיקרוסרבסים עם ה-secret החדש
 
 ---
 
