@@ -1,7 +1,7 @@
 // Profile Controller - Handles all profile-related requests
 const { query } = require('../config/database');
 const valuePropositionService = require('../services/valuePropositionService');
-const { apiService } = require('../services/api'); // For external microservice calls
+const axios = require('axios'); // For external microservice calls
 
 /**
  * Get complete employee profile with all sections
