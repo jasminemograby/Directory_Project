@@ -96,6 +96,20 @@ export const apiService = {
   createEmployee: (data) => api.post('/employee', data),
   getEmployees: (params) => api.get('/employee', { params }),
   
+  // Company endpoints
+  getCompany: (companyId, hrEmail) => {
+    if (hrEmail) {
+      return api.get('/company', { params: { hrEmail } });
+    }
+    return api.get(`/company/${companyId}`);
+  },
+  
+  getCompanyHierarchy: (companyId) => 
+    api.get(`/company/${companyId}/hierarchy`),
+  
+  getCompanyRequests: (companyId) => 
+    api.get(`/company/${companyId}/requests`),
+  
   // Profile endpoints
   getProfile: (employeeId) => api.get(`/profile/${employeeId}`),
   updateProfile: (employeeId, data) => api.put(`/profile/${employeeId}`, data),

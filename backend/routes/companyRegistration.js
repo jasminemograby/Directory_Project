@@ -46,5 +46,11 @@ router.post(
   companyRegistrationController.checkVerificationStatus
 );
 
+// Company profile routes
+const companyProfileController = require('../controllers/companyProfileController');
+
+router.get('/:companyId/hierarchy', companyProfileController.getCompanyHierarchy);
+router.get('/:companyId/requests', companyProfileController.getCompanyRequests);
+
 module.exports = router;
 

@@ -16,6 +16,7 @@ import EmployeeProfile from './pages/EmployeeProfile';
 import TrainerProfile from './pages/TrainerProfile';
 import TeamLeaderProfile from './pages/TeamLeaderProfile';
 import DepartmentManagerProfile from './pages/DepartmentManagerProfile';
+import CompanyProfile from './pages/CompanyProfile';
 
 // Company Registration Components
 import CompanyRegistrationStep1 from './components/CompanyRegistration/CompanyRegistrationStep1';
@@ -75,6 +76,9 @@ function App() {
           {/* Department Manager Profile */}
           <Route path="/department-manager/profile/:employeeId?" element={<DepartmentManagerProfile />} />
           <Route path="/department-manager/profile" element={<DepartmentManagerProfile />} />
+          
+          {/* Company Profile */}
+          <Route path={ROUTES.COMPANY_PROFILE} element={<CompanyProfile />} />
           
           {/* Company Registration Routes */}
           <Route path={ROUTES.COMPANY_REGISTER_STEP1} element={
