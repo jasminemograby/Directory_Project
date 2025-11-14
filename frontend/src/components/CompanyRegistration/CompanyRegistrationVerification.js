@@ -23,16 +23,25 @@ const CompanyRegistrationVerification = () => {
     setRegistrationId(regId);
     checkVerificationStatus(regId);
     
-    // Poll for status updates every 10 seconds
+    // Poll for status updates every 10 seconds - but only if not already verified
     const interval = setInterval(() => {
-      checkVerificationStatus(regId);
+      // Only poll if status is still verifying/pending
+      if (status === 'verifying' || status === 'pending') {
+        checkVerificationStatus(regId);
+      }
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [navigate]);
+  }, [navigate, status]);
 
   const checkVerificationStatus = async (regId) => {
     if (!regId) return;
+    
+    // Don't check again if already verified
+    if (status === 'verified') {
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     try {
@@ -46,7 +55,10 @@ const CompanyRegistrationVerification = () => {
     } catch (error) {
       console.error('Status check error:', error);
       setLoading(false);
-      setStatus('error');
+      // Only set error if not already verified
+      if (status !== 'verified') {
+        setStatus('error');
+      }
     }
   };
 

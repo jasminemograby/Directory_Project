@@ -30,10 +30,7 @@ const DepartmentTeamInput = ({ departments = [], employees = [], onChange, error
 
   const handleSaveDepartment = () => {
     if (!deptFormData.name.trim()) return;
-    if (!deptFormData.managerId) {
-      alert('Please select a department manager');
-      return;
-    }
+    // Manager is optional - can be assigned later after employees are created
 
     const newDepartments = [...departments];
     if (editingDeptId) {
@@ -42,14 +39,14 @@ const DepartmentTeamInput = ({ departments = [], employees = [], onChange, error
         newDepartments[index] = { 
           ...newDepartments[index], 
           name: deptFormData.name,
-          managerId: deptFormData.managerId,
+          managerId: deptFormData.managerId || null, // Optional
         };
       }
     } else {
       newDepartments.push({
         id: `dept-${Date.now()}`,
         name: deptFormData.name,
-        managerId: deptFormData.managerId,
+        managerId: deptFormData.managerId || null, // Optional - can be assigned later
         teams: [],
       });
     }
@@ -88,10 +85,7 @@ const DepartmentTeamInput = ({ departments = [], employees = [], onChange, error
 
   const handleSaveTeam = () => {
     if (!teamFormData.name.trim() || !selectedDeptId) return;
-    if (!teamFormData.managerId) {
-      alert('Please select a team manager');
-      return;
-    }
+    // Manager is optional - can be assigned later after employees are created
 
     const newDepartments = [...departments];
     const deptIndex = newDepartments.findIndex((d) => d.id === selectedDeptId);
@@ -102,14 +96,14 @@ const DepartmentTeamInput = ({ departments = [], employees = [], onChange, error
           newDepartments[deptIndex].teams[teamIndex] = {
             ...newDepartments[deptIndex].teams[teamIndex],
             name: teamFormData.name,
-            managerId: teamFormData.managerId,
+            managerId: teamFormData.managerId || null, // Optional
           };
         }
       } else {
         newDepartments[deptIndex].teams.push({
           id: `team-${Date.now()}`,
           name: teamFormData.name,
-          managerId: teamFormData.managerId,
+          managerId: teamFormData.managerId || null, // Optional - can be assigned later
         });
       }
       onChange(newDepartments);
@@ -261,12 +255,12 @@ const DepartmentTeamInput = ({ departments = [], employees = [], onChange, error
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Department Manager <span className="text-red-500">*</span>
+              Department Manager <span className="text-gray-400 text-xs">(Optional - can be assigned later)</span>
             </label>
             {employees.length === 0 ? (
-              <div className="border border-amber-300 rounded-lg p-4 bg-amber-50">
-                <p className="text-sm text-amber-800">
-                  No employees added yet. Please add employees first, then assign a manager.
+              <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                <p className="text-sm text-gray-600">
+                  No employees added yet. You can assign a manager later after employees are created.
                 </p>
               </div>
             ) : (
@@ -275,9 +269,8 @@ const DepartmentTeamInput = ({ departments = [], employees = [], onChange, error
                 value={deptFormData.managerId}
                 onChange={(e) => setDeptFormData((prev) => ({ ...prev, managerId: e.target.value }))}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-cyan"
-                required
               >
-                <option value="">Select Manager</option>
+                <option value="">No Manager (assign later)</option>
                 {employees.map((emp) => (
                   <option key={emp.email} value={emp.email}>
                     {emp.name} ({emp.email})
@@ -316,12 +309,12 @@ const DepartmentTeamInput = ({ departments = [], employees = [], onChange, error
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Team Manager <span className="text-red-500">*</span>
+              Team Manager <span className="text-gray-400 text-xs">(Optional - can be assigned later)</span>
             </label>
             {employees.length === 0 ? (
-              <div className="border border-amber-300 rounded-lg p-4 bg-amber-50">
-                <p className="text-sm text-amber-800">
-                  No employees added yet. Please add employees first, then assign a manager.
+              <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                <p className="text-sm text-gray-600">
+                  No employees added yet. You can assign a manager later after employees are created.
                 </p>
               </div>
             ) : (
@@ -330,9 +323,8 @@ const DepartmentTeamInput = ({ departments = [], employees = [], onChange, error
                 value={teamFormData.managerId}
                 onChange={(e) => setTeamFormData((prev) => ({ ...prev, managerId: e.target.value }))}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-cyan"
-                required
               >
-                <option value="">Select Manager</option>
+                <option value="">No Manager (assign later)</option>
                 {employees.map((emp) => (
                   <option key={emp.email} value={emp.email}>
                     {emp.name} ({emp.email})

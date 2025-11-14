@@ -166,6 +166,20 @@ const CompanyRegistrationStep1 = () => {
               )}
             </div>
 
+            {/* Company Domain - Moved here to be with company info */}
+            <Input
+              label="Company Domain"
+              name="domain"
+              value={formData.domain}
+              onChange={handleChange}
+              placeholder="example.com"
+              required
+              error={errors.domain?.[0]}
+            />
+            <p className="text-sm text-gray-500 mt-1 mb-6">
+              We'll verify this domain to confirm your company's legitimacy.
+            </p>
+
             {/* HR Information Section */}
             <div className="border-t pt-6 mt-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">HR/Registrar Information</h2>
@@ -200,24 +214,6 @@ const CompanyRegistrationStep1 = () => {
                 required
                 error={errors.hrRole?.[0]}
               />
-            </div>
-
-            {/* Domain Information */}
-            <div className="border-t pt-6 mt-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Company Domain</h2>
-              
-              <Input
-                label="Company Domain"
-                name="domain"
-                value={formData.domain}
-                onChange={handleChange}
-                placeholder="example.com"
-                required
-                error={errors.domain?.[0]}
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                We'll verify this domain to confirm your company's legitimacy.
-              </p>
             </div>
 
             {/* Submit Error */}
