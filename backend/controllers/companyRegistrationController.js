@@ -342,17 +342,18 @@ const registerCompanyStep4 = async (req, res, next) => {
             // Use normalized email for insert
             const empResult = await client.query(
               `INSERT INTO employees (
-                company_id, name, email, role, target_role, type,
+                company_id, name, email, role, current_role, target_role, type,
                 department_id, team_id, profile_status, created_at, updated_at
               )
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
               RETURNING id`,
               [
                 company.id,
                 emp.name,
                 normalizedEmail, // Use normalized email
-                emp.currentRole,
-                emp.targetRole,
+                emp.currentRole || null, // role field (for backward compatibility)
+                emp.currentRole || null, // current_role field (the actual current role)
+                emp.targetRole || null,
                 emp.type,
                 departmentId,
                 teamId,
@@ -550,16 +551,17 @@ const registerCompanyStep4 = async (req, res, next) => {
             const hrEmailNormalized = hrSettings.hr_email.trim().toLowerCase();
             const hrEmployeeResult = await client.query(
               `INSERT INTO employees (
-                company_id, name, email, role, target_role, type,
+                company_id, name, email, role, current_role, target_role, type,
                 department_id, team_id, profile_status, created_at, updated_at
               )
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
               RETURNING id`,
               [
                 company.id,
                 hrSettings.hr_name || 'HR Manager',
                 hrEmailNormalized, // Use normalized email
-                hrSettings.hr_role || 'HR Manager',
+                hrSettings.hr_role || 'HR Manager', // role field (for backward compatibility)
+                hrSettings.hr_role || 'HR Manager', // current_role field (the actual current role)
                 hrSettings.hr_role || 'HR Manager', // target_role same as current role
                 'regular', // HR is regular employee by default
                 null, // No department/team assignment for HR
