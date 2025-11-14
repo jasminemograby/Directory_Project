@@ -26,6 +26,7 @@ export const ROUTES = {
   MANAGER_DASHBOARD: '/manager/dashboard',
   EMPLOYEE_DASHBOARD: '/employee/dashboard',
   TRAINER_DASHBOARD: '/trainer/dashboard',
+  TRAINER_PROFILE: '/trainer/profile',
   
   // Profiles
   PROFILE: '/profile/:employeeId',

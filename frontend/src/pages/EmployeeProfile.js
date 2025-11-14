@@ -393,6 +393,43 @@ const EmployeeProfile = () => {
               />
             )}
 
+            {/* Show taught courses if employee is a trainer */}
+            {employee && (employee.type === 'internal_instructor' || employee.type === 'external_instructor') && profileData && profileData.courses && profileData.courses.taught && profileData.courses.taught.length > 0 && (
+              <div className="rounded-lg p-6" style={{ 
+                backgroundColor: 'var(--bg-card)', 
+                boxShadow: 'var(--shadow-card)', 
+                borderColor: 'var(--bg-secondary)', 
+                borderWidth: '1px', 
+                borderStyle: 'solid' 
+              }}>
+                <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Courses Taught</h2>
+                <div className="space-y-2">
+                  {profileData.courses.taught.map((course, idx) => (
+                    <div 
+                      key={course.course_id || idx}
+                      className="p-4 rounded border"
+                      style={{ 
+                        backgroundColor: 'var(--bg-secondary)',
+                        borderColor: course.status === 'archived' ? 'var(--text-muted)' : 'var(--accent-orange)'
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                          {course.course_name || course.name}
+                        </p>
+                        <span className="px-2 py-1 text-xs rounded capitalize" style={{ 
+                          backgroundColor: course.status === 'archived' ? 'var(--text-muted)' : 'var(--accent-orange)', 
+                          color: 'white' 
+                        }}>
+                          {course.status || 'Active'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Requests Section */}
             <RequestsSection
               onRequestTraining={async () => {

@@ -13,6 +13,7 @@ import Error500 from './pages/Error500';
 import HRLanding from './pages/HRLanding';
 import HRDashboard from './pages/HRDashboard';
 import EmployeeProfile from './pages/EmployeeProfile';
+import TrainerProfile from './pages/TrainerProfile';
 
 // Company Registration Components
 import CompanyRegistrationStep1 from './components/CompanyRegistration/CompanyRegistrationStep1';
@@ -60,6 +61,10 @@ function App() {
           <Route path={ROUTES.EMPLOYEE_PROFILE} element={<EmployeeProfile />} />
           <Route path={ROUTES.PROFILE} element={<EmployeeProfile />} />
           <Route path={ROUTES.PROFILE_ME} element={<EmployeeProfile />} />
+          
+          {/* Trainer Profile */}
+          <Route path="/trainer/profile/:employeeId?" element={<TrainerProfile />} />
+          <Route path="/trainer/profile" element={<TrainerProfile />} />
           
           {/* Company Registration Routes */}
           <Route path={ROUTES.COMPANY_REGISTER_STEP1} element={
