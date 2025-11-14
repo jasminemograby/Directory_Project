@@ -340,26 +340,62 @@ const registerCompanyStep4 = async (req, res, next) => {
           try {
             console.log(`[Step4] Creating employee: ${emp.email} for company ${company.id}`);
             // Use normalized email for insert
-            const empResult = await client.query(
-              `INSERT INTO employees (
-                company_id, name, email, role, current_role, target_role, type,
-                department_id, team_id, profile_status, created_at, updated_at
-              )
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-              RETURNING id`,
-              [
-                company.id,
-                emp.name,
-                normalizedEmail, // Use normalized email
-                emp.currentRole || null, // role field (for backward compatibility)
-                emp.currentRole || null, // current_role field (the actual current role)
-                emp.targetRole || null,
-                emp.type,
-                departmentId,
-                teamId,
-                'pending',
-              ]
+            // Check if current_role column exists, if not use role only
+            const checkColumnResult = await client.query(
+              `SELECT column_name 
+               FROM information_schema.columns 
+               WHERE table_name = 'employees' 
+               AND column_name = 'current_role' 
+               AND table_schema = 'public'`
             );
+            
+            const hasCurrentRoleColumn = checkColumnResult.rows.length > 0;
+            
+            let empResult;
+            if (hasCurrentRoleColumn) {
+              // Use both role and current_role columns
+              empResult = await client.query(
+                `INSERT INTO employees (
+                  company_id, name, email, role, current_role, target_role, type,
+                  department_id, team_id, profile_status, created_at, updated_at
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                RETURNING id`,
+                [
+                  company.id,
+                  emp.name,
+                  normalizedEmail,
+                  emp.currentRole || null, // role field (for backward compatibility)
+                  emp.currentRole || null, // current_role field (the actual current role)
+                  emp.targetRole || null,
+                  emp.type,
+                  departmentId,
+                  teamId,
+                  'pending',
+                ]
+              );
+            } else {
+              // Fallback: use role only (for databases without current_role column yet)
+              empResult = await client.query(
+                `INSERT INTO employees (
+                  company_id, name, email, role, target_role, type,
+                  department_id, team_id, profile_status, created_at, updated_at
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                RETURNING id`,
+                [
+                  company.id,
+                  emp.name,
+                  normalizedEmail,
+                  emp.currentRole || null, // role field
+                  emp.targetRole || null,
+                  emp.type,
+                  departmentId,
+                  teamId,
+                  'pending',
+                ]
+              );
+            }
             
             employeeId = empResult.rows[0].id;
             employeeMap.set(normalizedEmail, employeeId);
@@ -549,26 +585,61 @@ const registerCompanyStep4 = async (req, res, next) => {
         if (!hrEmployeeId) {
           try {
             const hrEmailNormalized = hrSettings.hr_email.trim().toLowerCase();
-            const hrEmployeeResult = await client.query(
-              `INSERT INTO employees (
-                company_id, name, email, role, current_role, target_role, type,
-                department_id, team_id, profile_status, created_at, updated_at
-              )
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-              RETURNING id`,
-              [
-                company.id,
-                hrSettings.hr_name || 'HR Manager',
-                hrEmailNormalized, // Use normalized email
-                hrSettings.hr_role || 'HR Manager', // role field (for backward compatibility)
-                hrSettings.hr_role || 'HR Manager', // current_role field (the actual current role)
-                hrSettings.hr_role || 'HR Manager', // target_role same as current role
-                'regular', // HR is regular employee by default
-                null, // No department/team assignment for HR
-                null,
-                'pending', // Profile status pending until enrichment
-              ]
+            // Check if current_role column exists
+            const checkHrColumnResult = await client.query(
+              `SELECT column_name 
+               FROM information_schema.columns 
+               WHERE table_name = 'employees' 
+               AND column_name = 'current_role' 
+               AND table_schema = 'public'`
             );
+            
+            const hasHrCurrentRoleColumn = checkHrColumnResult.rows.length > 0;
+            
+            let hrEmployeeResult;
+            if (hasHrCurrentRoleColumn) {
+              hrEmployeeResult = await client.query(
+                `INSERT INTO employees (
+                  company_id, name, email, role, current_role, target_role, type,
+                  department_id, team_id, profile_status, created_at, updated_at
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                RETURNING id`,
+                [
+                  company.id,
+                  hrSettings.hr_name || 'HR Manager',
+                  hrEmailNormalized,
+                  hrSettings.hr_role || 'HR Manager', // role field (for backward compatibility)
+                  hrSettings.hr_role || 'HR Manager', // current_role field (the actual current role)
+                  hrSettings.hr_role || 'HR Manager', // target_role same as current role
+                  'regular',
+                  null,
+                  null,
+                  'pending',
+                ]
+              );
+            } else {
+              // Fallback: use role only
+              hrEmployeeResult = await client.query(
+                `INSERT INTO employees (
+                  company_id, name, email, role, target_role, type,
+                  department_id, team_id, profile_status, created_at, updated_at
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                RETURNING id`,
+                [
+                  company.id,
+                  hrSettings.hr_name || 'HR Manager',
+                  hrEmailNormalized,
+                  hrSettings.hr_role || 'HR Manager', // role field
+                  hrSettings.hr_role || 'HR Manager', // target_role same as current role
+                  'regular',
+                  null,
+                  null,
+                  'pending',
+                ]
+              );
+            }
 
             hrEmployeeId = hrEmployeeResult.rows[0].id;
             employeeMap.set(hrEmailNormalized, hrEmployeeId);
