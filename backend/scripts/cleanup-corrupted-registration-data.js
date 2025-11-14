@@ -96,17 +96,18 @@ const cleanupCorruptedData = async () => {
         console.log(`   - ID: ${emp.id}, Name: ${emp.name}, Company: ${emp.company_id}, Created: ${emp.created_at}`);
       });
 
-      // First, check if this employee is a decision_maker for any company
+      // First, get the employee ID(s) we're about to delete
+      const employeeIds = employeeCheck.rows.map(emp => emp.id);
+      console.log(`   Found employee ID(s) to delete: ${employeeIds.join(', ')}`);
+
+      // Check if this employee is a decision_maker for any company
       // If so, we need to remove that reference first
       console.log(`   Checking for foreign key constraints...`);
       const decisionMakerCheck = await queryWithRetry(
         `SELECT id, name, decision_maker_id 
          FROM companies 
-         WHERE decision_maker_id IN (
-           SELECT id FROM employees 
-           WHERE LOWER(TRIM(email)) = $1 AND company_id = $2
-         )`,
-        [corruptedEmail.toLowerCase(), corruptedCompanyId]
+         WHERE decision_maker_id = ANY($1::uuid[])`,
+        [employeeIds]
       );
 
       if (decisionMakerCheck.rows.length > 0) {
@@ -126,18 +127,12 @@ const cleanupCorruptedData = async () => {
       const managerCheck = await queryWithRetry(
         `SELECT 'department' as type, id, name, manager_id 
          FROM departments 
-         WHERE manager_id IN (
-           SELECT id FROM employees 
-           WHERE LOWER(TRIM(email)) = $1 AND company_id = $2
-         )
+         WHERE manager_id = ANY($1::uuid[])
          UNION ALL
          SELECT 'team' as type, id, name, manager_id 
          FROM teams 
-         WHERE manager_id IN (
-           SELECT id FROM employees 
-           WHERE LOWER(TRIM(email)) = $1 AND company_id = $2
-         )`,
-        [corruptedEmail.toLowerCase(), corruptedCompanyId]
+         WHERE manager_id = ANY($1::uuid[])`,
+        [employeeIds]
       );
 
       if (managerCheck.rows.length > 0) {
