@@ -19,6 +19,7 @@ import TeamLeaderProfile from './pages/TeamLeaderProfile';
 import DepartmentManagerProfile from './pages/DepartmentManagerProfile';
 import CompanyProfile from './pages/CompanyProfile';
 import SuperAdminProfile from './pages/SuperAdminProfile';
+import ProfileEdit from './pages/ProfileEdit';
 
 // Company Registration Components
 import CompanyRegistrationStep1 from './components/CompanyRegistration/CompanyRegistrationStep1';
@@ -58,6 +59,10 @@ function App() {
           <Route path={ROUTES.EMPLOYEE_PROFILE} element={<EmployeeProfile />} />
           <Route path={ROUTES.PROFILE} element={<EmployeeProfile />} />
           <Route path={ROUTES.PROFILE_ME} element={<EmployeeProfile />} />
+          
+          {/* Profile Edit */}
+          <Route path={ROUTES.PROFILE_EDIT_ME} element={<ProfileEdit />} />
+          <Route path={ROUTES.PROFILE_EDIT} element={<ProfileEdit />} />
           
           {/* Trainer Profile */}
           <Route path="/trainer/profile/:employeeId?" element={<TrainerProfile />} />

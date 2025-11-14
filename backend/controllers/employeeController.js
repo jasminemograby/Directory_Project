@@ -21,10 +21,16 @@ const getEmployee = async (req, res, next) => {
         id,
         name,
         email,
+        phone,
+        address,
         role,
+        current_role,
+        target_role,
+        type,
         company_id,
         department_id,
         team_id,
+        preferred_language,
         bio,
         profile_status,
         created_at,
@@ -117,7 +123,7 @@ const getEmployees = async (req, res, next) => {
 const updateEmployee = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, email, role, bio, profile_status } = req.body;
+    const { name, email, phone, address, role, bio, preferred_language, profile_status } = req.body;
 
     if (!id) {
       return res.status(400).json({
@@ -126,6 +132,14 @@ const updateEmployee = async (req, res, next) => {
       });
     }
 
+    // Define allowed fields for employee self-edit (non-sensitive fields)
+    // Sensitive fields (role, email, department_id, team_id, type) require HR approval
+    const allowedFields = ['name', 'phone', 'address', 'bio', 'preferred_language'];
+    
+    // For HR/Admin, allow more fields
+    // TODO: Add RBAC check here to determine if user is HR/Admin
+    // For now, we'll allow all fields but log a warning for sensitive changes
+    
     // Build update query dynamically
     const updates = [];
     const params = [];
@@ -137,13 +151,35 @@ const updateEmployee = async (req, res, next) => {
       paramIndex++;
     }
 
+    if (phone !== undefined) {
+      updates.push(`phone = $${paramIndex}`);
+      params.push(phone);
+      paramIndex++;
+    }
+
+    if (address !== undefined) {
+      updates.push(`address = $${paramIndex}`);
+      params.push(address);
+      paramIndex++;
+    }
+
+    if (preferred_language !== undefined) {
+      updates.push(`preferred_language = $${paramIndex}`);
+      params.push(preferred_language);
+      paramIndex++;
+    }
+
     if (email !== undefined) {
+      // Email is sensitive - should require approval, but allow for now (HR/Admin only)
+      console.warn(`[EmployeeController] Email change requested for employee ${id} - should require approval`);
       updates.push(`email = $${paramIndex}`);
       params.push(email);
       paramIndex++;
     }
 
     if (role !== undefined) {
+      // Role is sensitive - should require approval, but allow for now (HR/Admin only)
+      console.warn(`[EmployeeController] Role change requested for employee ${id} - should require approval`);
       updates.push(`role = $${paramIndex}`);
       params.push(role);
       paramIndex++;
@@ -156,6 +192,8 @@ const updateEmployee = async (req, res, next) => {
     }
 
     if (profile_status !== undefined) {
+      // Profile status can only be changed by HR/Admin
+      console.warn(`[EmployeeController] Profile status change requested for employee ${id} - should require HR/Admin`);
       updates.push(`profile_status = $${paramIndex}`);
       params.push(profile_status);
       paramIndex++;
