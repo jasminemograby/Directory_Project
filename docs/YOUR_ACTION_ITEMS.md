@@ -118,7 +118,7 @@ psql $DATABASE_URL -f database/migrations/add_external_api_calls_log_table.sql
 ### צעד 4: בדיקת משתנים קיימים
 ודאי שיש לך גם:
 - ✅ `NODE_ENV=production`
-- ✅ `PORT=5000`
+- ✅ `PORT=8080` (Railway משתמש ב-8080 כברירת מחדל)
 - ✅ `DATABASE_URL` (מחובר ל-Supabase)
 - ✅ `CORS_ORIGIN` (URL של Vercel frontend)
 
@@ -134,7 +134,7 @@ psql $DATABASE_URL -f database/migrations/add_external_api_calls_log_table.sql
 1. ב-Railway Dashboard, לכי ל-**Deployments**
 2. לחצי על ה-Deployment האחרון
 3. בדקי את ה-Logs:
-   - חפשי: `Directory Backend running on port 5000`
+   - חפשי: `Directory Backend running on port` (Railway משתמש ב-8080 כברירת מחדל)
    - אם יש שגיאות - שלחי לי
 
 ### צעד 2: בדיקת Health Check
