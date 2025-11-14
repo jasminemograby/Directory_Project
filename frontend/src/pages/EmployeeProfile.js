@@ -387,6 +387,11 @@ const EmployeeProfile = () => {
               />
             )}
 
+            {/* Requests Section */}
+            {currentEmployeeId && (
+              <RequestsSection employeeId={currentEmployeeId} />
+            )}
+
             {/* Show taught courses if employee is a trainer */}
             {employee && (employee.type === 'internal_instructor' || employee.type === 'external_instructor') && profileData && profileData.courses && profileData.courses.taught && profileData.courses.taught.length > 0 && (
               <div className="rounded-lg p-6" style={{ 

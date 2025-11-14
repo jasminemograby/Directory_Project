@@ -6,6 +6,7 @@ import { ROUTES } from '../utils/constants';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
 import PendingProfilesApproval from '../components/HR/PendingProfilesApproval';
+import PendingRequestsApproval from '../components/HR/PendingRequestsApproval';
 
 const HRDashboard = () => {
   const navigate = useNavigate();
@@ -285,6 +286,11 @@ const HRDashboard = () => {
       {/* Pending Profiles Approval Section */}
       <div className="mb-6">
         <PendingProfilesApproval />
+      </div>
+
+      {/* Pending Requests Approval Section */}
+      <div className="mb-6">
+        <PendingRequestsApproval />
       </div>
 
       {/* Quick Actions */}

@@ -119,6 +119,16 @@ export const apiService = {
   approveProfile: (employeeId, notes) => api.post(`/profile-approval/${employeeId}/approve`, { notes }),
   rejectProfile: (employeeId, reason) => api.post(`/profile-approval/${employeeId}/reject`, { reason }),
   
+  // Requests endpoints
+  createTrainingRequest: (employeeId, data) => api.post(`/requests/training/${employeeId}`, data),
+  createSkillVerificationRequest: (employeeId, data) => api.post(`/requests/skill-verification/${employeeId}`, data),
+  createSelfLearningRequest: (employeeId, data) => api.post(`/requests/self-learning/${employeeId}`, data),
+  createExtraAttemptRequest: (employeeId, data) => api.post(`/requests/extra-attempts/${employeeId}`, data),
+  getEmployeeRequests: (employeeId) => api.get(`/requests/employee/${employeeId}`),
+  getPendingRequests: (hrEmail) => api.get('/requests/pending', { params: { hrEmail } }),
+  approveRequest: (requestType, requestId, notes) => api.post(`/requests/approve/${requestType}/${requestId}`, { notes }),
+  rejectRequest: (requestType, requestId, reason) => api.post(`/requests/reject/${requestType}/${requestId}`, { reason }),
+  
   // Skills endpoints
   verifySkills: (data) => api.post('/skills/verify', data),
   updateSkills: (employeeId, data) => api.put(`/skills/${employeeId}`, data),
