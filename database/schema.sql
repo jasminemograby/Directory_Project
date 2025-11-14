@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS employees (
     phone VARCHAR(50),
     address TEXT,
     role VARCHAR(255),
+    current_role VARCHAR(255),
     target_role VARCHAR(255),
     type VARCHAR(50) DEFAULT 'regular' CHECK (type IN ('regular', 'internal_instructor', 'external_instructor')),
     department_id UUID REFERENCES departments(id),
