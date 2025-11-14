@@ -343,6 +343,112 @@ const getProcessedData = async (req, res, next) => {
   }
 };
 
+/**
+ * Check connection status for external providers (without fetching data)
+ * GET /api/external/status/:employeeId
+ */
+const getConnectionStatus = async (req, res, next) => {
+  try {
+    const { employeeId } = req.params;
+
+    if (!employeeId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Employee ID is required'
+      });
+    }
+
+    // Check if tokens exist in database
+    const tokensResult = await query(
+      `SELECT provider, expires_at, created_at 
+       FROM oauth_tokens 
+       WHERE employee_id = $1 AND provider IN ('linkedin', 'github')
+       ORDER BY provider`,
+      [employeeId]
+    );
+
+    const status = {
+      linkedin: false,
+      github: false
+    };
+
+    const now = new Date();
+    for (const row of tokensResult.rows) {
+      const expiresAt = row.expires_at ? new Date(row.expires_at) : null;
+      // Token is valid if it doesn't expire or hasn't expired yet
+      const isValid = !expiresAt || expiresAt > now;
+      
+      if (row.provider === 'linkedin') {
+        status.linkedin = isValid;
+      } else if (row.provider === 'github') {
+        status.github = isValid;
+      }
+    }
+
+    res.json({
+      success: true,
+      data: status
+    });
+  } catch (error) {
+    console.error('Error checking connection status:', error.message);
+    next(error);
+  }
+};
+
+/**
+ * Disconnect external provider (delete token)
+ * DELETE /api/external/disconnect/:employeeId/:provider
+ */
+const disconnectProvider = async (req, res, next) => {
+  try {
+    const { employeeId, provider } = req.params;
+
+    if (!employeeId || !provider) {
+      return res.status(400).json({
+        success: false,
+        error: 'Employee ID and provider are required'
+      });
+    }
+
+    if (!['linkedin', 'github'].includes(provider)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid provider. Must be "linkedin" or "github"'
+      });
+    }
+
+    // Delete token
+    const deleteResult = await query(
+      `DELETE FROM oauth_tokens 
+       WHERE employee_id = $1 AND provider = $2
+       RETURNING id`,
+      [employeeId, provider]
+    );
+
+    if (deleteResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'No connection found for this provider'
+      });
+    }
+
+    // Also delete raw data (optional - you might want to keep it)
+    await query(
+      `DELETE FROM external_data_raw 
+       WHERE employee_id = $1 AND provider = $2`,
+      [employeeId, provider]
+    );
+
+    res.json({
+      success: true,
+      message: `${provider} disconnected successfully`
+    });
+  } catch (error) {
+    console.error('Error disconnecting provider:', error.message);
+    next(error);
+  }
+};
+
 module.exports = {
   initiateLinkedInAuth,
   handleLinkedInCallback,
@@ -351,6 +457,8 @@ module.exports = {
   handleGitHubCallback,
   fetchGitHubData,
   collectAllData,
-  getProcessedData
+  getProcessedData,
+  getConnectionStatus,
+  disconnectProvider
 };
 

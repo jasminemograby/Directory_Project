@@ -125,6 +125,8 @@ export const apiService = {
   fetchGitHubData: (employeeId) => api.get(`/external/github/data/${employeeId}`),
   collectAllExternalData: (employeeId) => api.post(`/external/collect/${employeeId}`),
   getProcessedData: (employeeId) => api.get(`/external/processed/${employeeId}`),
+  getConnectionStatus: (employeeId) => api.get(`/external/status/${employeeId}`),
+  disconnectProvider: (employeeId, provider) => api.delete(`/external/disconnect/${employeeId}/${provider}`),
   
   // Notifications endpoints
   getNotifications: (userEmail, params = {}) => 

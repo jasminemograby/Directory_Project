@@ -17,27 +17,48 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
     try {
       setLoading(true);
       
-      // Try to fetch data - if successful, connection exists
-      const [linkedInResult, githubResult] = await Promise.allSettled([
-        apiService.fetchLinkedInData(employeeId),
-        apiService.fetchGitHubData(employeeId)
-      ]);
-
-      if (linkedInResult.status === 'fulfilled' && linkedInResult.value.data) {
-        setLinkedInStatus('connected');
-        setLinkedInData(linkedInResult.value.data);
+      // Check connection status (without fetching data)
+      const statusResult = await apiService.getConnectionStatus(employeeId);
+      
+      if (statusResult.data && statusResult.data.data) {
+        const status = statusResult.data.data;
+        
+        // Set connection status
+        setLinkedInStatus(status.linkedin ? 'connected' : 'disconnected');
+        setGithubStatus(status.github ? 'connected' : 'disconnected');
+        
+        // If connected, try to fetch data for display
+        if (status.linkedin) {
+          try {
+            const linkedInDataResult = await apiService.fetchLinkedInData(employeeId);
+            if (linkedInDataResult.data && linkedInDataResult.data.data) {
+              setLinkedInData(linkedInDataResult.data.data);
+            }
+          } catch (err) {
+            console.warn('Could not fetch LinkedIn data:', err);
+            // Keep status as connected even if data fetch fails
+          }
+        }
+        
+        if (status.github) {
+          try {
+            const githubDataResult = await apiService.fetchGitHubData(employeeId);
+            if (githubDataResult.data && githubDataResult.data.data) {
+              setGithubData(githubDataResult.data.data);
+            }
+          } catch (err) {
+            console.warn('Could not fetch GitHub data:', err);
+            // Keep status as connected even if data fetch fails
+          }
+        }
       } else {
         setLinkedInStatus('disconnected');
-      }
-
-      if (githubResult.status === 'fulfilled' && githubResult.value.data) {
-        setGithubStatus('connected');
-        setGithubData(githubResult.value.data);
-      } else {
         setGithubStatus('disconnected');
       }
     } catch (error) {
       console.error('Error checking connection status:', error);
+      setLinkedInStatus('disconnected');
+      setGithubStatus('disconnected');
     } finally {
       setLoading(false);
     }
@@ -106,6 +127,38 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
       console.error('Error initiating GitHub auth:', error);
       setError('Failed to connect GitHub. Please try again.');
       setGithubStatus('disconnected');
+      setLoading(false);
+    }
+  };
+
+  const handleDisconnect = async (provider) => {
+    if (!window.confirm(`Are you sure you want to disconnect ${provider}? You will need to reconnect to use this service again.`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      await apiService.disconnectProvider(employeeId, provider);
+      
+      // Update status
+      if (provider === 'linkedin') {
+        setLinkedInStatus('disconnected');
+        setLinkedInData(null);
+      } else if (provider === 'github') {
+        setGithubStatus('disconnected');
+        setGithubData(null);
+      }
+      
+      setSuccessMessage(`${provider} disconnected successfully`);
+      
+      // Refresh connection status
+      await checkConnectionStatus();
+    } catch (error) {
+      console.error(`Error disconnecting ${provider}:`, error);
+      setError(`Failed to disconnect ${provider}. Please try again.`);
+    } finally {
       setLoading(false);
     }
   };
@@ -216,13 +269,28 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
                 </p>
               </div>
             </div>
-            <Button
-              onClick={handleLinkedInConnect}
-              disabled={loading || linkedInStatus === 'connecting' || linkedInStatus === 'connected'}
-              className={linkedInStatus === 'connected' ? 'bg-gray-400 cursor-not-allowed' : ''}
-            >
-              {linkedInStatus === 'connected' ? 'Connected ✓' : linkedInStatus === 'connecting' ? 'Connecting...' : 'Connect'}
-            </Button>
+            <div className="flex items-center space-x-2">
+              {linkedInStatus === 'connected' ? (
+                <>
+                  <span className="text-green-600 font-medium mr-2">Connected ✓</span>
+                  <Button
+                    onClick={() => handleDisconnect('linkedin')}
+                    disabled={loading}
+                    variant="secondary"
+                    className="bg-red-500 hover:bg-red-600 text-white"
+                  >
+                    Disconnect
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={handleLinkedInConnect}
+                  disabled={loading || linkedInStatus === 'connecting'}
+                >
+                  {linkedInStatus === 'connecting' ? 'Connecting...' : 'Connect'}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -242,13 +310,28 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
                 </p>
               </div>
             </div>
-            <Button
-              onClick={handleGitHubConnect}
-              disabled={loading || githubStatus === 'connecting' || githubStatus === 'connected'}
-              className={githubStatus === 'connected' ? 'bg-gray-400 cursor-not-allowed' : ''}
-            >
-              {githubStatus === 'connected' ? 'Connected ✓' : githubStatus === 'connecting' ? 'Connecting...' : 'Connect'}
-            </Button>
+            <div className="flex items-center space-x-2">
+              {githubStatus === 'connected' ? (
+                <>
+                  <span className="text-green-600 font-medium mr-2">Connected ✓</span>
+                  <Button
+                    onClick={() => handleDisconnect('github')}
+                    disabled={loading}
+                    variant="secondary"
+                    className="bg-red-500 hover:bg-red-600 text-white"
+                  >
+                    Disconnect
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={handleGitHubConnect}
+                  disabled={loading || githubStatus === 'connecting'}
+                >
+                  {githubStatus === 'connecting' ? 'Connecting...' : 'Connect'}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

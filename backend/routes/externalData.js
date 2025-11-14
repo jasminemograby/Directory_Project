@@ -19,5 +19,11 @@ router.post('/collect/:employeeId', externalDataController.collectAllData);
 // Get processed data (bio, projects, skills)
 router.get('/processed/:employeeId', externalDataController.getProcessedData);
 
+// Check connection status (without fetching data)
+router.get('/status/:employeeId', externalDataController.getConnectionStatus);
+
+// Disconnect provider (delete token)
+router.delete('/disconnect/:employeeId/:provider', externalDataController.disconnectProvider);
+
 module.exports = router;
 
