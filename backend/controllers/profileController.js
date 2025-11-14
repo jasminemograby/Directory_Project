@@ -15,7 +15,7 @@ const getEmployeeProfile = async (req, res) => {
 
     // Get basic employee data
     const employeeResult = await query(
-      `SELECT id, name, email, role, current_role, target_role, value_proposition, 
+      `SELECT id, name, email, role, type, current_role, target_role, value_proposition, 
               profile_status, company_id, created_at, updated_at
        FROM employees WHERE id = $1`,
       [employeeId]
