@@ -49,14 +49,24 @@ const sanitizeRawData = (rawData) => {
   if (rawData.github?.profile || rawData.github?.repositories) {
     sanitized.github = {
       profile: rawData.github.profile ? {
-        name: sanitizeInput(rawData.github.profile.name),
-        login: sanitizeInput(rawData.github.profile.login),
-        bio: sanitizeInput(rawData.github.profile.bio)
+        name: sanitizeInput(rawData.github.profile.name || ''),
+        login: sanitizeInput(rawData.github.profile.login || ''),
+        bio: sanitizeInput(rawData.github.profile.bio || ''),
+        company: sanitizeInput(rawData.github.profile.company || ''),
+        location: sanitizeInput(rawData.github.profile.location || ''),
+        blog: sanitizeInput(rawData.github.profile.blog || ''),
+        public_repos: rawData.github.profile.public_repos || 0,
+        followers: rawData.github.profile.followers || 0,
+        following: rawData.github.profile.following || 0
       } : null,
       repositories: (rawData.github.repositories || []).map(repo => ({
-        name: sanitizeInput(repo.name),
-        description: sanitizeInput(repo.description),
-        language: sanitizeInput(repo.language)
+        name: sanitizeInput(repo.name || ''),
+        description: sanitizeInput(repo.description || ''),
+        language: sanitizeInput(repo.language || ''),
+        stargazers_count: repo.stargazers_count || 0,
+        forks_count: repo.forks_count || 0,
+        created_at: repo.created_at || '',
+        updated_at: repo.updated_at || ''
       })).slice(0, 20) // Limit to 20 repos for security
     };
   }
