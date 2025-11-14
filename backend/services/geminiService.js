@@ -84,43 +84,102 @@ const generateBio = async (rawData) => {
     const githubData = sanitizedData.github?.profile || {};
     const githubRepos = sanitizedData.github?.repositories || [];
 
-    // Build context string
+    // Build context string - include all available data, even if minimal
     let context = '';
+    let hasAnyData = false;
     
     if (linkedInData.localizedFirstName || linkedInData.localizedLastName) {
       context += `Name: ${linkedInData.localizedFirstName || ''} ${linkedInData.localizedLastName || ''}\n`;
+      hasAnyData = true;
     }
     
     if (linkedInData.headline) {
       context += `Headline: ${linkedInData.headline}\n`;
+      hasAnyData = true;
     }
     
     if (linkedInData.summary) {
       context += `Summary: ${linkedInData.summary}\n`;
+      hasAnyData = true;
+    }
+    
+    // GitHub profile data - include all available fields
+    if (githubData.name) {
+      context += `GitHub Name: ${githubData.name}\n`;
+      hasAnyData = true;
+    }
+    
+    if (githubData.login) {
+      context += `GitHub Username: ${githubData.login}\n`;
+      hasAnyData = true;
     }
     
     if (githubData.bio) {
       context += `GitHub Bio: ${githubData.bio}\n`;
+      hasAnyData = true;
     }
     
+    if (githubData.company) {
+      context += `GitHub Company: ${githubData.company}\n`;
+      hasAnyData = true;
+    }
+    
+    if (githubData.location) {
+      context += `GitHub Location: ${githubData.location}\n`;
+      hasAnyData = true;
+    }
+    
+    if (githubData.public_repos !== undefined) {
+      context += `GitHub Public Repositories: ${githubData.public_repos}\n`;
+      hasAnyData = true;
+    }
+    
+    // GitHub repositories - include more details
     if (githubRepos.length > 0) {
       context += `GitHub Repositories (${githubRepos.length}):\n`;
       githubRepos.slice(0, 10).forEach(repo => {
-        context += `- ${repo.name}: ${repo.description || 'No description'}\n`;
+        context += `- ${repo.name}: ${repo.description || 'No description'} (${repo.language || 'No language'}, ${repo.stargazers_count || 0} stars, ${repo.forks_count || 0} forks)\n`;
       });
+      hasAnyData = true;
+    } else if (githubData.public_repos === 0) {
+      // User has GitHub account but no public repos
+      context += `GitHub: User has a GitHub account with 0 public repositories.\n`;
+      hasAnyData = true;
     }
 
-    if (!context.trim()) {
-      console.warn('No data available for bio generation');
+    // Log what we're sending to Gemini
+    console.log(`[Gemini] Context for bio generation:`, {
+      hasLinkedIn: !!rawData.linkedin,
+      hasGitHub: !!rawData.github,
+      githubName: githubData.name,
+      githubLogin: githubData.login,
+      githubBio: githubData.bio,
+      reposCount: githubRepos.length,
+      contextLength: context.length
+    });
+
+    if (!hasAnyData && !context.trim()) {
+      console.warn('[Gemini] No data available for bio generation');
       return null;
     }
 
     // Call Gemini API securely
-    const prompt = `Based on the following professional information, generate a short, professional bio (2-3 sentences, maximum 200 words). Focus on professional experience, skills, and achievements. Write in a professional tone.
+    // Improved prompt that works even with minimal data
+    const prompt = `You are a professional bio writer. Based on the following information about a person, generate a short, professional bio (2-3 sentences, maximum 200 words).
 
+IMPORTANT: Even if the information is limited, create a professional bio based on what is available. If there are no projects or repositories, focus on the person's profile information, username, or general professional presence.
+
+Information available:
 ${context}
 
-Generate only the bio text, without any additional commentary or labels.`;
+Generate a professional bio that:
+- Is 2-3 sentences long
+- Uses a professional, friendly tone
+- Highlights any available professional information, skills, or interests
+- If information is limited, create a general professional bio based on the username/profile
+- Does NOT include phrases like "limited information" or "not much data available"
+
+Generate ONLY the bio text, without any additional commentary, labels, or explanations.`;
 
     console.log(`[Gemini] Calling API: ${GEMINI_API_BASE}/models/${GEMINI_MODEL}:generateContent`);
     const response = await axios.post(
@@ -235,21 +294,34 @@ const identifyProjects = async (rawData) => {
     }
 
     // Call Gemini API securely
-    const prompt = `Based on the following professional information, identify and summarize key projects. For each project, provide:
+    // Improved prompt that works even with minimal data
+    const prompt = `You are a project analyst. Based on the following professional information, identify and summarize key projects, repositories, or work experiences.
+
+IMPORTANT: 
+- If there are GitHub repositories, analyze them and create project summaries
+- If there are LinkedIn positions, extract projects from work experience
+- If information is limited, create 1-2 general project summaries based on available data
+- Even if there are no repositories, you can create a project summary based on the profile information
+
+For each project, provide:
 1. A clear project title
 2. A brief summary (1-2 sentences, maximum 100 words)
 
-Focus on significant projects, repositories, or work experiences that demonstrate skills and achievements.
-
+Information available:
 ${context}
 
-Return the results as a JSON array of objects with "title" and "summary" fields. Example format:
+Return the results as a JSON array of objects with "title" and "summary" fields. 
+- If you find projects/repositories, create summaries for them
+- If information is limited, create 1-2 general professional projects based on the profile
+- Minimum: 1 project, Maximum: 10 projects
+
+Example format:
 [
   {"title": "Project Name", "summary": "Brief description"},
   {"title": "Another Project", "summary": "Brief description"}
 ]
 
-Return ONLY the JSON array, no additional text.`;
+Return ONLY the JSON array, no additional text or explanations.`;
 
     const response = await axios.post(
       `${GEMINI_API_BASE}/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
