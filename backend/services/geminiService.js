@@ -2,7 +2,8 @@
 const axios = require('axios');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+// Use v1 API (v1beta doesn't support gemini-1.5 models)
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1';
 // Use gemini-1.5-pro or gemini-1.5-flash (gemini-pro is deprecated)
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
