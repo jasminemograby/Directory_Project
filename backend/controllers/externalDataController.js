@@ -312,16 +312,18 @@ const collectAllData = async (req, res, next) => {
       console.log(`[Collect] No GitHub token found for employee: ${employeeId}`);
     }
 
-    // Process data through Gemini AI (enrichment)
+    // Process data through Gemini AI (enrichment) - AUTOMATIC after connection
     let enrichmentResult = null;
     if (results.linkedin || results.github) {
       try {
-        console.log(`[Collect] Starting Gemini enrichment for employee: ${employeeId}`);
+        console.log(`[Collect] Starting automatic Gemini enrichment for employee: ${employeeId}`);
         const profileEnrichmentService = require('../services/profileEnrichmentService');
         enrichmentResult = await profileEnrichmentService.enrichProfile(employeeId);
-        console.log('[Collect] ✅ Profile enrichment completed:', {
+        console.log('[Collect] ✅ Automatic profile enrichment completed:', {
           hasBio: !!enrichmentResult.bio,
-          projectsCount: enrichmentResult.projects?.length || 0
+          projectsCount: enrichmentResult.projects?.length || 0,
+          skillsCount: enrichmentResult.skills?.length || 0,
+          profileAutoApproved: true
         });
       } catch (error) {
         console.error('[Collect] ❌ Error enriching profile:', error.message);
@@ -336,7 +338,10 @@ const collectAllData = async (req, res, next) => {
     res.json({
       success: true,
       data: results,
-      enrichment: enrichmentResult
+      enrichment: enrichmentResult,
+      message: enrichmentResult && !enrichmentResult.error 
+        ? 'Profile enriched and approved automatically. You can now view your complete profile.'
+        : null
     });
   } catch (error) {
     console.error('Error collecting external data:', error.message);

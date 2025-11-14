@@ -259,29 +259,53 @@ const EmployeeProfile = () => {
         theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
       }`}>
 
-        {/* Mandatory Profile Enrichment Section */}
+        {/* Mandatory Profile Enrichment Section - BLOCKS ALL ACCESS UNTIL COMPLETE */}
         {!isEnriched && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className={`rounded-lg p-6 mb-6 border ${
+              theme === 'day-mode' 
+                ? 'bg-red-50 border-red-200' 
+                : 'bg-red-900/20 border-red-800'
+            }`}>
+              <h2 className={`text-xl font-bold mb-2 ${
+                theme === 'day-mode' ? 'text-red-800' : 'text-red-300'
+              }`}>
+                ⚠️ Profile Enrichment Required
+              </h2>
+              <p className={theme === 'day-mode' ? 'text-red-700' : 'text-red-300'}>
+                You must enrich your profile before you can access the system.
+              </p>
+              <p className={`text-sm mt-2 ${
+                theme === 'day-mode' ? 'text-red-600' : 'text-red-400'
+              }`}>
+                After connecting your accounts, your profile will be automatically enriched with AI-generated bio, 
+                projects, and skills. This is a one-time mandatory step.
+              </p>
+            </div>
+
             <EnhanceProfile 
               employeeId={currentEmployeeId} 
               onEnrichmentComplete={handleEnrichmentComplete}
             />
             
-            {/* Blocking Message */}
+            {/* Instructions */}
             <div className={`rounded-lg p-4 mt-4 border ${
               theme === 'day-mode' 
-                ? 'bg-yellow-50 border-yellow-200' 
-                : 'bg-yellow-900/20 border-yellow-800'
+                ? 'bg-blue-50 border-blue-200' 
+                : 'bg-blue-900/20 border-blue-800'
             }`}>
-              <p className={theme === 'day-mode' ? 'text-yellow-800' : 'text-yellow-300'}>
-                ⚠️ Please connect your GitHub account to enrich your profile before continuing.
+              <p className={theme === 'day-mode' ? 'text-blue-800' : 'text-blue-300'}>
+                📋 <strong>Instructions:</strong>
               </p>
-              <p className={`text-sm mt-2 ${
-                theme === 'day-mode' ? 'text-yellow-700' : 'text-yellow-400'
+              <ol className={`list-decimal list-inside mt-2 space-y-1 text-sm ${
+                theme === 'day-mode' ? 'text-blue-700' : 'text-blue-400'
               }`}>
-                GitHub connection is required to generate your skill profile and enable access to assessments and learning paths.
-                LinkedIn connection is optional but recommended for a more complete profile.
-              </p>
+                <li>Connect your GitHub account (required)</li>
+                <li>Connect your LinkedIn account (optional but recommended)</li>
+                <li>Click "Fetch Data" - enrichment happens automatically</li>
+                <li>Your profile will be approved automatically after enrichment</li>
+                <li>You'll be redirected to your complete profile</li>
+              </ol>
             </div>
           </div>
         )}

@@ -196,31 +196,43 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
           setGithubData(github);
         }
 
-        // Check enrichment result
+        // Check enrichment result - AUTOMATIC ENRICHMENT AFTER CONNECTION
         const enrichment = response.data.enrichment;
         if (enrichment) {
           if (enrichment.error) {
             console.error('[EnhanceProfile] Enrichment error:', enrichment.error);
             setError(`Enrichment failed: ${enrichment.error}. Please try again.`);
           } else {
-            console.log('[EnhanceProfile] Enrichment successful:', {
+            console.log('[EnhanceProfile] ✅ Automatic enrichment successful:', {
               hasBio: !!enrichment.bio,
-              projectsCount: enrichment.projects?.length || 0
+              projectsCount: enrichment.projects?.length || 0,
+              skillsCount: enrichment.skills?.length || 0
             });
-            setSuccessMessage('Profile enriched successfully! Your data has been processed and is ready to view.');
-            setTimeout(() => setSuccessMessage(null), 5000);
-          }
-        }
-
-        // Trigger enrichment complete callback if GitHub is connected (required)
-        if (githubStatus === 'connected' || (github && !github.error)) {
-          // Wait a bit for processed data to be available
-          setTimeout(() => {
-            if (onEnrichmentComplete) {
-              console.log('[EnhanceProfile] Triggering enrichment complete callback');
-              onEnrichmentComplete();
+            setSuccessMessage('✅ Profile enriched and approved automatically! Redirecting to your complete profile...');
+            
+            // Trigger enrichment complete callback - profile is now enriched and approved
+            if (githubStatus === 'connected' || (github && !github.error)) {
+              // Wait a bit for processed data to be available and profile status to update
+              setTimeout(() => {
+                if (onEnrichmentComplete) {
+                  console.log('[EnhanceProfile] Triggering enrichment complete callback - profile is now enriched and approved');
+                  onEnrichmentComplete();
+                }
+              }, 3000); // Increased delay to ensure backend processing is complete
             }
-          }, 2000);
+          }
+        } else {
+          // If no enrichment result but GitHub is connected, still trigger callback
+          if (githubStatus === 'connected' || (github && !github.error)) {
+            console.log('[EnhanceProfile] GitHub connected but enrichment not yet complete, waiting...');
+            // Wait longer for enrichment to complete
+            setTimeout(() => {
+              if (onEnrichmentComplete) {
+                console.log('[EnhanceProfile] Triggering callback after delay');
+                onEnrichmentComplete();
+              }
+            }, 5000);
+          }
         }
       }
     } catch (error) {

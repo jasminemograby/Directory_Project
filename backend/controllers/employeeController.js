@@ -1,5 +1,6 @@
 // Employee Controller
 const { query } = require('../config/database');
+const { canEditSensitiveFields, isHROrAdmin } = require('../utils/rbac');
 
 /**
  * Get employee by ID
@@ -137,9 +138,12 @@ const updateEmployee = async (req, res, next) => {
     // Sensitive fields (name, role, email, department_id, team_id, type, bio, target_role, career_path) require HR approval
     const allowedFields = ['phone', 'address', 'preferred_language'];
     
-    // For HR/Admin, allow more fields
-    // TODO: Add RBAC check here to determine if user is HR/Admin
-    // For now, we'll allow all fields but log a warning for sensitive changes
+    // Get editor employee ID from auth token (assume it's in req.employeeId or req.user.id)
+    // For now, we'll extract from token or use the target employee ID if self-edit
+    const editorEmployeeId = req.employeeId || req.user?.id || id; // Fallback to target ID if no auth
+    
+    // Check if editor is HR/Admin
+    const canEditSensitive = await canEditSensitiveFields(editorEmployeeId, id);
     
     // Build update query dynamically
     const updates = [];
@@ -166,38 +170,57 @@ const updateEmployee = async (req, res, next) => {
 
     // Sensitive fields - require HR/Admin approval (not allowed for employee self-edit)
     if (name !== undefined) {
-      console.warn(`[EmployeeController] Name change requested for employee ${id} - requires HR approval`);
-      // For now, allow but log warning - TODO: Add proper RBAC check
+      if (!canEditSensitive) {
+        return res.status(403).json({
+          success: false,
+          error: 'Permission denied: Name changes require HR approval. Please contact HR to update your name.'
+        });
+      }
       updates.push(`name = $${paramIndex}`);
       params.push(name);
       paramIndex++;
     }
 
     if (email !== undefined) {
-      console.warn(`[EmployeeController] Email change requested for employee ${id} - requires HR approval`);
+      if (!canEditSensitive) {
+        return res.status(403).json({
+          success: false,
+          error: 'Permission denied: Email changes require HR approval. Please contact HR to update your email.'
+        });
+      }
       updates.push(`email = $${paramIndex}`);
       params.push(email);
       paramIndex++;
     }
 
     if (role !== undefined) {
-      console.warn(`[EmployeeController] Role change requested for employee ${id} - requires HR approval`);
+      if (!canEditSensitive) {
+        return res.status(403).json({
+          success: false,
+          error: 'Permission denied: Role changes require HR approval. Please contact HR to update your role.'
+        });
+      }
       updates.push(`role = $${paramIndex}`);
       params.push(role);
       paramIndex++;
     }
 
     if (bio !== undefined) {
-      console.warn(`[EmployeeController] Bio change requested for employee ${id} - Bio is AI-generated and cannot be edited`);
-      // Bio is AI-generated, don't allow manual editing
-      // updates.push(`bio = $${paramIndex}`);
-      // params.push(bio);
-      // paramIndex++;
+      // Bio is AI-generated, don't allow manual editing (even for HR)
+      return res.status(400).json({
+        success: false,
+        error: 'Bio is AI-generated from your LinkedIn/GitHub data and cannot be edited manually. To update your bio, reconnect your external accounts.'
+      });
     }
 
     if (profile_status !== undefined) {
       // Profile status can only be changed by HR/Admin
-      console.warn(`[EmployeeController] Profile status change requested for employee ${id} - should require HR/Admin`);
+      if (!canEditSensitive) {
+        return res.status(403).json({
+          success: false,
+          error: 'Permission denied: Profile status can only be changed by HR/Admin.'
+        });
+      }
       updates.push(`profile_status = $${paramIndex}`);
       params.push(profile_status);
       paramIndex++;

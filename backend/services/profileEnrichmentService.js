@@ -189,10 +189,71 @@ const enrichProfile = async (employeeId) => {
       console.warn(`[Enrichment] ⚠️ No bio or projects generated - NOT marking as processed. Will retry next time.`);
     }
 
+    // Step 7: Send data to Skills Engine for normalization (if we have data)
+    let skillsEngineResult = null;
+    if (bio || (projects && projects.length > 0)) {
+      try {
+        console.log(`[Enrichment] Sending data to Skills Engine for normalization...`);
+        const microserviceIntegrationService = require('./microserviceIntegrationService');
+        const employeeResult = await query(
+          `SELECT type, current_role, target_role FROM employees WHERE id = $1`,
+          [employeeId]
+        );
+        
+        if (employeeResult.rows.length > 0) {
+          const employee = employeeResult.rows[0];
+          const skillsEnginePayload = {
+            employee_id: employeeId,
+            employee_type: employee.type,
+            raw_data: {
+              linkedin: rawData.linkedin,
+              github: rawData.github,
+              bio: bio,
+              projects: projects
+            },
+            fields: ['normalized_skills', 'competencies']
+          };
+          
+          const skillsEngineResponse = await microserviceIntegrationService.sendRequest(
+            'SkillsEngine',
+            skillsEnginePayload
+          );
+          
+          if (skillsEngineResponse && skillsEngineResponse.payload) {
+            const parsedPayload = typeof skillsEngineResponse.payload === 'string'
+              ? JSON.parse(skillsEngineResponse.payload)
+              : skillsEngineResponse.payload;
+            
+            skillsEngineResult = parsedPayload;
+            console.log(`[Enrichment] ✅ Skills Engine normalization completed`);
+          }
+        }
+      } catch (error) {
+        console.error(`[Enrichment] ⚠️ Error sending to Skills Engine (non-critical):`, error.message);
+        // Don't fail enrichment if Skills Engine fails - it's non-critical
+      }
+    }
+
+    // Step 8: Auto-approve profile after successful enrichment
+    if (bio || (projects && projects.length > 0)) {
+      try {
+        await query(
+          `UPDATE employees 
+           SET profile_status = 'approved', updated_at = CURRENT_TIMESTAMP 
+           WHERE id = $1 AND profile_status = 'pending'`,
+          [employeeId]
+        );
+        console.log(`[Enrichment] ✅ Profile auto-approved after enrichment`);
+      } catch (error) {
+        console.error(`[Enrichment] ⚠️ Error auto-approving profile:`, error.message);
+        // Don't fail enrichment if approval update fails
+      }
+    }
+
     return {
       bio: bio || null,
       projects: projects || [],
-      skills: [] // Skills will come from Skills Engine in F006
+      skills: skillsEngineResult?.normalized_skills || skillsEngineResult?.competencies || []
     };
   } catch (error) {
     console.error('[Enrichment] Error enriching profile:', error.message);
