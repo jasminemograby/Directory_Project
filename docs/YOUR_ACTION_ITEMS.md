@@ -154,6 +154,24 @@ https://your-backend.railway.app/health
 ```
 
 ### צעד 3: בדיקת Exchange Endpoint
+
+**איפה להריץ את זה:**
+- **Windows:** פתחי **PowerShell** או **Command Prompt** (cmd)
+- **Mac/Linux:** פתחי **Terminal**
+
+**איך להריץ:**
+1. פתחי PowerShell/Command Prompt:
+   - לחצי על **Windows** + **R**
+   - הקלידי `powershell` או `cmd`
+   - לחצי Enter
+
+2. העתיקי והדבקי את הפקודה הבאה (החלפי `your-backend.railway.app` ב-URL האמיתי שלך):
+
+```bash
+curl -X POST https://your-backend.railway.app/api/exchange -H "Content-Type: application/json" -d "{\"requester_service\":\"SkillsEngine\",\"payload\":\"{\\\"employee_id\\\":\\\"test-id\\\",\\\"fields\\\":[\\\"competencies\\\"]}\"}"
+```
+
+**או אם יש לך Git Bash (יותר קל):**
 ```bash
 curl -X POST https://your-backend.railway.app/api/exchange \
   -H "Content-Type: application/json" \
@@ -161,6 +179,19 @@ curl -X POST https://your-backend.railway.app/api/exchange \
     "requester_service": "SkillsEngine",
     "payload": "{\"employee_id\":\"test-id\",\"fields\":[\"competencies\"]}"
   }'
+```
+
+**או דרך דפדפן (Postman/Thunder Client):**
+- פתחי Postman או Thunder Client (extension ב-VS Code)
+- בחרי **POST**
+- URL: `https://your-backend.railway.app/api/exchange`
+- Headers: `Content-Type: application/json`
+- Body (raw JSON):
+```json
+{
+  "requester_service": "SkillsEngine",
+  "payload": "{\"employee_id\":\"test-id\",\"fields\":[\"competencies\"]}"
+}
 ```
 
 **צפוי לראות:**
@@ -190,6 +221,7 @@ curl -X POST https://your-backend.railway.app/api/exchange \
 1. לחצי על **Add New**
 2. מלאי:
    - **Key:** `REACT_APP_API_URL`
+   
    - **Value:** `https://your-backend.railway.app/api`
      (החלפי `your-backend.railway.app` ב-URL האמיתי של Railway)
    - **Environment:** בחרי **Production** (ו-**Preview** אם רוצה)
@@ -212,24 +244,46 @@ curl -X POST https://your-backend.railway.app/api/exchange \
 3. נסי להתחבר/לעשות פעולה
 
 ### בדיקה 2: Exchange Endpoint (Production)
-```bash
-curl -X POST https://your-backend.railway.app/api/exchange \
-  -H "Content-Type: application/json" \
-  -d '{
-    "requester_service": "SkillsEngine",
-    "payload": "{\"employee_id\":\"test\",\"fields\":[\"competencies\"]}"
-  }'
+
+**איפה להריץ:** PowerShell/Command Prompt או Postman
+
+**PowerShell (העתיקי שורה אחת):**
+```powershell
+curl -X POST https://your-backend.railway.app/api/exchange -H "Content-Type: application/json" -d "{\"requester_service\":\"SkillsEngine\",\"payload\":\"{\\\"employee_id\\\":\\\"test\\\",\\\"fields\\\":[\\\"competencies\\\"]}\"}"
+```
+
+**או Postman/Thunder Client:**
+- Method: **POST**
+- URL: `https://your-backend.railway.app/api/exchange`
+- Body (raw JSON):
+```json
+{
+  "requester_service": "SkillsEngine",
+  "payload": "{\"employee_id\":\"test\",\"fields\":[\"competencies\"]}"
+}
 ```
 
 ### בדיקה 3: Internal API (Production)
-```bash
-curl -X POST https://your-backend.railway.app/api/internal/skills-engine/update \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_INTERNAL_API_SECRET" \
-  -d '{
-    "employee_id": "valid-uuid-here",
-    "normalized_skills": []
-  }'
+
+**איפה להריץ:** PowerShell/Command Prompt או Postman
+
+**PowerShell (החלפי YOUR_INTERNAL_API_SECRET ב-secret האמיתי):**
+```powershell
+curl -X POST https://your-backend.railway.app/api/internal/skills-engine/update -H "Content-Type: application/json" -H "Authorization: Bearer YOUR_INTERNAL_API_SECRET" -d "{\"employee_id\":\"valid-uuid-here\",\"normalized_skills\":[]}"
+```
+
+**או Postman/Thunder Client:**
+- Method: **POST**
+- URL: `https://your-backend.railway.app/api/internal/skills-engine/update`
+- Headers:
+  - `Content-Type: application/json`
+  - `Authorization: Bearer YOUR_INTERNAL_API_SECRET`
+- Body (raw JSON):
+```json
+{
+  "employee_id": "valid-uuid-here",
+  "normalized_skills": []
+}
 ```
 
 **צפוי:** `{"success": true, "message": "Skills updated successfully"}`
