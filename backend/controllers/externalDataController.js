@@ -182,12 +182,26 @@ const handleGitHubCallback = async (req, res, next) => {
       return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile?error=missing_code`);
     }
 
-    // Extract employee ID from state
-    const employeeId = state; // In production, decode state properly
+    // Extract employee ID from state (state format: base64(employeeId:randomHex))
+    let employeeId = null;
+    if (state) {
+      try {
+        const decoded = Buffer.from(state, 'base64').toString('utf-8');
+        const parts = decoded.split(':');
+        if (parts.length === 2) {
+          employeeId = parts[0]; // First part is employeeId
+        }
+      } catch (error) {
+        console.error('Error decoding state:', error.message);
+      }
+    }
 
     if (!employeeId) {
+      console.error('[GitHub Callback] Invalid state - employeeId not found');
       return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile?error=invalid_state`);
     }
+
+    console.log(`[GitHub Callback] Processing OAuth for employee: ${employeeId}`);
 
     // Exchange code for token
     await githubService.exchangeCodeForToken(code, employeeId);
