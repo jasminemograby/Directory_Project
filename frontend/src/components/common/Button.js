@@ -14,8 +14,6 @@ const Button = ({
   className = '',
   ...props
 }) => {
-  const { theme } = useApp();
-  
   // Get button styles from CSS variables (set by design system)
   const getButtonStyles = () => {
     // Use CSS variables that are set in index.css based on theme
@@ -28,7 +26,7 @@ const Button = ({
       secondary: {
         background: 'var(--btn-secondary-bg)',
         color: 'var(--btn-secondary-text)',
-        border: theme === 'night-mode' ? 'var(--btn-secondary-border)' : 'none',
+        border: 'var(--btn-secondary-border, none)',
       },
       outline: {
         background: 'var(--btn-outline-bg)',
@@ -37,7 +35,7 @@ const Button = ({
       },
       ghost: {
         background: 'transparent',
-        color: theme === 'day-mode' ? 'var(--text-primary)' : 'var(--text-primary)',
+        color: 'var(--text-primary)',
       },
     };
     
@@ -60,7 +58,7 @@ const Button = ({
         border: 'var(--btn-outline-border-hover)',
       },
       ghost: {
-        background: theme === 'day-mode' ? 'var(--btn-secondary-bg-hover)' : 'var(--btn-outline-bg-hover)',
+        background: 'var(--btn-secondary-bg-hover)',
       },
     };
     

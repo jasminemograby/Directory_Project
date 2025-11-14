@@ -15,10 +15,7 @@ const Input = ({
   className = '',
   ...props
 }) => {
-  const { theme, getDesignToken } = useApp();
   const [isFocused, setIsFocused] = useState(false);
-  
-  const inputConfig = getDesignToken('input');
   
   const inputStyles = {
     width: '100%',
