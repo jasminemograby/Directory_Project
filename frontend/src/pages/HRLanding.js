@@ -9,7 +9,7 @@ const HRLanding = () => {
   const navigate = useNavigate();
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-body)' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
       {/* Single Header with Logo, Theme Toggle, and Home */}
       <div style={{ position: 'relative', zIndex: 10 }}>
         <Header />
