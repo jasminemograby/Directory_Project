@@ -176,14 +176,18 @@ const enrichProfile = async (employeeId) => {
       );
     }
 
-    // Step 6: Mark raw data as processed (processed = true)
-    await query(
-      `UPDATE external_data_raw 
-       SET processed = true, updated_at = CURRENT_TIMESTAMP 
-       WHERE employee_id = $1 AND processed = false`,
-      [employeeId]
-    );
-    console.log(`[Enrichment] Raw data marked as processed`);
+    // Step 6: Mark raw data as processed (processed = true) - ONLY if we got results
+    if (bio || (projects && projects.length > 0)) {
+      await query(
+        `UPDATE external_data_raw 
+         SET processed = true, updated_at = CURRENT_TIMESTAMP 
+         WHERE employee_id = $1 AND processed = false`,
+        [employeeId]
+      );
+      console.log(`[Enrichment] Raw data marked as processed`);
+    } else {
+      console.warn(`[Enrichment] ⚠️ No bio or projects generated - NOT marking as processed. Will retry next time.`);
+    }
 
     return {
       bio: bio || null,

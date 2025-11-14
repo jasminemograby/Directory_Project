@@ -121,8 +121,9 @@ ${context}
 
 Generate only the bio text, without any additional commentary or labels.`;
 
+    console.log(`[Gemini] Calling API: ${GEMINI_API_BASE}/models/${GEMINI_MODEL}:generateContent`);
     const response = await axios.post(
-      `${GEMINI_API_BASE}/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+      `${GEMINI_API_BASE}/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
       {
         contents: [{
           parts: [{
@@ -182,6 +183,11 @@ Generate only the bio text, without any additional commentary or labels.`;
     return null;
   } catch (error) {
     console.error('[Gemini] Error generating bio:', error.message);
+    if (error.response) {
+      console.error('[Gemini] API Error Status:', error.response.status);
+      console.error('[Gemini] API Error Data:', JSON.stringify(error.response.data, null, 2));
+      console.error('[Gemini] API URL:', error.config?.url);
+    }
     // Don't throw - return null for graceful degradation
     return null;
   }
@@ -327,6 +333,11 @@ Return ONLY the JSON array, no additional text.`;
     return [];
   } catch (error) {
     console.error('[Gemini] Error identifying projects:', error.message);
+    if (error.response) {
+      console.error('[Gemini] API Error Status:', error.response.status);
+      console.error('[Gemini] API Error Data:', JSON.stringify(error.response.data, null, 2));
+      console.error('[Gemini] API URL:', error.config?.url);
+    }
     // Don't throw - return empty array for graceful degradation
     return [];
   }
