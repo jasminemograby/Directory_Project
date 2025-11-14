@@ -110,18 +110,13 @@ function App() {
           <Route path={ROUTES.ERROR_403} element={<Error403 />} />
           <Route path={ROUTES.ERROR_500} element={<Error500 />} />
           
-          {/* Protected Routes - Placeholders */}
+          {/* Super Admin Dashboard */}
           <Route
             path={ROUTES.ADMIN_DASHBOARD}
             element={
-              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
-                <div className="min-h-screen flex items-center justify-center">
-                  <div className="text-center">
-                    <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-                    <p className="text-gray-600">Coming soon</p>
-                  </div>
-                </div>
-              </ProtectedRoute>
+              <Layout>
+                <SuperAdminProfile />
+              </Layout>
             }
           />
           
