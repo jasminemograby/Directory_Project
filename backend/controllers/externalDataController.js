@@ -85,13 +85,27 @@ const handleLinkedInCallback = async (req, res, next) => {
     console.log(`[LinkedIn Callback] Processing OAuth for employee: ${employeeId}`);
 
     // Exchange code for token
-    await linkedInService.exchangeCodeForToken(code, employeeId);
+    try {
+      await linkedInService.exchangeCodeForToken(code, employeeId);
+      console.log(`[LinkedIn Callback] ✅ Token exchange successful for employee: ${employeeId}`);
+    } catch (tokenError) {
+      console.error('[LinkedIn Callback] ❌ Token exchange failed:', tokenError.message);
+      if (tokenError.response) {
+        console.error('[LinkedIn Callback] LinkedIn API response:', JSON.stringify(tokenError.response.data, null, 2));
+      }
+      throw tokenError; // Re-throw to be caught by outer catch
+    }
 
     // Redirect to frontend success page
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile?linkedin=connected&employeeId=${employeeId}`);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    console.log(`[LinkedIn Callback] Redirecting to: ${frontendUrl}/profile?linkedin=connected&employeeId=${employeeId}`);
+    res.redirect(`${frontendUrl}/profile?linkedin=connected&employeeId=${employeeId}`);
   } catch (error) {
-    console.error('Error handling LinkedIn callback:', error.message);
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile?error=${encodeURIComponent(error.message)}`);
+    console.error('[LinkedIn Callback] ❌ Error handling LinkedIn callback:', error.message);
+    console.error('[LinkedIn Callback] Error stack:', error.stack);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const errorMessage = error.message || 'Unknown error occurred';
+    res.redirect(`${frontendUrl}/profile?error=${encodeURIComponent(errorMessage)}`);
   }
 };
 

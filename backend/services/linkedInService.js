@@ -28,13 +28,12 @@ const getAuthorizationUrl = (employeeId, state = null) => {
   const randomHex = crypto.randomBytes(16).toString('hex');
   const stateParam = state || Buffer.from(`${employeeId}:${randomHex}`).toString('base64');
   
-  // LinkedIn OAuth scopes - minimal permissions for profile data
+  // LinkedIn OAuth scopes - using OpenID Connect (new API)
+  // Note: LinkedIn deprecated r_liteprofile, r_basicprofile, r_emailaddress
+  // Using OpenID Connect scopes instead
   const scopes = [
-    'r_liteprofile',      // Basic profile info (deprecated, but still used)
-    'r_emailaddress',     // Email address
-    'r_basicprofile',     // Basic profile
     'openid',             // OpenID Connect
-    'profile',            // Profile information
+    'profile',            // Profile information (name, picture)
     'email'               // Email address
   ].join(' ');
 
@@ -84,7 +83,9 @@ const exchangeCodeForToken = async (code, employeeId) => {
         ? new Date(Date.now() + response.data.expires_in * 1000)
         : null;
 
-      await query(
+      console.log(`[LinkedIn] Storing OAuth token for employee: ${employeeId}`);
+
+      const result = await query(
         `INSERT INTO oauth_tokens (employee_id, provider, access_token, refresh_token, token_type, expires_at, scope, updated_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
          ON CONFLICT (employee_id, provider) 
@@ -105,6 +106,12 @@ const exchangeCodeForToken = async (code, employeeId) => {
           response.data.scope || null
         ]
       );
+
+      if (result.rows.length > 0) {
+        console.log(`[LinkedIn] ✅ Token stored successfully for employee: ${employeeId}`);
+      } else {
+        console.warn(`[LinkedIn] ⚠️ Token insert returned no rows for employee: ${employeeId}`);
+      }
 
       return {
         access_token: response.data.access_token,
