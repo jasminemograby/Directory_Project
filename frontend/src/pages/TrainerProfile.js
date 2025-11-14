@@ -107,90 +107,162 @@ const TrainerProfile = () => {
   return (
     <Layout>
       <div className="max-w-4xl mx-auto p-6">
-        {/* Trainer-Specific Header */}
-        <div className="rounded-lg p-6 mb-6" style={{ 
-          backgroundColor: 'var(--bg-card)', 
-          boxShadow: 'var(--shadow-card)', 
-          borderColor: 'var(--bg-secondary)', 
-          borderWidth: '1px', 
-          borderStyle: 'solid' 
-        }}>
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
-              Trainer Profile
-            </h1>
-            <Button
-              variant="secondary"
-              onClick={() => navigate(ROUTES.TRAINER_DASHBOARD)}
-            >
-              Trainer Dashboard
-            </Button>
-          </div>
+        <h1 className="text-3xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>Trainer Profile</h1>
 
-          {/* Trainer Status and Settings */}
-          <div className="grid md:grid-cols-3 gap-4">
-            <div>
-              <h3 className="text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Trainer Status</h3>
-              <span className={`px-3 py-1 rounded text-sm font-medium capitalize ${
-                trainerData.trainerStatus === 'Active' 
-                  ? 'bg-accent-green text-white' 
-                  : trainerData.trainerStatus === 'Invited'
-                  ? 'bg-accent-orange text-white'
-                  : 'bg-gray-500 text-white'
-              }`}>
-                {trainerData.trainerStatus}
-              </span>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>AI Enabled</h3>
-              <span className={`px-3 py-1 rounded text-sm font-medium ${
-                trainerData.aiEnabled 
-                  ? 'bg-accent-green text-white' 
-                  : 'bg-gray-400 text-white'
-              }`}>
-                {trainerData.aiEnabled ? 'Yes' : 'No'}
-              </span>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Public Publish</h3>
-              <span className={`px-3 py-1 rounded text-sm font-medium ${
-                trainerData.publicPublishEnabled 
-                  ? 'bg-accent-green text-white' 
-                  : 'bg-gray-400 text-white'
-              }`}>
-                {trainerData.publicPublishEnabled ? 'Enabled' : 'Disabled'}
-              </span>
+        {/* Mandatory Profile Enrichment Section */}
+        {!isEnriched && (
+          <div className="mb-6">
+            <EnhanceProfile 
+              employeeId={currentEmployeeId} 
+              onEnrichmentComplete={handleEnrichmentComplete}
+            />
+            
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+              <p className="text-yellow-800 font-medium">
+                ⚠️ Please connect your GitHub account to enrich your profile before continuing.
+              </p>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Employee Profile Component (reuse) */}
-        <EmployeeProfile employeeId={currentEmployeeId} />
+        {/* Profile Content */}
+        {isEnriched && employee && (
+          <div className="space-y-6">
+            {/* Top Section - Name, Email, Actions */}
+            <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                    {employee.name || 'Trainer Name'}
+                  </h2>
+                  <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
+                    {employee.email || 'email@example.com'}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => navigate(ROUTES.PROFILE_EDIT_ME)}
+                  >
+                    Edit Profile
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => navigate(ROUTES.TRAINER_DASHBOARD)}
+                  >
+                    Trainer Dashboard
+                  </Button>
+                </div>
+              </div>
+            </div>
 
-        {/* Teaching Requests Section */}
-        <div className="rounded-lg p-6 mt-6" style={{ 
-          backgroundColor: 'var(--bg-card)', 
-          boxShadow: 'var(--shadow-card)', 
-          borderColor: 'var(--bg-secondary)', 
-          borderWidth: '1px', 
-          borderStyle: 'solid' 
-        }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Teaching Requests</h2>
-            <Button
-              variant="primary"
-              onClick={() => {
-                // TODO: Navigate to teaching request form
-                console.log('Navigate to teaching request form');
+            {/* Trainer Info Section */}
+            {trainerData && (
+              <TrainerInfoSection
+                trainerStatus={trainerData.trainerStatus}
+                aiEnabled={trainerData.aiEnabled}
+                publicPublishEnabled={trainerData.publicPublishEnabled}
+                onEditSettings={() => {
+                  // TODO: Navigate to trainer settings
+                  console.log('Edit trainer settings');
+                }}
+              />
+            )}
+
+            {/* Bio Section */}
+            {processedData?.bio && (
+              <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+                <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Professional Bio</h2>
+                <p className="leading-relaxed" style={{ color: 'var(--text-primary)' }}>{processedData.bio}</p>
+              </div>
+            )}
+
+            {/* Career Block */}
+            {profileData && profileData.career && (
+              <CareerBlock
+                currentRole={profileData.career.currentRole || profileData.career.current_role}
+                targetRole={profileData.career.targetRole || profileData.career.target_role}
+                valueProposition={profileData.career.valueProposition || profileData.career.value_proposition}
+                relevanceScore={profileData.career.relevanceScore || profileData.career.relevance_score}
+              />
+            )}
+
+            {/* Skills Tree */}
+            {profileData && (
+              <SkillsTree
+                competencies={profileData.competencies || profileData.skills}
+                onVerifySkills={async () => {
+                  console.log('Requesting skill verification...');
+                  alert('Skill verification request submitted!');
+                }}
+              />
+            )}
+
+            {/* Courses Section */}
+            {profileData && profileData.courses && (
+              <CoursesSection
+                assignedCourses={profileData.courses.assigned || []}
+                learningCourses={profileData.courses.learning || []}
+                completedCourses={profileData.courses.completed || []}
+                taughtCourses={trainerData?.taughtCourses || []}
+              />
+            )}
+
+            {/* Projects Section */}
+            {processedData?.projects && processedData.projects.length > 0 && (
+              <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+                <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Projects</h2>
+                <div className="space-y-4">
+                  {processedData.projects.map((project) => (
+                    <div key={project.id} className="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
+                      <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{project.title}</h3>
+                      <p style={{ color: 'var(--text-secondary)' }}>{project.summary}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Teaching Requests Section */}
+            <TeachingRequestsSection
+              onTeachSkill={async (skill) => {
+                // TODO: Implement teaching request
+                console.log('Teaching request for skill:', skill);
+                alert(`Teaching request submitted for: ${skill}`);
               }}
-            >
-              Teach a Skill
-            </Button>
+            />
+
+            {/* Requests Section (Employee requests) */}
+            <RequestsSection
+              onRequestTraining={async () => {
+                console.log('Requesting training...');
+                alert('Training request submitted!');
+              }}
+              onRequestTrainer={async () => {
+                console.log('Requesting to become trainer...');
+                alert('You are already a trainer!');
+              }}
+              onRequestSkillVerification={async () => {
+                console.log('Requesting skill verification...');
+                alert('Skill verification request submitted!');
+              }}
+              onRequestSelfLearning={async () => {
+                console.log('Requesting self-learning...');
+                alert('Self-learning request submitted!');
+              }}
+            />
           </div>
-          <p style={{ color: 'var(--text-secondary)' }}>Submit requests to teach specific skills.</p>
-        </div>
+        )}
+
+        {/* Show enrichment section even if enriched (for re-connection) */}
+        {isEnriched && (
+          <div className="mt-6">
+            <EnhanceProfile 
+              employeeId={currentEmployeeId} 
+              onEnrichmentComplete={handleEnrichmentComplete}
+            />
+          </div>
+        )}
       </div>
     </Layout>
   );
