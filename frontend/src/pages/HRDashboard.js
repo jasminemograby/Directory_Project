@@ -5,6 +5,7 @@ import { apiService } from '../services/api';
 import { ROUTES } from '../utils/constants';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
+import PendingProfilesApproval from '../components/HR/PendingProfilesApproval';
 
 const HRDashboard = () => {
   const navigate = useNavigate();
@@ -280,6 +281,11 @@ const HRDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Pending Profiles Approval Section */}
+      <div className="mb-6">
+        <PendingProfilesApproval />
+      </div>
 
       {/* Quick Actions */}
       <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>

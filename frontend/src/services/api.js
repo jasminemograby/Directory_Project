@@ -112,7 +112,12 @@ export const apiService = {
   // Profile endpoints
   getProfile: (employeeId) => api.get(`/profile/${employeeId}`),
   updateProfile: (employeeId, data) => api.put(`/profile/${employeeId}`, data),
-  approveProfile: (employeeId, data) => api.post(`/profile/${employeeId}/approve`, data),
+  
+  // Profile Approval endpoints (HR only)
+  getPendingProfiles: (hrEmail) => api.get('/profile-approval/pending', { params: { hrEmail } }),
+  getProfileForApproval: (employeeId) => api.get(`/profile-approval/${employeeId}/review`),
+  approveProfile: (employeeId, notes) => api.post(`/profile-approval/${employeeId}/approve`, { notes }),
+  rejectProfile: (employeeId, reason) => api.post(`/profile-approval/${employeeId}/reject`, { reason }),
   
   // Skills endpoints
   verifySkills: (data) => api.post('/skills/verify', data),
