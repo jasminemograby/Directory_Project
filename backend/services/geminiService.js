@@ -2,12 +2,12 @@
 const axios = require('axios');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-// Use v1beta API for gemini-1.5 models (v1 doesn't support them)
-// gemini-pro works with v1, but gemini-1.5-flash and gemini-1.5-pro need v1beta
-const GEMINI_API_BASE = process.env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com/v1beta';
-// Use gemini-1.5-flash (fast and efficient) or gemini-1.5-pro (more capable)
-// gemini-pro is deprecated and only works with v1 API
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+// Use v1 API for gemini-pro (most stable and widely available)
+// v1beta may have different model availability
+const GEMINI_API_BASE = process.env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com/v1';
+// Use gemini-pro (works with v1 API) - most stable option
+// Alternative: gemini-1.5-pro or gemini-1.5-flash may require v1beta and specific API access
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-pro';
 
 /**
  * Sanitize input data to prevent injection attacks
