@@ -203,8 +203,39 @@ const enrichProfile = async (employeeId) => {
         console.warn(`[Enrichment] ⚠️ No bio or projects generated - NOT marking as processed. Will retry next time.`);
       }
 
-      // Step 8: Auto-approve profile after successful enrichment
+      // Step 8: Generate value proposition if current_role and target_role exist
       if (bio || (projects && projects.length > 0)) {
+        const employeeCheck = await client.query(
+          `SELECT current_role, target_role FROM employees WHERE id = $1`,
+          [employeeId]
+        );
+        
+        if (employeeCheck.rows.length > 0) {
+          const { current_role, target_role } = employeeCheck.rows[0];
+          if (current_role && target_role) {
+            try {
+              const valuePropositionService = require('./valuePropositionService');
+              const valueProposition = await valuePropositionService.generateValueProposition(
+                employeeId,
+                current_role,
+                target_role
+              );
+              
+              if (valueProposition) {
+                await client.query(
+                  `UPDATE employees SET value_proposition = $1 WHERE id = $2`,
+                  [valueProposition, employeeId]
+                );
+                console.log(`[Enrichment] ✅ Value proposition generated and saved`);
+              }
+            } catch (vpError) {
+              console.warn(`[Enrichment] ⚠️ Error generating value proposition (non-critical):`, vpError.message);
+              // Don't fail enrichment if value proposition generation fails
+            }
+          }
+        }
+        
+        // Step 9: Auto-approve profile after successful enrichment
         await client.query(
           `UPDATE employees 
            SET profile_status = 'approved', updated_at = CURRENT_TIMESTAMP 

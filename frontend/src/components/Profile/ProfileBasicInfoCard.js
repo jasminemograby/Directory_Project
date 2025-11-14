@@ -46,21 +46,6 @@ const ProfileBasicInfoCard = ({ employee, onEditClick }) => {
         )}
       </div>
 
-      {/* Employee ID */}
-      <div className={`text-center mb-4 p-2 rounded ${
-        theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-700/50'
-      }`}>
-        <p className={`text-xs ${
-          theme === 'day-mode' ? 'text-gray-500' : 'text-gray-400'
-        }`}>
-          Employee ID
-        </p>
-        <p className={`text-sm font-mono ${
-          theme === 'day-mode' ? 'text-gray-700' : 'text-gray-300'
-        }`}>
-          {employee.id?.substring(0, 8) || 'N/A'}
-        </p>
-      </div>
 
       {/* Basic Information */}
       <div className="space-y-3 mb-4">

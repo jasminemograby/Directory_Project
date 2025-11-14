@@ -177,6 +177,9 @@ export const apiService = {
     api.patch('/notifications/mark-all-read', { user_email: userEmail }),
   deleteNotification: (notificationId, userEmail) => 
     api.delete(`/notifications/${notificationId}`, { data: { user_email: userEmail } }),
+  
+  // Employee Enrollment endpoints
+  enrollEmployeesToLearningPath: (data) => api.post('/enrollment/learning-path', data),
 };
 
 export default api;

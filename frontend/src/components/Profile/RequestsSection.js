@@ -1,5 +1,5 @@
 // Requests Section Component - Employee can create various requests
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { apiService } from '../../services/api';
 import Button from '../common/Button';
 
@@ -8,12 +8,32 @@ const RequestsSection = ({ employeeId }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [hasSkillVerificationRequest, setHasSkillVerificationRequest] = useState(false);
 
   // Form states
   const [trainingForm, setTrainingForm] = useState({ courseId: '', courseName: '', reason: '', targetDate: '' });
   const [skillForm, setSkillForm] = useState({ skillIds: [], reason: '' });
   const [selfLearningForm, setSelfLearningForm] = useState({ topic: '', description: '', estimatedHours: '', targetDate: '' });
   const [extraAttemptForm, setExtraAttemptForm] = useState({ courseId: '', courseName: '', currentAttempts: '', maxAttempts: '', reason: '' });
+
+  // Check if employee already has skill verification request
+  useEffect(() => {
+    const checkSkillVerificationRequest = async () => {
+      if (!employeeId) return;
+      
+      try {
+        const response = await apiService.getEmployeeRequests(employeeId);
+        if (response.data && response.data.data) {
+          const hasRequest = response.data.data.skillVerification && response.data.data.skillVerification.length > 0;
+          setHasSkillVerificationRequest(hasRequest);
+        }
+      } catch (err) {
+        console.warn('Error checking skill verification request:', err);
+      }
+    };
+
+    checkSkillVerificationRequest();
+  }, [employeeId]);
 
   const handleSubmit = async (type, formData) => {
     try {
@@ -45,7 +65,10 @@ const RequestsSection = ({ employeeId }) => {
         setActiveForm(null);
         // Clear form data
         if (type === 'training') setTrainingForm({ courseId: '', courseName: '', reason: '', targetDate: '' });
-        else if (type === 'skill-verification') setSkillForm({ skillIds: [], reason: '' });
+        else if (type === 'skill-verification') {
+          setSkillForm({ skillIds: [], reason: '' });
+          setHasSkillVerificationRequest(true); // Mark as having request
+        }
         else if (type === 'self-learning') setSelfLearningForm({ topic: '', description: '', estimatedHours: '', targetDate: '' });
         else if (type === 'extra-attempt') setExtraAttemptForm({ courseId: '', courseName: '', currentAttempts: '', maxAttempts: '', reason: '' });
         
@@ -345,12 +368,14 @@ const RequestsSection = ({ employeeId }) => {
         >
           Request Training
         </Button>
-        <Button
-          variant={activeForm === 'skill-verification' ? 'primary' : 'secondary'}
-          onClick={() => setActiveForm(activeForm === 'skill-verification' ? null : 'skill-verification')}
-        >
-          Request Skill Verification
-        </Button>
+        {!hasSkillVerificationRequest && (
+          <Button
+            variant={activeForm === 'skill-verification' ? 'primary' : 'secondary'}
+            onClick={() => setActiveForm(activeForm === 'skill-verification' ? null : 'skill-verification')}
+          >
+            Request Skill Verification
+          </Button>
+        )}
         <Button
           variant={activeForm === 'self-learning' ? 'primary' : 'secondary'}
           onClick={() => setActiveForm(activeForm === 'self-learning' ? null : 'self-learning')}

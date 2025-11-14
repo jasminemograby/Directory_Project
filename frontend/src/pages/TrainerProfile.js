@@ -1,23 +1,26 @@
 // Trainer Profile Page - Employee Profile + Trainer-specific fields
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Layout from '../components/common/Layout';
+import Header from '../components/common/Header';
 import EnhanceProfile from '../components/Profile/EnhanceProfile';
-import CareerBlock from '../components/Profile/CareerBlock';
-import SkillsTree from '../components/Profile/SkillsTree';
-import CoursesSection from '../components/Profile/CoursesSection';
+import ProfileBasicInfoCard from '../components/Profile/ProfileBasicInfoCard';
+import ProfileOverviewTab from '../components/Profile/ProfileOverviewTab';
+import ProfileDashboardView from '../components/Profile/ProfileDashboardView';
+import ProfileLearningPathView from '../components/Profile/ProfileLearningPathView';
+import ProfileCoursesTab from '../components/Profile/ProfileCoursesTab';
 import RequestsSection from '../components/Profile/RequestsSection';
 import TrainerInfoSection from '../components/Profile/TrainerInfoSection';
 import TeachingRequestsSection from '../components/Profile/TeachingRequestsSection';
-import Button from '../components/common/Button';
 import { apiService } from '../services/api';
 import { mockDataService } from '../services/mockData';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { ROUTES } from '../utils/constants';
+import { useApp } from '../contexts/AppContext';
 
 const TrainerProfile = () => {
   const { employeeId } = useParams();
   const navigate = useNavigate();
+  const { theme } = useApp();
   const [employee, setEmployee] = useState(null);
   const [processedData, setProcessedData] = useState(null);
   const [profileData, setProfileData] = useState(null);
@@ -25,11 +28,33 @@ const TrainerProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEnriched, setIsEnriched] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview'); // overview, dashboard, learning-path, requests, courses, trainer
 
   // Get employee ID from localStorage if not in URL
   const currentEmployeeId = useMemo(() => {
     return employeeId || localStorage.getItem('currentEmployeeId');
   }, [employeeId]);
+
+  const checkingEnrichment = useRef(false);
+  const hasLoadedData = useRef(false);
+  
+  const checkEnrichmentStatus = useCallback(async () => {
+    if (!currentEmployeeId || checkingEnrichment.current) return;
+    checkingEnrichment.current = true;
+
+    try {
+      const processedResponse = await apiService.getProcessedData(currentEmployeeId);
+      if (processedResponse.data && processedResponse.data.data) {
+        const hasBio = !!processedResponse.data.data.bio;
+        setIsEnriched(hasBio);
+      }
+    } catch (error) {
+      console.warn('Could not check enrichment status:', error.message);
+      setIsEnriched(false);
+    } finally {
+      checkingEnrichment.current = false;
+    }
+  }, [currentEmployeeId]);
 
   const fetchTrainerData = useCallback(async () => {
     if (!currentEmployeeId) {
@@ -56,15 +81,17 @@ const TrainerProfile = () => {
 
         setEmployee(emp);
 
-        // Fetch processed data (bio, projects, skills)
+        // Fetch processed data (bio, projects, skills) - NOT raw data
         try {
           const processedResponse = await apiService.getProcessedData(currentEmployeeId);
           if (processedResponse.data && processedResponse.data.data) {
             setProcessedData(processedResponse.data.data);
-            setIsEnriched(true);
+            const hasBio = !!processedResponse.data.data.bio;
+            setIsEnriched(hasBio);
           }
         } catch (processedError) {
           console.warn('No processed data available yet:', processedError.message);
+          setIsEnriched(false);
         }
 
         // Fetch additional profile data
@@ -113,198 +140,246 @@ const TrainerProfile = () => {
     }
   }, [currentEmployeeId]);
 
-  const handleEnrichmentComplete = useCallback(() => {
-    setIsEnriched(true);
-    fetchTrainerData();
+  const handleEnrichmentComplete = useCallback(async () => {
+    // Wait for backend processing
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Refresh data
+    await fetchTrainerData();
+    // Check enrichment status
+    await checkEnrichmentStatus();
+  }, [fetchTrainerData, checkEnrichmentStatus]);
+
+  useEffect(() => {
+    if (!hasLoadedData.current) {
+      fetchTrainerData();
+      hasLoadedData.current = true;
+    }
   }, [fetchTrainerData]);
 
   useEffect(() => {
-    fetchTrainerData();
-  }, [fetchTrainerData]);
+    if (currentEmployeeId && hasLoadedData.current) {
+      checkEnrichmentStatus();
+    }
+  }, [currentEmployeeId, checkEnrichmentStatus]);
 
   if (loading) {
     return (
-      <Layout>
-        <div className="max-w-4xl mx-auto p-6">
+      <>
+        <Header />
+        <div className="flex items-center justify-center min-h-screen pt-16">
           <LoadingSpinner />
         </div>
-      </Layout>
+      </>
     );
   }
 
   if (error) {
     return (
-      <Layout>
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="rounded-lg p-6 border border-red-200" style={{ backgroundColor: '#fee2e2' }}>
-            <p className="text-red-800 font-medium">{error}</p>
+      <>
+        <Header />
+        <div className={`min-h-screen pt-16 ${
+          theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
+        }`}>
+          <div className="max-w-4xl mx-auto p-6">
+            <div className={`rounded-lg p-6 border ${
+              theme === 'day-mode' 
+                ? 'bg-red-50 border-red-200' 
+                : 'bg-red-900/20 border-red-800'
+            }`}>
+              <p className={theme === 'day-mode' ? 'text-red-800' : 'text-red-300'}>{error}</p>
+            </div>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
-  return (
-    <Layout>
-      <div className="max-w-4xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>Trainer Profile</h1>
+  // Tab navigation items (same as EmployeeProfile + Trainer tab)
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'learning-path', label: 'Learning Path' },
+    { id: 'requests', label: 'Requests' },
+    { id: 'courses', label: 'Courses' },
+    { id: 'trainer', label: 'Trainer' }, // Additional trainer-specific tab
+  ];
 
-        {/* Mandatory Profile Enrichment Section */}
+  return (
+    <>
+      <Header />
+      <div className={`min-h-screen pt-16 ${
+        theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
+      }`}>
+
+        {/* Mandatory Profile Enrichment Section - BLOCKS ALL ACCESS UNTIL COMPLETE */}
         {!isEnriched && (
-          <div className="mb-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className={`rounded-lg p-6 mb-6 border ${
+              theme === 'day-mode' 
+                ? 'bg-red-50 border-red-200' 
+                : 'bg-red-900/20 border-red-800'
+            }`}>
+              <h2 className={`text-xl font-bold mb-2 ${
+                theme === 'day-mode' ? 'text-red-800' : 'text-red-300'
+              }`}>
+                ⚠️ Profile Enrichment Required
+              </h2>
+              <p className={theme === 'day-mode' ? 'text-red-700' : 'text-red-300'}>
+                You must enrich your profile before you can access the system.
+              </p>
+              <p className={`text-sm mt-2 ${
+                theme === 'day-mode' ? 'text-red-600' : 'text-red-400'
+              }`}>
+                After connecting your accounts, your profile will be automatically enriched with AI-generated bio, 
+                projects, and skills. This is a one-time mandatory step.
+              </p>
+            </div>
+
             <EnhanceProfile 
               employeeId={currentEmployeeId} 
               onEnrichmentComplete={handleEnrichmentComplete}
             />
             
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
-              <p className="text-yellow-800 font-medium">
-                ⚠️ Please connect your GitHub account to enrich your profile before continuing.
+            {/* Instructions */}
+            <div className={`rounded-lg p-4 mt-4 border ${
+              theme === 'day-mode' 
+                ? 'bg-blue-50 border-blue-200' 
+                : 'bg-blue-900/20 border-blue-800'
+            }`}>
+              <p className={theme === 'day-mode' ? 'text-blue-800' : 'text-blue-300'}>
+                📋 <strong>Instructions:</strong>
               </p>
+              <ol className={`list-decimal list-inside mt-2 space-y-1 text-sm ${
+                theme === 'day-mode' ? 'text-blue-700' : 'text-blue-400'
+              }`}>
+                <li>Connect your GitHub account (required)</li>
+                <li>Connect your LinkedIn account (optional but recommended)</li>
+                <li>Click "Fetch Data" - enrichment happens automatically</li>
+                <li>Your profile will be approved automatically after enrichment</li>
+                <li>You'll be redirected to your complete profile</li>
+              </ol>
             </div>
           </div>
         )}
 
-        {/* Profile Content */}
+        {/* Profile Content with Tabs */}
         {isEnriched && employee && (
-          <div className="space-y-6">
-            {/* Top Section - Name, Email, Actions */}
-            <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                    {employee.name || 'Trainer Name'}
-                  </h2>
-                  <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
-                    {employee.email || 'email@example.com'}
-                  </p>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Left Sidebar - Basic Info Card */}
+              <div className="lg:col-span-1">
+                <ProfileBasicInfoCard 
+                  employee={employee}
+                  onEditClick={() => navigate(ROUTES.PROFILE_EDIT_ME)}
+                />
+              </div>
+
+              {/* Main Content Area */}
+              <div className="lg:col-span-3">
+                {/* Navigation Tabs */}
+                <div className={`rounded-t-lg border-b ${
+                  theme === 'day-mode' 
+                    ? 'bg-white border-gray-200' 
+                    : 'bg-slate-800 border-gray-700'
+                }`}>
+                  <div className="flex space-x-1 overflow-x-auto">
+                    {tabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-6 py-3 text-sm font-medium transition-all duration-300 border-b-2 ${
+                          activeTab === tab.id
+                            ? theme === 'day-mode'
+                              ? 'border-emerald-600 text-emerald-600'
+                              : 'border-emerald-400 text-emerald-400'
+                            : theme === 'day-mode'
+                              ? 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
+                              : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => navigate(ROUTES.PROFILE_EDIT_ME)}
-                  >
-                    Edit Profile
-                  </Button>
-                  <Button
-                    variant="primary"
-                    onClick={() => navigate(ROUTES.TRAINER_DASHBOARD)}
-                  >
-                    Trainer Dashboard
-                  </Button>
+
+                {/* Tab Content */}
+                <div className={`rounded-b-lg p-6 ${
+                  theme === 'day-mode' 
+                    ? 'bg-white border border-gray-200 border-t-0' 
+                    : 'bg-slate-800 border border-gray-700 border-t-0'
+                }`}>
+                  {activeTab === 'overview' && (
+                    <ProfileOverviewTab
+                      employee={employee}
+                      processedData={processedData}
+                      profileData={profileData}
+                    />
+                  )}
+
+                  {activeTab === 'dashboard' && (
+                    <ProfileDashboardView employeeId={currentEmployeeId} />
+                  )}
+
+                  {activeTab === 'learning-path' && (
+                    <ProfileLearningPathView employeeId={currentEmployeeId} />
+                  )}
+
+                  {activeTab === 'requests' && (
+                    <RequestsSection employeeId={currentEmployeeId} />
+                  )}
+
+                  {activeTab === 'courses' && profileData && profileData.courses && (
+                    <ProfileCoursesTab
+                      assignedCourses={profileData.courses.assigned || []}
+                      learningCourses={profileData.courses.learning || []}
+                      completedCourses={profileData.courses.completed || []}
+                      taughtCourses={trainerData?.taughtCourses || []}
+                    />
+                  )}
+
+                  {activeTab === 'trainer' && (
+                    <div className="space-y-6">
+                      {/* Trainer Info Section */}
+                      {trainerData && (
+                        <TrainerInfoSection
+                          trainerStatus={trainerData.trainerStatus}
+                          aiEnabled={trainerData.aiEnabled}
+                          publicPublishEnabled={trainerData.publicPublishEnabled}
+                          onEditSettings={() => {
+                            // TODO: Navigate to trainer settings
+                            console.log('Edit trainer settings');
+                          }}
+                        />
+                      )}
+
+                      {/* Teaching Requests Section */}
+                      <TeachingRequestsSection
+                        onTeachSkill={async (skill) => {
+                          // TODO: Implement teaching request
+                          console.log('Teaching request for skill:', skill);
+                          alert(`Teaching request submitted for: ${skill}`);
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Trainer Info Section */}
-            {trainerData && (
-              <TrainerInfoSection
-                trainerStatus={trainerData.trainerStatus}
-                aiEnabled={trainerData.aiEnabled}
-                publicPublishEnabled={trainerData.publicPublishEnabled}
-                onEditSettings={() => {
-                  // TODO: Navigate to trainer settings
-                  console.log('Edit trainer settings');
-                }}
-              />
-            )}
-
-            {/* Bio Section */}
-            {processedData?.bio && (
-              <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
-                <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Professional Bio</h2>
-                <p className="leading-relaxed" style={{ color: 'var(--text-primary)' }}>{processedData.bio}</p>
+            {/* Show enrichment section even if enriched (for re-connection) - HIDDEN after first enrichment */}
+            {false && (
+              <div className="mt-6">
+                <EnhanceProfile 
+                  employeeId={currentEmployeeId} 
+                  onEnrichmentComplete={handleEnrichmentComplete}
+                />
               </div>
             )}
-
-            {/* Career Block */}
-            {profileData && profileData.career && (
-              <CareerBlock
-                currentRole={profileData.career.currentRole || profileData.career.current_role}
-                targetRole={profileData.career.targetRole || profileData.career.target_role}
-                valueProposition={profileData.career.valueProposition || profileData.career.value_proposition}
-                relevanceScore={profileData.career.relevanceScore || profileData.career.relevance_score}
-              />
-            )}
-
-            {/* Skills Tree */}
-            {profileData && (
-              <SkillsTree
-                competencies={profileData.competencies || profileData.skills}
-                onVerifySkills={async () => {
-                  console.log('Requesting skill verification...');
-                  alert('Skill verification request submitted!');
-                }}
-              />
-            )}
-
-            {/* Courses Section */}
-            {profileData && profileData.courses && (
-              <CoursesSection
-                assignedCourses={profileData.courses.assigned || []}
-                learningCourses={profileData.courses.learning || []}
-                completedCourses={profileData.courses.completed || []}
-                taughtCourses={trainerData?.taughtCourses || []}
-              />
-            )}
-
-            {/* Projects Section */}
-            {processedData?.projects && processedData.projects.length > 0 && (
-              <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
-                <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Projects</h2>
-                <div className="space-y-4">
-                  {processedData.projects.map((project) => (
-                    <div key={project.id} className="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
-                      <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{project.title}</h3>
-                      <p style={{ color: 'var(--text-secondary)' }}>{project.summary}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Teaching Requests Section */}
-            <TeachingRequestsSection
-              onTeachSkill={async (skill) => {
-                // TODO: Implement teaching request
-                console.log('Teaching request for skill:', skill);
-                alert(`Teaching request submitted for: ${skill}`);
-              }}
-            />
-
-            {/* Requests Section (Employee requests) */}
-            <RequestsSection
-              onRequestTraining={async () => {
-                console.log('Requesting training...');
-                alert('Training request submitted!');
-              }}
-              onRequestTrainer={async () => {
-                console.log('Requesting to become trainer...');
-                alert('You are already a trainer!');
-              }}
-              onRequestSkillVerification={async () => {
-                console.log('Requesting skill verification...');
-                alert('Skill verification request submitted!');
-              }}
-              onRequestSelfLearning={async () => {
-                console.log('Requesting self-learning...');
-                alert('Self-learning request submitted!');
-              }}
-            />
-          </div>
-        )}
-
-        {/* Show enrichment section even if enriched (for re-connection) */}
-        {isEnriched && (
-          <div className="mt-6">
-            <EnhanceProfile 
-              employeeId={currentEmployeeId} 
-              onEnrichmentComplete={handleEnrichmentComplete}
-            />
           </div>
         )}
       </div>
-    </Layout>
+    </>
   );
 };
 

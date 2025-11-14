@@ -143,6 +143,9 @@ app.use('/api/exchange', require('./routes/exchange'));
 // Internal API endpoints (for other microservices)
 app.use('/api/internal', require('./routes/internal'));
 
+// Employee Enrollment endpoints
+app.use('/api/enrollment', require('./routes/enrollment'));
+
 // 404 handler (must be after all routes)
 app.use(notFound);
 

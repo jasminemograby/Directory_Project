@@ -85,6 +85,22 @@ const createSkillVerificationRequest = async (req, res) => {
 
     const { company_id } = employeeResult.rows[0];
 
+    // Check if employee already has a skill verification request (only one allowed)
+    const existingRequest = await query(
+      `SELECT id, status FROM skill_verification_requests 
+       WHERE employee_id = $1 
+       ORDER BY created_at DESC 
+       LIMIT 1`,
+      [employeeId]
+    );
+
+    if (existingRequest.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'You have already submitted a skill verification request. Only one request is allowed per employee.'
+      });
+    }
+
     // Create skill verification request
     const result = await query(
       `INSERT INTO skill_verification_requests 

@@ -36,7 +36,8 @@ const getPendingProfiles = async (req, res) => {
 
     const companyId = hrCheck.rows[0].company_id;
 
-    // Get all pending profiles in the company
+    // Get all pending profiles in the company that have been enriched (have processed data)
+    // Only show profiles that have been enriched (have bio in external_data_processed)
     const pendingResult = await query(
       `SELECT 
         e.id,
@@ -53,8 +54,10 @@ const getPendingProfiles = async (req, res) => {
        FROM employees e
        LEFT JOIN departments d ON e.department_id = d.id
        LEFT JOIN teams t ON e.team_id = t.id
+       INNER JOIN external_data_processed edp ON e.id = edp.employee_id
        WHERE e.company_id = $1 
        AND e.profile_status = 'pending'
+       AND edp.bio IS NOT NULL
        ORDER BY e.created_at DESC`,
       [companyId]
     );

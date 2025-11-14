@@ -7,11 +7,14 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
 import PendingProfilesApproval from '../components/HR/PendingProfilesApproval';
 import PendingRequestsApproval from '../components/HR/PendingRequestsApproval';
+import HierarchyTree from '../components/Profile/HierarchyTree';
+import EmployeeEnrollment from '../components/HR/EmployeeEnrollment';
 
 const HRDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [company, setCompany] = useState(null);
+  const [hierarchy, setHierarchy] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
@@ -86,6 +89,17 @@ const HRDashboard = () => {
 
         if (response.data.success) {
           setCompany(response.data.data);
+          
+          // Fetch company hierarchy
+          const companyId = response.data.data.id;
+          try {
+            const hierarchyResponse = await apiService.getCompanyHierarchy(companyId);
+            if (hierarchyResponse.data && hierarchyResponse.data.data) {
+              setHierarchy(hierarchyResponse.data.data.hierarchy);
+            }
+          } catch (hierarchyError) {
+            console.warn('Could not fetch company hierarchy:', hierarchyError.message);
+          }
         } else {
           setError(response.data.error || 'Failed to load company data');
         }
@@ -174,7 +188,7 @@ const HRDashboard = () => {
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>HR Dashboard</h1>
-        <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>Welcome back, {company.hr?.name || 'HR'}</p>
+        <p className="mt-2" style={{ color: 'var(--text-secondary)' }}>Welcome to {company.name || 'your company'}</p>
       </div>
 
       {/* Company Overview Card */}
@@ -187,17 +201,6 @@ const HRDashboard = () => {
               <p style={{ color: 'var(--text-primary)' }}><span className="font-medium" style={{ color: 'var(--text-accent)' }}>Name:</span> {company.name}</p>
               <p style={{ color: 'var(--text-primary)' }}><span className="font-medium" style={{ color: 'var(--text-accent)' }}>Industry:</span> {company.industry || 'N/A'}</p>
               <p style={{ color: 'var(--text-primary)' }}><span className="font-medium" style={{ color: 'var(--text-accent)' }}>Domain:</span> {company.domain || 'N/A'}</p>
-              <p style={{ color: 'var(--text-primary)' }}><span className="font-medium" style={{ color: 'var(--text-accent)' }}>Status:</span> 
-                <span className={`ml-2 px-2 py-1 rounded text-sm font-medium ${
-                  company.verification_status === 'verified' 
-                    ? 'bg-accent-green text-white' 
-                    : company.verification_status === 'pending'
-                    ? 'bg-accent-orange text-white'
-                    : 'bg-red-500 text-white'
-                }`}>
-                  {company.verification_status || 'pending'}
-                </span>
-              </p>
             </div>
           </div>
           <div>
@@ -280,6 +283,25 @@ const HRDashboard = () => {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Employee Enrollment Section */}
+      {company && company.id && (
+        <div className="mb-6">
+          <EmployeeEnrollment companyId={company.id} />
+        </div>
+      )}
+
+      {/* Hierarchy Tree */}
+      {hierarchy && (
+        <div className="mb-6">
+          <HierarchyTree
+            hierarchy={hierarchy}
+            onEmployeeClick={(employeeId) => {
+              navigate(`${ROUTES.PROFILE}/${employeeId}`);
+            }}
+          />
         </div>
       )}
 
