@@ -4,9 +4,37 @@
 - [x] UNIQUE constraint added
 - [x] updated_at column added
 
+## שלב 0: מצא Employee ID
+
+**לפני הכל, צריך למצוא את ה-Employee ID:**
+
+```sql
+-- רשימת כל העובדים עם ה-IDs שלהם
+SELECT 
+  id,
+  name,
+  email,
+  role,
+  created_at
+FROM employees
+ORDER BY created_at DESC
+LIMIT 10;
+```
+
+**העתיקי את ה-`id` של העובד שאת רוצה לבדוק.**
+
+**או לפי email:**
+```sql
+SELECT id, name, email FROM employees WHERE email = 'sonia@gmail.com';
+```
+
+**📋 ראה גם: `docs/how_to_find_employee_id.md`**
+
+---
+
 ## שלב 1: נקה נתונים קיימים (אופציונלי)
 
-אם יש נתונים ישנים, נקה אותם:
+אם יש נתונים ישנים, נקה אותם (החלף `YOUR_EMPLOYEE_ID` ב-ID שמצאת):
 
 ```sql
 -- מחק נתונים ישנים (אם יש)
@@ -17,6 +45,8 @@ DELETE FROM projects WHERE employee_id = 'YOUR_EMPLOYEE_ID' AND source = 'gemini
 ```
 
 ## שלב 2: בדוק שהטבלאות ריקות
+
+(החלף `YOUR_EMPLOYEE_ID` ב-ID שמצאת בשלב 0)
 
 ```sql
 -- בדוק שאין tokens
@@ -44,6 +74,8 @@ SELECT COUNT(*) as processed_count FROM external_data_processed WHERE employee_i
 
 ### בדוק ב-Database:
 
+(החלף `YOUR_EMPLOYEE_ID` ב-ID שמצאת)
+
 ```sql
 -- בדוק שה-token נשמר
 SELECT 
@@ -67,6 +99,8 @@ WHERE employee_id = 'YOUR_EMPLOYEE_ID'
 4. **הדף אמור להציג**: "GitHub connected successfully!"
 
 ### בדוק ב-Database:
+
+(החלף `YOUR_EMPLOYEE_ID` ב-ID שמצאת)
 
 ```sql
 -- בדוק שה-token נשמר
@@ -95,7 +129,10 @@ WHERE employee_id = 'YOUR_EMPLOYEE_ID'
 פתחי Console (F12) והרצי:
 
 ```javascript
+// ה-Employee ID כבר שמור ב-localStorage
 const employeeId = localStorage.getItem('currentEmployeeId');
+console.log('Using Employee ID:', employeeId);
+
 fetch(`https://directoryproject-production.up.railway.app/api/external/collect/${employeeId}`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' }
@@ -109,6 +146,8 @@ fetch(`https://directoryproject-production.up.railway.app/api/external/collect/$
 ```
 
 ## שלב 6: בדוק Raw Data
+
+(החלף `YOUR_EMPLOYEE_ID` ב-ID שמצאת)
 
 ```sql
 -- בדוק שה-raw data נשמר
@@ -132,6 +171,8 @@ ORDER BY fetched_at DESC;
 ## שלב 7: בדוק Processed Data (Gemini)
 
 **המתן 10-30 שניות** (Gemini צריך לעבד)
+
+(החלף `YOUR_EMPLOYEE_ID` ב-ID שמצאת)
 
 ```sql
 -- בדוק שה-processed data נשמר
