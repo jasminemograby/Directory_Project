@@ -51,19 +51,78 @@ const getEmployeeProfile = async (req, res) => {
       valueProposition = await valuePropositionService.getValueProposition(employeeId);
     }
 
-    // Get relevance score from Skills Engine (mock for now)
-    const relevanceScoreData = await mockSkillsEngineService.getRelevanceScore(
-      employeeId,
-      employee.current_role,
-      employee.target_role
-    );
+    // Get relevance score from Skills Engine (with fallback to mock)
+    let relevanceScoreData = null;
+    try {
+      const payload = {
+        employee_id: employeeId,
+        employee_type: employee.type,
+        current_role: employee.current_role,
+        target_role: employee.target_role,
+        fields: ['relevance_score']
+      };
+      
+      const response = await sendRequest('SkillsEngine', payload);
+      
+      if (response.payload) {
+        const parsedPayload = typeof response.payload === 'string' 
+          ? JSON.parse(response.payload) 
+          : response.payload;
+        
+        if (parsedPayload.relevance_score) {
+          relevanceScoreData = parsedPayload.relevance_score;
+        } else if (parsedPayload.score !== undefined) {
+          relevanceScoreData = parsedPayload;
+        }
+      }
+    } catch (error) {
+      console.warn('[ProfileController] Error fetching relevance score, using mock data:', error.message);
+    }
+    
+    // Fallback to mock if no data received
+    if (!relevanceScoreData) {
+      relevanceScoreData = await mockSkillsEngineService.getRelevanceScore(
+        employeeId,
+        employee.current_role,
+        employee.target_role
+      );
+    }
     const relevanceScore = relevanceScoreData?.score || null;
 
-    // Get competencies/skills from Skills Engine (mock for now)
-    const competencies = await mockSkillsEngineService.getNormalizedSkills(
-      employeeId,
-      employee.type
-    );
+    // Get competencies/skills from Skills Engine (with fallback to mock)
+    let competencies = null;
+    try {
+      const payload = {
+        employee_id: employeeId,
+        employee_type: employee.type,
+        fields: ['competencies', 'normalized_skills']
+      };
+      
+      const response = await sendRequest('SkillsEngine', payload);
+      
+      if (response.payload) {
+        const parsedPayload = typeof response.payload === 'string' 
+          ? JSON.parse(response.payload) 
+          : response.payload;
+        
+        if (parsedPayload.competencies) {
+          competencies = parsedPayload.competencies;
+        } else if (parsedPayload.normalized_skills) {
+          // Convert normalized_skills to competencies format if needed
+          competencies = { competencies: parsedPayload.normalized_skills };
+        }
+      }
+    } catch (error) {
+      console.warn('[ProfileController] Error fetching competencies, using mock data:', error.message);
+    }
+    
+    // Fallback to mock if no data received
+    if (!competencies) {
+      competencies = await mockSkillsEngineService.getNormalizedSkills(
+        employeeId,
+        employee.type
+      );
+    }
 
     // Get courses from external microservices
     const [completedCourses, learningCourses, assignedCourses, taughtCourses] = await Promise.all([
@@ -590,7 +649,7 @@ const getAssignedCoursesFromAPI = async (employeeId) => {
 const getTaughtCoursesFromAPI = async (employeeId) => {
   // Content Studio sends: course_id, course_name, trainer_id, trainer_name, status
   // Only fetch if employee is a trainer
-  const CONTENT_STUDIO_URL = process.env.CONTENT_STUDIO_URL;
+  // Use microserviceIntegrationService with fallback to mock data
   
   // Check if employee is a trainer
   const employeeResult = await query(
@@ -604,27 +663,53 @@ const getTaughtCoursesFromAPI = async (employeeId) => {
     return []; // Not a trainer
   }
 
-  if (!CONTENT_STUDIO_URL) {
-    console.warn('[ProfileController] CONTENT_STUDIO_URL not configured, using mock data');
-    const mockCourses = await mockContentStudioService.getTaughtCourses(employeeId);
-    // Update trainer_name with actual name
-    return mockCourses.map(course => ({
-      ...course,
-      trainer_name: employeeResult.rows[0].name
-    }));
-  }
-
   try {
-    const response = await axios.get(`${CONTENT_STUDIO_URL}/api/courses/trainer/${employeeId}`, {
-      timeout: 5000
-    });
-    return response.data.courses || [];
+    const payload = {
+      trainer_id: employeeId,
+      fields: ['taught_courses']
+    };
+    
+    const response = await sendRequest('ContentStudio', payload);
+    
+    // Parse response payload
+    let courses = [];
+    if (response.payload) {
+      const parsedPayload = typeof response.payload === 'string' 
+        ? JSON.parse(response.payload) 
+        : response.payload;
+      
+      if (Array.isArray(parsedPayload)) {
+        courses = parsedPayload;
+      } else if (parsedPayload.taught_courses && Array.isArray(parsedPayload.taught_courses)) {
+        courses = parsedPayload.taught_courses;
+      } else if (parsedPayload.courses && Array.isArray(parsedPayload.courses)) {
+        courses = parsedPayload.courses;
+      }
+    }
+    
+    // If using fallback, ensure courses have trainer_id and trainer_name
+    if (response.source && response.source.includes('fallback')) {
+      courses = courses.map(course => ({
+        ...course,
+        trainer_id: employeeId,
+        trainer_name: employeeResult.rows[0].name
+      }));
+    } else {
+      // Ensure trainer_name is set even from real API
+      courses = courses.map(course => ({
+        ...course,
+        trainer_name: course.trainer_name || employeeResult.rows[0].name
+      }));
+    }
+    
+    return courses;
   } catch (error) {
-    console.warn('[ProfileController] Content Studio API not available, using mock data fallback');
+    console.warn('[ProfileController] Error fetching taught courses, using mock data:', error.message);
     const mockCourses = await mockContentStudioService.getTaughtCourses(employeeId);
     // Update trainer_name with actual name
     return mockCourses.map(course => ({
       ...course,
+      trainer_id: employeeId,
       trainer_name: employeeResult.rows[0].name
     }));
   }
