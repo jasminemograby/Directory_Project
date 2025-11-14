@@ -21,5 +21,11 @@ router.get('/employee/:employeeId/courses/assigned', profileController.getAssign
 // Get learning courses (currently in progress)
 router.get('/employee/:employeeId/courses/learning', profileController.getLearningCourses);
 
+// Get team hierarchy (for Team Leader)
+router.get('/team-leader/:employeeId/hierarchy', profileController.getTeamHierarchy);
+
+// Get department hierarchy (for Department Manager)
+router.get('/department-manager/:employeeId/hierarchy', profileController.getDepartmentHierarchy);
+
 module.exports = router;
 

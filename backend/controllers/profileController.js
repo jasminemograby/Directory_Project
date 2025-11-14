@@ -268,6 +268,193 @@ const getCompletedCoursesFromAPI = async (employeeId) => {
   }
 };
 
+/**
+ * Get team hierarchy for Team Leader
+ * Returns teams and employees under the team leader
+ */
+const getTeamHierarchy = async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+
+    // Get employee's team
+    const employeeResult = await query(
+      `SELECT team_id, company_id FROM employees WHERE id = $1`,
+      [employeeId]
+    );
+
+    if (employeeResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Employee not found'
+      });
+    }
+
+    const { team_id, company_id } = employeeResult.rows[0];
+
+    if (!team_id) {
+      return res.json({
+        success: true,
+        data: {
+          hierarchy: null,
+          message: 'Employee is not assigned to a team'
+        }
+      });
+    }
+
+    // Get team details
+    const teamResult = await query(
+      `SELECT id, name, department_id FROM teams WHERE id = $1`,
+      [team_id]
+    );
+
+    if (teamResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Team not found'
+      });
+    }
+
+    const team = teamResult.rows[0];
+
+    // Get all employees in the team
+    const employeesResult = await query(
+      `SELECT id, name, email, role, type, current_role, target_role
+       FROM employees 
+       WHERE team_id = $1 AND company_id = $2
+       ORDER BY name`,
+      [team_id, company_id]
+    );
+
+    const hierarchy = {
+      id: team.id,
+      name: team.name,
+      type: 'Team',
+      employees: employeesResult.rows.map(emp => ({
+        id: emp.id,
+        name: emp.name,
+        email: emp.email,
+        role: emp.role || emp.current_role,
+        type: emp.type
+      }))
+    };
+
+    res.json({
+      success: true,
+      data: {
+        hierarchy: hierarchy
+      }
+    });
+  } catch (error) {
+    console.error('[ProfileController] Error getting team hierarchy:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch team hierarchy'
+    });
+  }
+};
+
+/**
+ * Get department hierarchy for Department Manager
+ * Returns departments, teams, and employees under the department manager
+ */
+const getDepartmentHierarchy = async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+
+    // Get employee's department
+    const employeeResult = await query(
+      `SELECT department_id, company_id FROM employees WHERE id = $1`,
+      [employeeId]
+    );
+
+    if (employeeResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Employee not found'
+      });
+    }
+
+    const { department_id, company_id } = employeeResult.rows[0];
+
+    if (!department_id) {
+      return res.json({
+        success: true,
+        data: {
+          hierarchy: null,
+          message: 'Employee is not assigned to a department'
+        }
+      });
+    }
+
+    // Get department details
+    const deptResult = await query(
+      `SELECT id, name FROM departments WHERE id = $1`,
+      [department_id]
+    );
+
+    if (deptResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Department not found'
+      });
+    }
+
+    const department = deptResult.rows[0];
+
+    // Get all teams in the department
+    const teamsResult = await query(
+      `SELECT id, name FROM teams WHERE department_id = $1 ORDER BY name`,
+      [department_id]
+    );
+
+    // Get all employees in teams within the department
+    const teams = await Promise.all(
+      teamsResult.rows.map(async (team) => {
+        const employeesResult = await query(
+          `SELECT id, name, email, role, type, current_role, target_role
+           FROM employees 
+           WHERE team_id = $1 AND company_id = $2
+           ORDER BY name`,
+          [team.id, company_id]
+        );
+
+        return {
+          id: team.id,
+          name: team.name,
+          type: 'Team',
+          employees: employeesResult.rows.map(emp => ({
+            id: emp.id,
+            name: emp.name,
+            email: emp.email,
+            role: emp.role || emp.current_role,
+            type: emp.type
+          }))
+        };
+      })
+    );
+
+    const hierarchy = {
+      id: department.id,
+      name: department.name,
+      type: 'Department',
+      teams: teams
+    };
+
+    res.json({
+      success: true,
+      data: {
+        hierarchy: hierarchy
+      }
+    });
+  } catch (error) {
+    console.error('[ProfileController] Error getting department hierarchy:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch department hierarchy'
+    });
+  }
+};
+
 const getLearningCoursesFromAPI = async (employeeId) => {
   // Get from Course Builder or Learning Analytics
   const COURSE_BUILDER_URL = process.env.COURSE_BUILDER_URL;
@@ -332,6 +519,8 @@ module.exports = {
   getCompletedCourses,
   getTaughtCourses,
   getAssignedCourses,
-  getLearningCourses
+  getLearningCourses,
+  getTeamHierarchy,
+  getDepartmentHierarchy
 };
 

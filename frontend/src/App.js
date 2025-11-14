@@ -14,6 +14,7 @@ import HRLanding from './pages/HRLanding';
 import HRDashboard from './pages/HRDashboard';
 import EmployeeProfile from './pages/EmployeeProfile';
 import TrainerProfile from './pages/TrainerProfile';
+import TeamLeaderProfile from './pages/TeamLeaderProfile';
 
 // Company Registration Components
 import CompanyRegistrationStep1 from './components/CompanyRegistration/CompanyRegistrationStep1';
@@ -65,6 +66,10 @@ function App() {
           {/* Trainer Profile */}
           <Route path="/trainer/profile/:employeeId?" element={<TrainerProfile />} />
           <Route path="/trainer/profile" element={<TrainerProfile />} />
+          
+          {/* Team Leader Profile */}
+          <Route path="/team-leader/profile/:employeeId?" element={<TeamLeaderProfile />} />
+          <Route path="/team-leader/profile" element={<TeamLeaderProfile />} />
           
           {/* Company Registration Routes */}
           <Route path={ROUTES.COMPANY_REGISTER_STEP1} element={
