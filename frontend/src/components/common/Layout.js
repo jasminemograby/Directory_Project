@@ -1,6 +1,7 @@
 // Layout Component with Navigation
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import Header from './Header';
 import { ROUTES } from '../../utils/constants';
 import { authService } from '../../utils/auth';
 
@@ -28,8 +29,11 @@ const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Global Header */}
+      <Header />
+      
       {/* Navigation Bar */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      <nav className="bg-white shadow-sm border-b border-gray-200 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo / Brand */}

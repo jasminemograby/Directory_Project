@@ -1,27 +1,32 @@
-// Employee Profile Page - Main profile page with mandatory profile enrichment
+// Employee Profile Page - Main profile page with Navigation Tabs
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/common/Layout';
+import Header from '../components/common/Header';
 import EnhanceProfile from '../components/Profile/EnhanceProfile';
-import CareerBlock from '../components/Profile/CareerBlock';
-import SkillsTree from '../components/Profile/SkillsTree';
-import CoursesSection from '../components/Profile/CoursesSection';
+import ProfileBasicInfoCard from '../components/Profile/ProfileBasicInfoCard';
+import ProfileOverviewTab from '../components/Profile/ProfileOverviewTab';
+import ProfileDashboardView from '../components/Profile/ProfileDashboardView';
+import ProfileLearningPathView from '../components/Profile/ProfileLearningPathView';
+import ProfileCoursesTab from '../components/Profile/ProfileCoursesTab';
 import RequestsSection from '../components/Profile/RequestsSection';
-import Button from '../components/common/Button';
 import { apiService } from '../services/api';
 import { mockDataService } from '../services/mockData';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { ROUTES } from '../utils/constants';
+import { useApp } from '../contexts/AppContext';
 
 const EmployeeProfile = () => {
   const { employeeId } = useParams();
   const navigate = useNavigate();
+  const { theme } = useApp();
   const [employee, setEmployee] = useState(null);
   const [processedData, setProcessedData] = useState(null);
   const [profileData, setProfileData] = useState(null); // Additional profile data (career, skills, courses)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEnriched, setIsEnriched] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview'); // overview, dashboard, learning-path, requests, courses
 
   // Get employee ID from localStorage if not in URL (for mock login)
   // Use useMemo to prevent unnecessary recalculations

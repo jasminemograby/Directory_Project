@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import ErrorBoundary from './components/common/ErrorBoundary';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import Layout from './components/common/Layout';
+import { AppProvider } from './contexts/AppContext';
 import { ROUTES, USER_ROLES } from './utils/constants';
 
 // Pages
@@ -36,9 +37,10 @@ const Home = () => (
 
 function App() {
   return (
-    <ErrorBoundary>
-      <Router>
-        <Routes>
+    <AppProvider>
+      <ErrorBoundary>
+        <Router>
+          <Routes>
           {/* Public Routes */}
           <Route path={ROUTES.HOME} element={<Home />} />
           <Route path={ROUTES.LOGIN} element={<Login />} />
@@ -123,6 +125,7 @@ function App() {
         </Routes>
       </Router>
     </ErrorBoundary>
+    </AppProvider>
   );
 }
 
