@@ -123,6 +123,7 @@ app.get('/health/detailed', async (req, res) => {
 });
 
 // Routes
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/company', require('./routes/companyRegistration'));
 app.use('/api/employee-registration', require('./routes/employeeRegistration'));
 app.use('/api/employee', require('./routes/employees'));
