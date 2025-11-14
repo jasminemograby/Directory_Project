@@ -17,6 +17,7 @@ import TrainerProfile from './pages/TrainerProfile';
 import TeamLeaderProfile from './pages/TeamLeaderProfile';
 import DepartmentManagerProfile from './pages/DepartmentManagerProfile';
 import CompanyProfile from './pages/CompanyProfile';
+import SuperAdminProfile from './pages/SuperAdminProfile';
 
 // Company Registration Components
 import CompanyRegistrationStep1 from './components/CompanyRegistration/CompanyRegistrationStep1';
@@ -79,6 +80,9 @@ function App() {
           
           {/* Company Profile */}
           <Route path={ROUTES.COMPANY_PROFILE} element={<CompanyProfile />} />
+          
+          {/* Super Admin Profile */}
+          <Route path={ROUTES.ADMIN_DASHBOARD} element={<SuperAdminProfile />} />
           
           {/* Company Registration Routes */}
           <Route path={ROUTES.COMPANY_REGISTER_STEP1} element={

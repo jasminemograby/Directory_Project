@@ -129,6 +129,7 @@ app.use('/api/employee', require('./routes/employees'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/external', require('./routes/externalData'));
 app.use('/api/profile', require('./routes/profile'));
+app.use('/api/admin', require('./routes/admin'));
 
 // 404 handler (must be after all routes)
 app.use(notFound);
