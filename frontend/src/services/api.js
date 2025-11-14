@@ -94,26 +94,16 @@ export const apiService = {
   getCompanyByHrEmail: (hrEmail) => api.get('/company', { params: { hrEmail } }),
   updateCompany: (companyId, data) => api.put(`/company/${companyId}`, data),
   getCompanies: (params) => api.get('/company', { params }),
+  getCompanyHierarchy: (companyId) => 
+    api.get(`/company/${companyId}/hierarchy`),
+  getCompanyRequests: (companyId) => 
+    api.get(`/company/${companyId}/requests`),
   
   // Employee endpoints
   getEmployee: (employeeId) => api.get(`/employee/${employeeId}`),
   updateEmployee: (employeeId, data) => api.put(`/employee/${employeeId}`, data),
   createEmployee: (data) => api.post('/employee', data),
   getEmployees: (params) => api.get('/employee', { params }),
-  
-  // Company endpoints
-  getCompany: (companyId, hrEmail) => {
-    if (hrEmail) {
-      return api.get('/company', { params: { hrEmail } });
-    }
-    return api.get(`/company/${companyId}`);
-  },
-  
-  getCompanyHierarchy: (companyId) => 
-    api.get(`/company/${companyId}/hierarchy`),
-  
-  getCompanyRequests: (companyId) => 
-    api.get(`/company/${companyId}/requests`),
   
   // Profile endpoints
   getProfile: (employeeId) => api.get(`/profile/${employeeId}`),
