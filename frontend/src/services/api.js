@@ -93,11 +93,15 @@ export const apiService = {
   },
   getCompanyByHrEmail: (hrEmail) => api.get('/company', { params: { hrEmail } }),
   updateCompany: (companyId, data) => api.put(`/company/${companyId}`, data),
-  getCompanies: (params) => api.get('/company', { params }),
   getCompanyHierarchy: (companyId) => 
     api.get(`/company/${companyId}/hierarchy`),
   getCompanyRequests: (companyId) => 
     api.get(`/company/${companyId}/requests`),
+  
+  // Admin endpoints (Super Admin only)
+  getCompanies: (params) => api.get('/admin/companies', { params }),
+  getAllEmployees: (params) => api.get('/admin/employees', { params }),
+  getAdminLogs: (params) => api.get('/admin/logs', { params }),
   
   // Employee endpoints
   getEmployee: (employeeId) => api.get(`/employee/${employeeId}`),
