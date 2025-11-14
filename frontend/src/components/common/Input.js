@@ -1,5 +1,6 @@
-// Input Component
-import React from 'react';
+// Input Component - Design System Compliant
+import React, { useState } from 'react';
+import { useApp } from '../../contexts/AppContext';
 
 const Input = ({
   label,
@@ -14,19 +15,47 @@ const Input = ({
   className = '',
   ...props
 }) => {
-  const inputClasses = `
-    w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-cyan focus:border-transparent
-    ${error ? 'border-red-500' : 'border-gray-300'}
-    ${disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'}
-    ${className}
-  `;
+  const { theme, getDesignToken } = useApp();
+  const [isFocused, setIsFocused] = useState(false);
+  
+  const inputConfig = getDesignToken('input');
+  
+  const inputStyles = {
+    width: '100%',
+    padding: '12px 16px',
+    fontFamily: 'var(--font-primary)',
+    fontSize: '16px',
+    lineHeight: '24px',
+    borderRadius: 'var(--radius-md)',
+    border: error 
+      ? `2px solid var(--border-error)` 
+      : isFocused 
+        ? `var(--input-border-focus)` 
+        : `var(--input-border)`,
+    backgroundColor: disabled ? 'var(--input-bg-disabled)' : 'var(--input-bg)',
+    color: 'var(--input-text)',
+    outline: 'none',
+    transition: 'all var(--transition-fast) var(--transition-ease)',
+    boxShadow: isFocused && !error ? 'var(--input-shadow-focus)' : 'none',
+    cursor: disabled ? 'not-allowed' : 'text',
+    opacity: disabled ? 0.6 : 1,
+  };
+  
+  const labelStyles = {
+    display: 'block',
+    fontSize: '14px',
+    lineHeight: '20px',
+    fontWeight: 500,
+    color: 'var(--text-primary)',
+    marginBottom: '8px',
+  };
   
   return (
-    <div className="mb-4">
+    <div style={{ marginBottom: '16px' }}>
       {label && (
-        <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={name} style={labelStyles}>
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span style={{ color: 'var(--error-base)', marginLeft: '4px' }}>*</span>}
         </label>
       )}
       <input
@@ -35,14 +64,22 @@ const Input = ({
         name={name}
         value={value}
         onChange={onChange}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         placeholder={placeholder}
         disabled={disabled}
         required={required}
-        className={inputClasses}
+        style={inputStyles}
+        className={className}
         {...props}
       />
       {error && (
-        <p className="mt-1 text-sm text-red-600" role="alert">
+        <p style={{ 
+          marginTop: '8px', 
+          fontSize: '14px', 
+          color: 'var(--error-base)',
+          lineHeight: '20px'
+        }} role="alert">
           {error}
         </p>
       )}

@@ -1,5 +1,6 @@
-// App Context - Theme Management
+// App Context - Theme Management + Design System
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { designSystem, getThemeValue, getToken } from '../config/designSystem';
 
 const AppContext = createContext();
 
@@ -35,9 +36,16 @@ export const AppProvider = ({ children }) => {
     setTheme(prev => prev === 'day-mode' ? 'night-mode' : 'day-mode');
   };
 
+  // Helper functions for design system access
+  const getDesignToken = (path) => getThemeValue(theme, path);
+  const getDesignSystemToken = (category, key) => getToken(category, key, theme);
+
   const value = {
     theme,
     toggleTheme,
+    designSystem,
+    getDesignToken,
+    getDesignSystemToken,
   };
 
   return (

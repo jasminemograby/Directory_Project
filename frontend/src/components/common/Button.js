@@ -1,5 +1,6 @@
-// Button Component
+// Button Component - Design System Compliant
 import React from 'react';
+import { useApp } from '../../contexts/AppContext';
 import LoadingSpinner from './LoadingSpinner';
 
 const Button = ({
@@ -13,34 +14,74 @@ const Button = ({
   className = '',
   ...props
 }) => {
-  const baseClasses = 'font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const { theme, getDesignToken } = useApp();
   
-  const variantClasses = {
-    primary: 'bg-gradient-primary text-white hover:opacity-90 focus:ring-primary-cyan',
-    secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-400',
-    tertiary: 'bg-transparent text-primary-cyan border border-primary-cyan hover:bg-primary-cyan hover:text-white focus:ring-primary-cyan',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-    link: 'bg-transparent text-primary-cyan hover:text-primary-purple focus:ring-primary-cyan',
+  // Get button styles from design system
+  const getButtonStyles = () => {
+    const buttonConfig = getDesignToken(`button.${variant}`);
+    if (!buttonConfig) return {};
+    
+    const isGradient = typeof buttonConfig.background === 'string' && buttonConfig.background.includes('gradient');
+    
+    return {
+      background: isGradient ? buttonConfig.background : buttonConfig.background,
+      color: buttonConfig.text,
+      border: buttonConfig.border || 'none',
+      boxShadow: buttonConfig.shadow || 'none',
+      transition: 'all var(--transition-fast) var(--transition-ease)',
+    };
   };
   
-  const sizeClasses = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-base',
-    lg: 'px-6 py-3 text-lg',
+  const getHoverStyles = () => {
+    const buttonConfig = getDesignToken(`button.${variant}`);
+    if (!buttonConfig) return {};
+    
+    return {
+      background: buttonConfig.backgroundHover,
+      boxShadow: buttonConfig.shadowHover || buttonConfig.shadow,
+      transform: variant === 'primary' ? 'translateY(-1px)' : 'none',
+    };
   };
   
-  const classes = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
+  const baseStyles = {
+    fontFamily: 'var(--font-primary)',
+    fontWeight: 600,
+    borderRadius: 'var(--radius-md)',
+    border: 'none',
+    cursor: disabled || loading ? 'not-allowed' : 'pointer',
+    opacity: disabled || loading ? 0.5 : 1,
+    outline: 'none',
+    transition: 'all var(--transition-fast) var(--transition-ease)',
+    ...getButtonStyles(),
+  };
+  
+  const sizeStyles = {
+    sm: { padding: '8px 16px', fontSize: '14px', lineHeight: '20px' },
+    md: { padding: '12px 24px', fontSize: '16px', lineHeight: '24px' },
+    lg: { padding: '16px 32px', fontSize: '18px', lineHeight: '28px' },
+  };
+  
+  const [isHovered, setIsHovered] = React.useState(false);
+  
+  const combinedStyles = {
+    ...baseStyles,
+    ...sizeStyles[size],
+    ...(isHovered && !disabled && !loading ? getHoverStyles() : {}),
+  };
   
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
-      className={classes}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={combinedStyles}
+      className={className}
       {...props}
     >
       {loading ? (
-        <span className="flex items-center gap-2">
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <LoadingSpinner size="sm" />
           Loading...
         </span>
