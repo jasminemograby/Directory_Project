@@ -1,7 +1,6 @@
 // HR Landing Page - Redesigned
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import Button from '../components/common/Button';
 import Header from '../components/common/Header';
 import { ROUTES } from '../utils/constants';
 
