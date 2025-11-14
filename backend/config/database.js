@@ -69,32 +69,38 @@ pool.on('error', (err) => {
   }
 });
 
-// Test connection on startup (with retry for Railway/Supabase)
+// Test connection on startup (non-blocking for Railway fast deployment)
+// Run in background - don't block server startup
 (async () => {
-  const maxRetries = 3;
-  const retryDelay = 2000; // 2 seconds
-  
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      // Wait a bit before first attempt (Railway needs time to establish connection)
-      if (i > 0) {
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
-      }
-      
-      const testResult = await pool.query('SELECT NOW()');
-      if (process.env.NODE_ENV === 'development') {
+  // Don't wait - let server start immediately
+  // Connection will be tested on first query
+  if (process.env.NODE_ENV === 'development') {
+    // Only test in development
+    const maxRetries = 2;
+    const retryDelay = 1000; // 1 second (faster)
+    
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
+        
+        const testResult = await pool.query('SELECT NOW()');
         console.log('Database connection test successful:', testResult.rows[0].now);
-      }
-      return; // Success, exit
-    } catch (error) {
-      if (i === maxRetries - 1) {
-        // Last attempt failed - log but don't crash (connection might work later)
-        console.warn('Database connection test failed after retries:', error.message);
-        console.warn('The app will continue - connection will be tested on first query.');
-      } else if (process.env.NODE_ENV === 'development') {
-        console.log(`Database connection test attempt ${i + 1} failed, retrying...`);
+        return;
+      } catch (error) {
+        if (i === maxRetries - 1) {
+          console.warn('Database connection test failed (non-blocking):', error.message);
+          console.warn('The app will continue - connection will be tested on first query.');
+        } else {
+          console.log(`Database connection test attempt ${i + 1} failed, retrying...`);
+        }
       }
     }
+  } else {
+    // Production: Skip startup test - let Railway start fast
+    // Connection will be tested on first actual query
+    console.log('Database connection will be tested on first query (fast startup)');
   }
 })();
 

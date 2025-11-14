@@ -72,22 +72,54 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health check endpoint (also at root for Railway)
-app.get('/health', (req, res) => {
+// Fast health check - no DB connection (for Railway deployment speed)
+app.get('/health', async (req, res) => {
+  // Quick response - don't wait for DB (Railway needs fast response)
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     service: 'directory-backend',
-    version: '1.0.0'
+    version: '1.0.0',
+    uptime: process.uptime()
   });
 });
 
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  // Quick response - don't wait for DB
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     service: 'directory-backend',
-    version: '1.0.0'
+    version: '1.0.0',
+    uptime: process.uptime()
   });
+});
+
+// Detailed health check with DB (optional, for monitoring)
+app.get('/health/detailed', async (req, res) => {
+  const { query } = require('./config/database');
+  try {
+    // Quick DB check
+    await query('SELECT 1');
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      service: 'directory-backend',
+      version: '1.0.0',
+      database: 'connected',
+      uptime: process.uptime()
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'degraded',
+      timestamp: new Date().toISOString(),
+      service: 'directory-backend',
+      version: '1.0.0',
+      database: 'disconnected',
+      error: error.message,
+      uptime: process.uptime()
+    });
+  }
 });
 
 // Routes
