@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const profileController = require('../controllers/profileController');
+const { verifySameCompany } = require('../middleware/companyIsolation');
 
 // Get employee profile with all sections
 router.get('/employee/:employeeId', profileController.getEmployeeProfile);

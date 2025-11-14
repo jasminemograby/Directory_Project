@@ -2,15 +2,16 @@
 const express = require('express');
 const router = express.Router();
 const requestsController = require('../controllers/requestsController');
+const { verifySameCompany } = require('../middleware/companyIsolation');
 
-// Employee request creation endpoints
-router.post('/training/:employeeId', requestsController.createTrainingRequest);
-router.post('/skill-verification/:employeeId', requestsController.createSkillVerificationRequest);
-router.post('/self-learning/:employeeId', requestsController.createSelfLearningRequest);
-router.post('/extra-attempt/:employeeId', requestsController.createExtraAttemptRequest);
+// Employee request creation endpoints (with company isolation)
+router.post('/training/:employeeId', verifySameCompany, requestsController.createTrainingRequest);
+router.post('/skill-verification/:employeeId', verifySameCompany, requestsController.createSkillVerificationRequest);
+router.post('/self-learning/:employeeId', verifySameCompany, requestsController.createSelfLearningRequest);
+router.post('/extra-attempt/:employeeId', verifySameCompany, requestsController.createExtraAttemptRequest);
 
-// Get employee's own requests
-router.get('/employee/:employeeId', requestsController.getEmployeeRequests);
+// Get employee's own requests (with company isolation)
+router.get('/employee/:employeeId', verifySameCompany, requestsController.getEmployeeRequests);
 
 // HR endpoints - Get pending requests
 router.get('/pending', requestsController.getPendingRequests);

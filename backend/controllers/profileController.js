@@ -4,6 +4,7 @@ const valuePropositionService = require('../services/valuePropositionService');
 const mockSkillsEngineService = require('../services/mockSkillsEngineService');
 const mockCourseBuilderService = require('../services/mockCourseBuilderService');
 const mockContentStudioService = require('../services/mockContentStudioService');
+const profileVisibilityService = require('../services/profileVisibilityService');
 const axios = require('axios'); // For external microservice calls
 
 /**
@@ -12,6 +13,19 @@ const axios = require('axios'); // For external microservice calls
 const getEmployeeProfile = async (req, res) => {
   try {
     const { employeeId } = req.params;
+    const viewerEmployeeId = req.employeeId || req.user?.id; // From middleware or auth
+
+    // Check profile visibility (RBAC) if viewer is authenticated
+    if (viewerEmployeeId) {
+      const visibilityCheck = await profileVisibilityService.canViewProfile(viewerEmployeeId, employeeId);
+      if (!visibilityCheck.allowed) {
+        return res.status(403).json({
+          success: false,
+          error: 'You do not have permission to view this profile',
+          reason: visibilityCheck.reason
+        });
+      }
+    }
 
     // Get basic employee data
     const employeeResult = await query(
