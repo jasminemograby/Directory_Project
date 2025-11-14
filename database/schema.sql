@@ -144,7 +144,9 @@ CREATE TABLE IF NOT EXISTS external_data_raw (
     data JSONB NOT NULL,
     fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     processed BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(employee_id, provider)
 );
 
 -- Index for faster lookups

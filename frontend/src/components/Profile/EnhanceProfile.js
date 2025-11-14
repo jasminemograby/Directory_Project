@@ -131,10 +131,15 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
           setGithubData(github);
         }
 
-        // Show success message
+        // Show success message and trigger enrichment callback
         if ((linkedin && !linkedin.error) || (github && !github.error)) {
           setSuccessMessage('Profile enriched successfully! Your LinkedIn and GitHub data has been imported.');
           setTimeout(() => setSuccessMessage(null), 5000);
+          
+          // Trigger enrichment complete callback if both are connected
+          if (linkedInStatus === 'connected' && githubStatus === 'connected' && onEnrichmentComplete) {
+            onEnrichmentComplete();
+          }
         }
       }
     } catch (error) {

@@ -10,7 +10,7 @@ const GITHUB_API_BASE = 'https://api.github.com';
 
 /**
  * Generate OAuth authorization URL for GitHub
- * @param {string} employeeId - Employee UUID
+ * @param {string} employeeId - Employee UUID (will be encoded in state)
  * @param {string} state - Optional state parameter for CSRF protection
  * @returns {string} Authorization URL
  */
@@ -19,8 +19,14 @@ const getAuthorizationUrl = (employeeId, state = null) => {
     throw new Error('GitHub Client ID not configured');
   }
 
-  // Generate state if not provided (for CSRF protection)
-  const stateParam = state || crypto.randomBytes(16).toString('hex');
+  if (!employeeId) {
+    throw new Error('Employee ID is required for OAuth flow');
+  }
+
+  // Encode employeeId in state for callback (base64 encode for safety)
+  // Format: employeeId:randomHex (for CSRF protection)
+  const randomHex = crypto.randomBytes(16).toString('hex');
+  const stateParam = state || Buffer.from(`${employeeId}:${randomHex}`).toString('base64');
   
   // GitHub OAuth scopes - minimal permissions for profile and public repo data
   const scopes = [
@@ -74,7 +80,9 @@ const exchangeCodeForToken = async (code, employeeId) => {
         ? new Date(Date.now() + response.data.expires_in * 1000)
         : null;
 
-      await query(
+      console.log(`[GitHub] Storing OAuth token for employee: ${employeeId}`);
+
+      const result = await query(
         `INSERT INTO oauth_tokens (employee_id, provider, access_token, refresh_token, token_type, expires_at, scope, updated_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
          ON CONFLICT (employee_id, provider) 
@@ -84,7 +92,8 @@ const exchangeCodeForToken = async (code, employeeId) => {
            token_type = EXCLUDED.token_type,
            expires_at = EXCLUDED.expires_at,
            scope = EXCLUDED.scope,
-           updated_at = CURRENT_TIMESTAMP`,
+           updated_at = CURRENT_TIMESTAMP
+         RETURNING id, employee_id, provider, created_at`,
         [
           employeeId,
           'github',
@@ -95,6 +104,12 @@ const exchangeCodeForToken = async (code, employeeId) => {
           response.data.scope || null
         ]
       );
+
+      if (result.rows.length > 0) {
+        console.log(`[GitHub] ✅ Token stored successfully for employee: ${employeeId}, token ID: ${result.rows[0].id}`);
+      } else {
+        console.warn(`[GitHub] ⚠️ Token insert returned no rows for employee: ${employeeId}`);
+      }
 
       return {
         access_token: response.data.access_token,
@@ -213,13 +228,27 @@ const fetchProfileData = async (employeeId) => {
       emails: emailsResponse?.data || null
     };
 
-    // Store raw data in database
-    await query(
-      `INSERT INTO external_data_raw (employee_id, provider, data, fetched_at, processed)
-       VALUES ($1, $2, $3, CURRENT_TIMESTAMP, false)
-       ON CONFLICT DO NOTHING`,
+    // Store raw data in database (per-user)
+    console.log(`[GitHub] Storing raw data for employee: ${employeeId}`);
+    
+    const insertResult = await query(
+      `INSERT INTO external_data_raw (employee_id, provider, data, fetched_at, processed, updated_at)
+       VALUES ($1, $2, $3, CURRENT_TIMESTAMP, false, CURRENT_TIMESTAMP)
+       ON CONFLICT (employee_id, provider) 
+       DO UPDATE SET 
+         data = EXCLUDED.data,
+         fetched_at = EXCLUDED.fetched_at,
+         processed = false,
+         updated_at = CURRENT_TIMESTAMP
+       RETURNING id, employee_id, provider, fetched_at`,
       [employeeId, 'github', JSON.stringify(profileData)]
     );
+
+    if (insertResult.rows.length > 0) {
+      console.log(`[GitHub] ✅ Raw data stored for employee: ${employeeId}, record ID: ${insertResult.rows[0].id}`);
+    } else {
+      console.warn(`[GitHub] ⚠️ Raw data insert returned no rows for employee: ${employeeId}`);
+    }
 
     return profileData;
   } catch (error) {
