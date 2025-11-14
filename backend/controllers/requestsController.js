@@ -191,9 +191,10 @@ const createExtraAttemptRequest = async (req, res) => {
     const { company_id } = employeeResult.rows[0];
 
     // Create extra attempt request
+    // Note: extra_attempt_requests table has max_attempts field, but we'll use NULL for now
     const result = await query(
-      `INSERT INTO extra_attempt_requests (employee_id, company_id, course_id, current_attempts, reason, status, created_at)
-       VALUES ($1, $2, $3, $4, $5, 'pending', CURRENT_TIMESTAMP)
+      `INSERT INTO extra_attempt_requests (employee_id, company_id, course_id, current_attempts, max_attempts, reason, status, created_at)
+       VALUES ($1, $2, $3, $4, NULL, $5, 'pending', CURRENT_TIMESTAMP)
        RETURNING *`,
       [employeeId, company_id, courseId, currentAttempts, reason || null]
     );
