@@ -154,13 +154,13 @@ const cleanupCorruptedData = async () => {
         }
       }
 
-      // Now safe to delete the employee
+      // Now safe to delete the employee(s)
+      // Use employee IDs directly for more reliable deletion
       const deleteResult = await queryWithRetry(
         `DELETE FROM employees 
-         WHERE LOWER(TRIM(email)) = $1 
-         AND company_id = $2
+         WHERE id = ANY($1::uuid[])
          RETURNING id, name, email`,
-        [corruptedEmail.toLowerCase(), corruptedCompanyId]
+        [employeeIds]
       );
 
       if (deleteResult.rows.length > 0) {
