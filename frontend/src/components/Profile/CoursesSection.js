@@ -1,7 +1,14 @@
 // Courses Section Component - Shows assigned, learning, and completed courses
+// Completed courses come from Course Builder: feedback, course_id, course_name, learner_id
+// Taught courses (for trainers) come from Content Studio: course_id, course_name, trainer_id, trainer_name, status
 import React from 'react';
 
-const CoursesSection = ({ assignedCourses, learningCourses, completedCourses }) => {
+const CoursesSection = ({ 
+  assignedCourses = [],      // From company learning paths (future feature)
+  learningCourses = [],      // Currently in progress
+  completedCourses = [],     // From Course Builder: { feedback, course_id, course_name, learner_id }
+  taughtCourses = []         // From Content Studio (for trainers): { course_id, course_name, trainer_id, trainer_name, status }
+}) => {
   return (
     <div className="rounded-lg p-6" style={{ 
       backgroundColor: 'var(--bg-card)', 
@@ -85,7 +92,7 @@ const CoursesSection = ({ assignedCourses, learningCourses, completedCourses }) 
           </div>
         )}
 
-        {/* Completed Courses */}
+        {/* Completed Courses - From Course Builder */}
         {completedCourses && completedCourses.length > 0 && (
           <div>
             <h3 className="text-lg font-medium mb-3" style={{ color: 'var(--text-primary)' }}>
@@ -94,7 +101,7 @@ const CoursesSection = ({ assignedCourses, learningCourses, completedCourses }) 
             <div className="space-y-2">
               {completedCourses.map((course, idx) => (
                 <div 
-                  key={idx}
+                  key={course.course_id || idx}
                   className="p-4 rounded border"
                   style={{ 
                     backgroundColor: 'var(--bg-secondary)',
@@ -103,7 +110,7 @@ const CoursesSection = ({ assignedCourses, learningCourses, completedCourses }) 
                 >
                   <div className="flex items-center justify-between">
                     <p className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {course.name || course.title}
+                      {course.course_name || course.name || course.title}
                     </p>
                     <span className="px-2 py-1 text-xs rounded" style={{ 
                       backgroundColor: 'var(--accent-green)', 
@@ -117,9 +124,47 @@ const CoursesSection = ({ assignedCourses, learningCourses, completedCourses }) 
                       <strong>Feedback:</strong> {course.feedback}
                     </p>
                   )}
-                  {course.completedAt && (
+                  {course.course_id && (
                     <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                      Completed on {new Date(course.completedAt).toLocaleDateString()}
+                      Course ID: {course.course_id}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Taught Courses - From Content Studio (for trainers) */}
+        {taughtCourses && taughtCourses.length > 0 && (
+          <div>
+            <h3 className="text-lg font-medium mb-3" style={{ color: 'var(--text-primary)' }}>
+              Courses Taught ({taughtCourses.length})
+            </h3>
+            <div className="space-y-2">
+              {taughtCourses.map((course, idx) => (
+                <div 
+                  key={course.course_id || idx}
+                  className="p-4 rounded border"
+                  style={{ 
+                    backgroundColor: 'var(--bg-secondary)',
+                    borderColor: course.status === 'archived' ? 'var(--text-muted)' : 'var(--accent-orange)'
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {course.course_name || course.name}
+                    </p>
+                    <span className="px-2 py-1 text-xs rounded capitalize" style={{ 
+                      backgroundColor: course.status === 'archived' ? 'var(--text-muted)' : 'var(--accent-orange)', 
+                      color: 'white' 
+                    }}>
+                      {course.status || 'Active'}
+                    </span>
+                  </div>
+                  {course.course_id && (
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                      Course ID: {course.course_id}
                     </p>
                   )}
                 </div>
@@ -130,7 +175,8 @@ const CoursesSection = ({ assignedCourses, learningCourses, completedCourses }) 
 
         {(!assignedCourses || assignedCourses.length === 0) &&
          (!learningCourses || learningCourses.length === 0) &&
-         (!completedCourses || completedCourses.length === 0) && (
+         (!completedCourses || completedCourses.length === 0) &&
+         (!taughtCourses || taughtCourses.length === 0) && (
           <p style={{ color: 'var(--text-secondary)' }}>No courses data available yet.</p>
         )}
       </div>

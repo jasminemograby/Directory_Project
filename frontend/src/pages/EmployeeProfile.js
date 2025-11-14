@@ -59,11 +59,20 @@ const EmployeeProfile = () => {
         // This is OK - processed data might not exist yet
       }
 
-      // Fetch additional profile data (career, skills, courses) - using mock data for now
-      // TODO: Replace with actual API calls when Skills Engine and Course Builder are integrated
-      const mockProfileData = mockDataService.getEmployeeProfile(currentEmployeeId);
-      setProfileData(mockProfileData);
-        setProcessedData(null);
+      // Fetch additional profile data (career, skills, courses)
+      try {
+        const profileResponse = await apiService.getEmployeeProfile(currentEmployeeId);
+        if (profileResponse.data && profileResponse.data.data) {
+          setProfileData(profileResponse.data.data);
+        } else {
+          // Fallback to mock data if API fails
+          console.warn('Profile API not available, using mock data');
+          setProfileData(mockDataService.getEmployeeProfile(currentEmployeeId));
+        }
+      } catch (profileError) {
+        console.warn('Profile API error, using mock data fallback:', profileError.message);
+        // Fallback to mock data if API fails
+        setProfileData(mockDataService.getEmployeeProfile(currentEmployeeId));
       }
     } catch (error) {
       console.error('Error fetching employee data:', error);
@@ -346,21 +355,21 @@ const EmployeeProfile = () => {
             )}
 
             {/* Career Block */}
-            {profileData && (
+            {profileData && profileData.career && (
               <CareerBlock
-                currentRole={profileData.currentRole}
-                targetRole={profileData.targetRole}
-                valueProposition={profileData.valueProposition}
-                relevanceScore={profileData.relevanceScore}
+                currentRole={profileData.career.currentRole || profileData.career.current_role}
+                targetRole={profileData.career.targetRole || profileData.career.target_role}
+                valueProposition={profileData.career.valueProposition || profileData.career.value_proposition}
+                relevanceScore={profileData.career.relevanceScore || profileData.career.relevance_score}
               />
             )}
 
             {/* Skills Tree */}
             {profileData && (
               <SkillsTree
-                competencies={profileData.competencies}
+                competencies={profileData.competencies || profileData.skills}
                 onVerifySkills={async () => {
-                  // TODO: Implement skill verification request
+                  // TODO: Implement skill verification request to Skills Engine
                   console.log('Requesting skill verification...');
                   // POST to Skills Engine
                   try {
@@ -375,11 +384,12 @@ const EmployeeProfile = () => {
             )}
 
             {/* Courses Section */}
-            {profileData && (
+            {profileData && profileData.courses && (
               <CoursesSection
-                assignedCourses={profileData.assignedCourses}
-                learningCourses={profileData.learningCourses}
-                completedCourses={profileData.completedCourses}
+                assignedCourses={profileData.courses.assigned || []}
+                learningCourses={profileData.courses.learning || []}
+                completedCourses={profileData.courses.completed || []}
+                taughtCourses={profileData.courses.taught || []}
               />
             )}
 

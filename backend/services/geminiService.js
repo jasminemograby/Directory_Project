@@ -86,11 +86,15 @@ const sanitizeRawData = (rawData) => {
 };
 
 /**
- * Generate professional bio from raw external data
- * @param {Object} rawData - Combined raw data from LinkedIn and GitHub
+ * Generate professional bio from raw external data or custom prompt
+ * @param {Object} rawData - Combined raw data from LinkedIn and GitHub, OR object with customPrompt
  * @returns {Promise<string>} AI-generated short professional bio
  */
 const generateBio = async (rawData) => {
+  // Check if this is a custom prompt request (for value proposition)
+  if (rawData && rawData.customPrompt) {
+    return generateFromCustomPrompt(rawData.customPrompt);
+  }
   if (!GEMINI_API_KEY) {
     console.warn('[Gemini] API key not configured, skipping bio generation');
     return null;
@@ -448,8 +452,81 @@ Return ONLY the JSON array, no additional text or explanations.`;
   }
 };
 
+/**
+ * Generate text from custom prompt (for value proposition, etc.)
+ * @param {string} customPrompt - Custom prompt text
+ * @returns {Promise<string>} AI-generated text
+ */
+const generateFromCustomPrompt = async (customPrompt) => {
+  if (!GEMINI_API_KEY) {
+    console.warn('[Gemini] API key not configured, skipping text generation');
+    return null;
+  }
+
+  try {
+    const sanitizedPrompt = sanitizeInput(customPrompt);
+
+    console.log(`[Gemini] Calling API with custom prompt: ${GEMINI_API_BASE}/models/${GEMINI_MODEL}:generateContent`);
+    const response = await axios.post(
+      `${GEMINI_API_BASE}/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        contents: [{
+          parts: [{
+            text: sanitizedPrompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 300,
+        },
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          },
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+          }
+        ]
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      }
+    );
+
+    if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+      const text = response.data.candidates[0].content.parts[0].text.trim();
+      return sanitizeInput(text);
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[Gemini] Error generating from custom prompt:', error.message);
+    if (error.response) {
+      console.error('[Gemini] API Error Status:', error.response.status);
+      console.error('[Gemini] API Error Data:', JSON.stringify(error.response.data, null, 2));
+    }
+    return null;
+  }
+};
+
 module.exports = {
   generateBio,
-  identifyProjects
+  identifyProjects,
+  generateFromCustomPrompt
 };
 

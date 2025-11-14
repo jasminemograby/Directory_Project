@@ -102,7 +102,11 @@ const SkillsTree = ({ competencies, onVerifySkills }) => {
 
       {competencies && competencies.length > 0 ? (
         <div className="space-y-2">
-          {competencies.map(competency => renderCompetency(competency))}
+          {competencies.map((competency, idx) => (
+            <div key={idx}>
+              {renderCompetency(competency)}
+            </div>
+          ))}
         </div>
       ) : (
         <p style={{ color: 'var(--text-secondary)' }}>No skills data available yet.</p>
