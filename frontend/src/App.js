@@ -15,6 +15,7 @@ import HRDashboard from './pages/HRDashboard';
 import EmployeeProfile from './pages/EmployeeProfile';
 import TrainerProfile from './pages/TrainerProfile';
 import TeamLeaderProfile from './pages/TeamLeaderProfile';
+import DepartmentManagerProfile from './pages/DepartmentManagerProfile';
 
 // Company Registration Components
 import CompanyRegistrationStep1 from './components/CompanyRegistration/CompanyRegistrationStep1';
@@ -70,6 +71,10 @@ function App() {
           {/* Team Leader Profile */}
           <Route path="/team-leader/profile/:employeeId?" element={<TeamLeaderProfile />} />
           <Route path="/team-leader/profile" element={<TeamLeaderProfile />} />
+          
+          {/* Department Manager Profile */}
+          <Route path="/department-manager/profile/:employeeId?" element={<DepartmentManagerProfile />} />
+          <Route path="/department-manager/profile" element={<DepartmentManagerProfile />} />
           
           {/* Company Registration Routes */}
           <Route path={ROUTES.COMPANY_REGISTER_STEP1} element={
