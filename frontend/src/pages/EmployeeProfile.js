@@ -425,28 +425,9 @@ const EmployeeProfile = () => {
             )}
 
             {/* Requests Section */}
-            <RequestsSection
-              onRequestTraining={async () => {
-                // TODO: Implement training request
-                console.log('Requesting training...');
-                alert('Training request submitted!');
-              }}
-              onRequestTrainer={async () => {
-                // TODO: Implement trainer request
-                console.log('Requesting to become trainer...');
-                alert('Trainer request submitted!');
-              }}
-              onRequestSkillVerification={async () => {
-                // TODO: Implement skill verification request
-                console.log('Requesting skill verification...');
-                alert('Skill verification request submitted!');
-              }}
-              onRequestSelfLearning={async () => {
-                // TODO: Implement self-learning request
-                console.log('Requesting self-learning...');
-                alert('Self-learning request submitted!');
-              }}
-            />
+            {employee && currentEmployeeId && (
+              <RequestsSection employeeId={currentEmployeeId} />
+            )}
 
             {/* Message if no processed data yet */}
             {!processedData?.bio && !processedData?.projects?.length && !processedData?.skills?.length && (
