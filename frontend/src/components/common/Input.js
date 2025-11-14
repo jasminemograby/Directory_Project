@@ -1,6 +1,5 @@
 // Input Component - Design System Compliant
 import React, { useState } from 'react';
-import { useApp } from '../../contexts/AppContext';
 
 const Input = ({
   label,

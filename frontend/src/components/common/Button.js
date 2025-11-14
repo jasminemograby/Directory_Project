@@ -1,6 +1,5 @@
 // Button Component - Design System Compliant
 import React from 'react';
-import { useApp } from '../../contexts/AppContext';
 import LoadingSpinner from './LoadingSpinner';
 
 const Button = ({
