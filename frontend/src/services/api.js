@@ -85,7 +85,12 @@ export const apiService = {
           throw new Error('Invalid registration step');
         },
   verifyCompany: (companyId, data) => api.post(`/company/${companyId}/verify`, data),
-  getCompany: (companyId) => api.get(`/company/${companyId}`),
+  getCompany: (companyId, hrEmail) => {
+    if (hrEmail) {
+      return api.get('/company', { params: { hrEmail } });
+    }
+    return api.get(`/company/${companyId}`);
+  },
   getCompanyByHrEmail: (hrEmail) => api.get('/company', { params: { hrEmail } }),
   updateCompany: (companyId, data) => api.put(`/company/${companyId}`, data),
   getCompanies: (params) => api.get('/company', { params }),
@@ -103,12 +108,6 @@ export const apiService = {
     }
     return api.get(`/company/${companyId}`);
   },
-  
-  getCompanyHierarchy: (companyId) => 
-    api.get(`/company/${companyId}/hierarchy`),
-  
-  getCompanyRequests: (companyId) => 
-    api.get(`/company/${companyId}/requests`),
   
   // Profile endpoints
   getProfile: (employeeId) => api.get(`/profile/${employeeId}`),
