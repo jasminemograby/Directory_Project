@@ -259,60 +259,34 @@ const EmployeeProfile = () => {
                 </div>
               </div>
 
-                  {/* External Data Icons */}
-                  <div className="flex items-center gap-4 mt-4 pt-4 border-t" style={{ borderColor: 'var(--bg-secondary)' }}>
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>External Data:</span>
-                    <div className="flex gap-2">
-                      {/* LinkedIn */}
-                      <div 
-                        className="w-8 h-8 rounded flex items-center justify-center cursor-default"
-                        style={{ backgroundColor: 'var(--bg-secondary)' }}
-                        title="LinkedIn"
-                      >
-                        <span className="text-xs">in</span>
-                      </div>
-                      {/* GitHub */}
-                      <div 
-                        className="w-8 h-8 rounded flex items-center justify-center cursor-default"
-                        style={{ backgroundColor: 'var(--bg-secondary)' }}
-                        title="GitHub"
-                      >
-                        <span className="text-xs">GH</span>
-                      </div>
-                      {/* Credly */}
-                      <div 
-                        className="w-8 h-8 rounded flex items-center justify-center cursor-default"
-                        style={{ backgroundColor: 'var(--bg-secondary)' }}
-                        title="Credly"
-                      >
-                        <span className="text-xs">C</span>
-                      </div>
-                      {/* ORCID */}
-                      <div 
-                        className="w-8 h-8 rounded flex items-center justify-center cursor-default"
-                        style={{ backgroundColor: 'var(--bg-secondary)' }}
-                        title="ORCID"
-                      >
-                        <span className="text-xs">OR</span>
-                      </div>
-                      {/* Crossref */}
-                      <div 
-                        className="w-8 h-8 rounded flex items-center justify-center cursor-default"
-                        style={{ backgroundColor: 'var(--bg-secondary)' }}
-                        title="Crossref"
-                      >
-                        <span className="text-xs">CR</span>
-                      </div>
-                      {/* YouTube */}
-                      <div 
-                        className="w-8 h-8 rounded flex items-center justify-center cursor-default"
-                        style={{ backgroundColor: 'var(--bg-secondary)' }}
-                        title="YouTube"
-                      >
-                        <span className="text-xs">YT</span>
+                  {/* External Data Icons - Only show if data exists */}
+                  {(processedData?.linkedin || processedData?.github) && (
+                    <div className="flex items-center gap-4 mt-4 pt-4 border-t" style={{ borderColor: 'var(--bg-secondary)' }}>
+                      <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>External Data:</span>
+                      <div className="flex gap-2">
+                        {/* LinkedIn - Only show if data exists */}
+                        {processedData?.linkedin && (
+                          <div 
+                            className="w-8 h-8 rounded flex items-center justify-center"
+                            style={{ backgroundColor: 'var(--bg-secondary)' }}
+                            title="LinkedIn data available"
+                          >
+                            <span className="text-xs">in</span>
+                          </div>
+                        )}
+                        {/* GitHub - Only show if data exists */}
+                        {processedData?.github && (
+                          <div 
+                            className="w-8 h-8 rounded flex items-center justify-center"
+                            style={{ backgroundColor: 'var(--bg-secondary)' }}
+                            title="GitHub data available"
+                          >
+                            <span className="text-xs">GH</span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
+                  )}
             </div>
 
             {/* AI-Generated Bio (Processed Data) */}
