@@ -1,4 +1,4 @@
-// Pending Requests Approval Component - HR reviews and approves/rejects employee requests
+// Pending Requests Approval Component - HR reviews and approves/rejects requests
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '../../services/api';
 import { authService } from '../../utils/auth';
@@ -46,22 +46,34 @@ const PendingRequestsApproval = () => {
     fetchPendingRequests();
   }, [fetchPendingRequests]);
 
-  const handleApprove = async (requestType, requestId) => {
-    if (!window.confirm(`Are you sure you want to approve this ${requestType} request?`)) {
-      return;
-    }
-
-    const key = `${requestType}-${requestId}`;
-    setProcessing(prev => ({ ...prev, [key]: true }));
-
+  const handleApprove = async (type, requestId, notes = '') => {
     try {
-      const response = await apiService.approveRequest(requestType, requestId, null);
-      
+      setProcessing({ ...processing, [`${type}-${requestId}`]: true });
+
+      let response;
+      switch (type) {
+        case 'training':
+          response = await apiService.updateTrainingRequest(requestId, 'approved', notes);
+          break;
+        case 'skill-verification':
+          response = await apiService.updateSkillVerificationRequest(requestId, 'approved', notes);
+          break;
+        case 'self-learning':
+          response = await apiService.updateSelfLearningRequest(requestId, 'approved', notes);
+          break;
+        case 'extra-attempt':
+          response = await apiService.updateExtraAttemptRequest(requestId, 'approved', notes);
+          break;
+        default:
+          throw new Error('Invalid request type');
+      }
+
       if (response.data && response.data.success) {
-        // Remove from list
+        // Remove from pending list
         setRequests(prev => ({
           ...prev,
-          [requestType]: prev[requestType].filter(r => r.id !== requestId)
+          [type === 'skill-verification' ? 'skillVerification' : type === 'extra-attempt' ? 'extraAttempts' : type === 'self-learning' ? 'selfLearning' : type]: 
+            prev[type === 'skill-verification' ? 'skillVerification' : type === 'extra-attempt' ? 'extraAttempts' : type === 'self-learning' ? 'selfLearning' : type].filter(r => r.id !== requestId)
         }));
         alert('Request approved successfully!');
       } else {
@@ -71,24 +83,41 @@ const PendingRequestsApproval = () => {
       console.error('Error approving request:', err);
       alert(err.response?.data?.error || 'Failed to approve request');
     } finally {
-      setProcessing(prev => ({ ...prev, [key]: false }));
+      setProcessing({ ...processing, [`${type}-${requestId}`]: false });
     }
   };
 
-  const handleReject = async (requestType, requestId) => {
-    const reason = window.prompt('Please provide a reason for rejection (optional):');
-    
-    const key = `${requestType}-${requestId}`;
-    setProcessing(prev => ({ ...prev, [key]: true }));
+  const handleReject = async (type, requestId, notes = '') => {
+    const reason = window.prompt('Please provide a reason for rejection (optional):', notes);
+    if (reason === null) return; // User cancelled
 
     try {
-      const response = await apiService.rejectRequest(requestType, requestId, reason || null);
-      
+      setProcessing({ ...processing, [`${type}-${requestId}`]: true });
+
+      let response;
+      switch (type) {
+        case 'training':
+          response = await apiService.updateTrainingRequest(requestId, 'rejected', reason);
+          break;
+        case 'skill-verification':
+          response = await apiService.updateSkillVerificationRequest(requestId, 'rejected', reason);
+          break;
+        case 'self-learning':
+          response = await apiService.updateSelfLearningRequest(requestId, 'rejected', reason);
+          break;
+        case 'extra-attempt':
+          response = await apiService.updateExtraAttemptRequest(requestId, 'rejected', reason);
+          break;
+        default:
+          throw new Error('Invalid request type');
+      }
+
       if (response.data && response.data.success) {
-        // Remove from list
+        // Remove from pending list
         setRequests(prev => ({
           ...prev,
-          [requestType]: prev[requestType].filter(r => r.id !== requestId)
+          [type === 'skill-verification' ? 'skillVerification' : type === 'extra-attempt' ? 'extraAttempts' : type === 'self-learning' ? 'selfLearning' : type]: 
+            prev[type === 'skill-verification' ? 'skillVerification' : type === 'extra-attempt' ? 'extraAttempts' : type === 'self-learning' ? 'selfLearning' : type].filter(r => r.id !== requestId)
         }));
         alert('Request rejected.');
       } else {
@@ -98,82 +127,81 @@ const PendingRequestsApproval = () => {
       console.error('Error rejecting request:', err);
       alert(err.response?.data?.error || 'Failed to reject request');
     } finally {
-      setProcessing(prev => ({ ...prev, [key]: false }));
+      setProcessing({ ...processing, [`${type}-${requestId}`]: false });
     }
   };
 
-  const renderRequestCard = (request, requestType) => {
-    const key = `${requestType}-${request.id}`;
-    const isProcessing = processing[key];
+  const renderRequestCard = (request, type, typeLabel) => {
+    const isProcessing = processing[`${type}-${request.id}`];
 
     return (
       <div
         key={request.id}
-        className="rounded-lg p-4 border transition-all"
+        className="rounded-lg p-4 border mb-3"
         style={{ 
           backgroundColor: 'var(--bg-secondary)',
           borderColor: 'var(--bg-tertiary)'
         }}
       >
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h4 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-              {request.employee_name || 'Employee'}
-            </h4>
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              {request.employee_email}
-            </p>
+            <h3 className="font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+              {typeLabel} - {request.employee_name || 'Employee'}
+            </h3>
+            <div className="space-y-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+              <p><strong>Employee:</strong> {request.employee_email}</p>
+              {type === 'training' && (
+                <>
+                  <p><strong>Course:</strong> {request.course_name} ({request.course_id})</p>
+                  {request.reason && <p><strong>Reason:</strong> {request.reason}</p>}
+                  {request.target_date && <p><strong>Target Date:</strong> {new Date(request.target_date).toLocaleDateString()}</p>}
+                </>
+              )}
+              {type === 'skill-verification' && (
+                <>
+                  <p><strong>Skills:</strong> {Array.isArray(request.skill_ids) ? request.skill_ids.join(', ') : request.skill_ids}</p>
+                  {request.reason && <p><strong>Reason:</strong> {request.reason}</p>}
+                </>
+              )}
+              {type === 'self-learning' && (
+                <>
+                  <p><strong>Topic:</strong> {request.topic}</p>
+                  {request.description && <p><strong>Description:</strong> {request.description}</p>}
+                  {request.estimated_hours && <p><strong>Estimated Hours:</strong> {request.estimated_hours}</p>}
+                  {request.target_date && <p><strong>Target Date:</strong> {new Date(request.target_date).toLocaleDateString()}</p>}
+                </>
+              )}
+              {type === 'extra-attempt' && (
+                <>
+                  <p><strong>Course:</strong> {request.course_name} ({request.course_id})</p>
+                  <p><strong>Attempts:</strong> {request.current_attempts} / {request.max_attempts}</p>
+                  {request.reason && <p><strong>Reason:</strong> {request.reason}</p>}
+                </>
+              )}
+              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                Created: {new Date(request.created_at).toLocaleDateString()}
+              </p>
+            </div>
           </div>
-          <span className="px-2 py-1 text-xs rounded capitalize" style={{ 
-            backgroundColor: 'var(--accent-orange)', 
-            color: 'white' 
-          }}>
-            {requestType.replace('-', ' ')}
-          </span>
-        </div>
-
-        <div className="mt-3 space-y-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          {request.course_name && (
-            <p><strong>Course:</strong> {request.course_name}</p>
-          )}
-          {request.course_id && (
-            <p><strong>Course ID:</strong> {request.course_id}</p>
-          )}
-          {request.current_attempts !== undefined && (
-            <p><strong>Current Attempts:</strong> {request.current_attempts}</p>
-          )}
-          {request.skill_ids && (
-            <p><strong>Skills:</strong> {Array.isArray(request.skill_ids) ? request.skill_ids.join(', ') : request.skill_ids}</p>
-          )}
-          {request.reason && (
-            <p><strong>Reason:</strong> {request.reason}</p>
-          )}
-          {request.learning_path && (
-            <p><strong>Learning Path:</strong> {request.learning_path}</p>
-          )}
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            Created: {new Date(request.created_at).toLocaleString()}
-          </p>
-        </div>
-
-        <div className="flex gap-2 mt-4">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => handleApprove(requestType, request.id)}
-            disabled={isProcessing}
-          >
-            {isProcessing ? 'Processing...' : 'Approve'}
-          </Button>
-          <Button
-            variant="tertiary"
-            size="sm"
-            onClick={() => handleReject(requestType, request.id)}
-            disabled={isProcessing}
-            style={{ color: '#dc2626' }}
-          >
-            {isProcessing ? 'Processing...' : 'Reject'}
-          </Button>
+          <div className="flex gap-2 ml-4">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => handleApprove(type, request.id)}
+              disabled={isProcessing}
+            >
+              {isProcessing ? 'Processing...' : 'Approve'}
+            </Button>
+            <Button
+              variant="tertiary"
+              size="sm"
+              onClick={() => handleReject(type, request.id)}
+              disabled={isProcessing}
+              style={{ color: '#dc2626' }}
+            >
+              {isProcessing ? 'Processing...' : 'Reject'}
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -203,10 +231,8 @@ const PendingRequestsApproval = () => {
     );
   }
 
-  const totalRequests = requests.training.length + 
-                       requests.skillVerification.length + 
-                       requests.selfLearning.length + 
-                       requests.extraAttempts.length;
+  const totalPending = requests.training.length + requests.skillVerification.length + 
+                      requests.selfLearning.length + requests.extraAttempts.length;
 
   return (
     <div className="rounded-lg p-6" style={{ 
@@ -224,61 +250,53 @@ const PendingRequestsApproval = () => {
           backgroundColor: 'var(--bg-tertiary)', 
           color: 'var(--text-primary)' 
         }}>
-          {totalRequests} pending
+          {totalPending} pending
         </span>
       </div>
 
-      {totalRequests === 0 ? (
+      {totalPending === 0 ? (
         <p className="text-center py-8" style={{ color: 'var(--text-secondary)' }}>
-          No pending requests. All employee requests have been processed.
+          No pending requests. All requests have been processed.
         </p>
       ) : (
         <div className="space-y-6">
           {/* Training Requests */}
           {requests.training.length > 0 && (
             <div>
-              <h3 className="text-lg font-medium mb-3" style={{ color: 'var(--text-primary)' }}>
+              <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                 Training Requests ({requests.training.length})
               </h3>
-              <div className="space-y-3">
-                {requests.training.map(request => renderRequestCard(request, 'training'))}
-              </div>
+              {requests.training.map(request => renderRequestCard(request, 'training', 'Training'))}
             </div>
           )}
 
           {/* Skill Verification Requests */}
           {requests.skillVerification.length > 0 && (
             <div>
-              <h3 className="text-lg font-medium mb-3" style={{ color: 'var(--text-primary)' }}>
+              <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                 Skill Verification Requests ({requests.skillVerification.length})
               </h3>
-              <div className="space-y-3">
-                {requests.skillVerification.map(request => renderRequestCard(request, 'skill-verification'))}
-              </div>
+              {requests.skillVerification.map(request => renderRequestCard(request, 'skill-verification', 'Skill Verification'))}
             </div>
           )}
 
           {/* Self-Learning Requests */}
           {requests.selfLearning.length > 0 && (
             <div>
-              <h3 className="text-lg font-medium mb-3" style={{ color: 'var(--text-primary)' }}>
+              <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                 Self-Learning Requests ({requests.selfLearning.length})
               </h3>
-              <div className="space-y-3">
-                {requests.selfLearning.map(request => renderRequestCard(request, 'self-learning'))}
-              </div>
+              {requests.selfLearning.map(request => renderRequestCard(request, 'self-learning', 'Self-Learning'))}
             </div>
           )}
 
           {/* Extra Attempt Requests */}
           {requests.extraAttempts.length > 0 && (
             <div>
-              <h3 className="text-lg font-medium mb-3" style={{ color: 'var(--text-primary)' }}>
+              <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                 Extra Attempt Requests ({requests.extraAttempts.length})
               </h3>
-              <div className="space-y-3">
-                {requests.extraAttempts.map(request => renderRequestCard(request, 'extra-attempts'))}
-              </div>
+              {requests.extraAttempts.map(request => renderRequestCard(request, 'extra-attempt', 'Extra Attempt'))}
             </div>
           )}
         </div>

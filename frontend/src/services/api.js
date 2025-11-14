@@ -123,11 +123,13 @@ export const apiService = {
   createTrainingRequest: (employeeId, data) => api.post(`/requests/training/${employeeId}`, data),
   createSkillVerificationRequest: (employeeId, data) => api.post(`/requests/skill-verification/${employeeId}`, data),
   createSelfLearningRequest: (employeeId, data) => api.post(`/requests/self-learning/${employeeId}`, data),
-  createExtraAttemptRequest: (employeeId, data) => api.post(`/requests/extra-attempts/${employeeId}`, data),
+  createExtraAttemptRequest: (employeeId, data) => api.post(`/requests/extra-attempt/${employeeId}`, data),
   getEmployeeRequests: (employeeId) => api.get(`/requests/employee/${employeeId}`),
   getPendingRequests: (hrEmail) => api.get('/requests/pending', { params: { hrEmail } }),
-  approveRequest: (requestType, requestId, notes) => api.post(`/requests/approve/${requestType}/${requestId}`, { notes }),
-  rejectRequest: (requestType, requestId, reason) => api.post(`/requests/reject/${requestType}/${requestId}`, { reason }),
+  updateTrainingRequest: (requestId, status, notes) => api.put(`/requests/training/${requestId}`, { status, notes }),
+  updateSkillVerificationRequest: (requestId, status, notes) => api.put(`/requests/skill-verification/${requestId}`, { status, notes }),
+  updateSelfLearningRequest: (requestId, status, notes) => api.put(`/requests/self-learning/${requestId}`, { status, notes }),
+  updateExtraAttemptRequest: (requestId, status, notes) => api.put(`/requests/extra-attempt/${requestId}`, { status, notes }),
   
   // Skills endpoints
   verifySkills: (data) => api.post('/skills/verify', data),

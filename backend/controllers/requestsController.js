@@ -1,13 +1,13 @@
-// Requests Controller - Handles all employee requests (training, skill verification, self-learning, extra attempts)
+// Requests Controller - Handles all request types (training, skill verification, self-learning, extra attempts)
 const { query } = require('../config/database');
 
 /**
- * Create a training request
+ * Create training request
  */
 const createTrainingRequest = async (req, res) => {
   try {
     const { employeeId } = req.params;
-    const { courseId, courseName, reason } = req.body;
+    const { courseId, courseName, reason, targetDate } = req.body;
 
     if (!courseId || !courseName) {
       return res.status(400).json({
@@ -33,13 +33,14 @@ const createTrainingRequest = async (req, res) => {
 
     // Create training request
     const result = await query(
-      `INSERT INTO training_requests (employee_id, company_id, course_id, course_name, reason, status, created_at)
-       VALUES ($1, $2, $3, $4, $5, 'pending', CURRENT_TIMESTAMP)
-       RETURNING *`,
-      [employeeId, company_id, courseId, courseName, reason || null]
+      `INSERT INTO training_requests 
+       (employee_id, company_id, course_id, course_name, reason, target_date, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending', CURRENT_TIMESTAMP)
+       RETURNING id, employee_id, course_id, course_name, reason, target_date, status, created_at`,
+      [employeeId, company_id, courseId, courseName, reason || null, targetDate || null]
     );
 
-    res.json({
+    res.status(201).json({
       success: true,
       data: {
         request: result.rows[0]
@@ -55,7 +56,7 @@ const createTrainingRequest = async (req, res) => {
 };
 
 /**
- * Create a skill verification request
+ * Create skill verification request
  */
 const createSkillVerificationRequest = async (req, res) => {
   try {
@@ -86,13 +87,14 @@ const createSkillVerificationRequest = async (req, res) => {
 
     // Create skill verification request
     const result = await query(
-      `INSERT INTO skill_verification_requests (employee_id, company_id, skill_ids, reason, status, created_at)
+      `INSERT INTO skill_verification_requests 
+       (employee_id, company_id, skill_ids, reason, status, created_at)
        VALUES ($1, $2, $3, $4, 'pending', CURRENT_TIMESTAMP)
-       RETURNING *`,
+       RETURNING id, employee_id, skill_ids, reason, status, created_at`,
       [employeeId, company_id, JSON.stringify(skillIds), reason || null]
     );
 
-    res.json({
+    res.status(201).json({
       success: true,
       data: {
         request: result.rows[0]
@@ -108,12 +110,66 @@ const createSkillVerificationRequest = async (req, res) => {
 };
 
 /**
- * Create a self-learning request
+ * Create self-learning request
  */
 const createSelfLearningRequest = async (req, res) => {
   try {
     const { employeeId } = req.params;
-    const { courseId, courseName, reason, learningPath } = req.body;
+    const { topic, description, estimatedHours, targetDate } = req.body;
+
+    if (!topic) {
+      return res.status(400).json({
+        success: false,
+        error: 'Topic is required'
+      });
+    }
+
+    // Verify employee exists
+    const employeeResult = await query(
+      `SELECT id, company_id FROM employees WHERE id = $1`,
+      [employeeId]
+    );
+
+    if (employeeResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Employee not found'
+      });
+    }
+
+    const { company_id } = employeeResult.rows[0];
+
+    // Create self-learning request
+    const result = await query(
+      `INSERT INTO self_learning_requests 
+       (employee_id, company_id, topic, description, estimated_hours, target_date, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending', CURRENT_TIMESTAMP)
+       RETURNING id, employee_id, topic, description, estimated_hours, target_date, status, created_at`,
+      [employeeId, company_id, topic, description || null, estimatedHours || null, targetDate || null]
+    );
+
+    res.status(201).json({
+      success: true,
+      data: {
+        request: result.rows[0]
+      }
+    });
+  } catch (error) {
+    console.error('[RequestsController] Error creating self-learning request:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create self-learning request'
+    });
+  }
+};
+
+/**
+ * Create extra attempt request
+ */
+const createExtraAttemptRequest = async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+    const { courseId, courseName, currentAttempts, maxAttempts, reason } = req.body;
 
     if (!courseId || !courseName) {
       return res.status(400).json({
@@ -137,69 +193,16 @@ const createSelfLearningRequest = async (req, res) => {
 
     const { company_id } = employeeResult.rows[0];
 
-    // Create self-learning request
-    const result = await query(
-      `INSERT INTO self_learning_requests (employee_id, company_id, course_id, course_name, reason, learning_path, status, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, 'pending', CURRENT_TIMESTAMP)
-       RETURNING *`,
-      [employeeId, company_id, courseId, courseName, reason || null, learningPath || null]
-    );
-
-    res.json({
-      success: true,
-      data: {
-        request: result.rows[0]
-      }
-    });
-  } catch (error) {
-    console.error('[RequestsController] Error creating self-learning request:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to create self-learning request'
-    });
-  }
-};
-
-/**
- * Create an extra attempt request
- */
-const createExtraAttemptRequest = async (req, res) => {
-  try {
-    const { employeeId } = req.params;
-    const { courseId, courseName, currentAttempts, reason } = req.body;
-
-    if (!courseId || !courseName || currentAttempts === undefined) {
-      return res.status(400).json({
-        success: false,
-        error: 'Course ID, course name, and current attempts are required'
-      });
-    }
-
-    // Verify employee exists
-    const employeeResult = await query(
-      `SELECT id, company_id FROM employees WHERE id = $1`,
-      [employeeId]
-    );
-
-    if (employeeResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Employee not found'
-      });
-    }
-
-    const { company_id } = employeeResult.rows[0];
-
     // Create extra attempt request
-    // Note: extra_attempt_requests table has max_attempts field, but we'll use NULL for now
     const result = await query(
-      `INSERT INTO extra_attempt_requests (employee_id, company_id, course_id, current_attempts, max_attempts, reason, status, created_at)
-       VALUES ($1, $2, $3, $4, NULL, $5, 'pending', CURRENT_TIMESTAMP)
-       RETURNING *`,
-      [employeeId, company_id, courseId, currentAttempts, reason || null]
+      `INSERT INTO extra_attempt_requests 
+       (employee_id, company_id, course_id, course_name, current_attempts, max_attempts, reason, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', CURRENT_TIMESTAMP)
+       RETURNING id, employee_id, course_id, course_name, current_attempts, max_attempts, reason, status, created_at`,
+      [employeeId, company_id, courseId, courseName, currentAttempts || 0, maxAttempts || 3, reason || null]
     );
 
-    res.json({
+    res.status(201).json({
       success: true,
       data: {
         request: result.rows[0]
@@ -220,7 +223,7 @@ const createExtraAttemptRequest = async (req, res) => {
 const getPendingRequests = async (req, res) => {
   try {
     const hrEmail = req.query.hrEmail || req.user?.email;
-    
+
     if (!hrEmail) {
       return res.status(400).json({
         success: false,
@@ -248,7 +251,7 @@ const getPendingRequests = async (req, res) => {
     const companyId = hrCheck.rows[0].company_id;
 
     // Get all pending requests
-    const [trainingRequests, skillVerificationRequests, selfLearningRequests, extraAttemptRequests] = await Promise.all([
+    const [trainingRequests, skillRequests, selfLearningRequests, extraAttemptRequests] = await Promise.all([
       query(
         `SELECT tr.*, e.name as employee_name, e.email as employee_email
          FROM training_requests tr
@@ -287,7 +290,7 @@ const getPendingRequests = async (req, res) => {
       success: true,
       data: {
         training: trainingRequests.rows,
-        skillVerification: skillVerificationRequests.rows,
+        skillVerification: skillRequests.rows,
         selfLearning: selfLearningRequests.rows,
         extraAttempts: extraAttemptRequests.rows
       }
@@ -302,39 +305,26 @@ const getPendingRequests = async (req, res) => {
 };
 
 /**
- * Approve a request (generic - works for all request types)
+ * Approve/reject training request
  */
-const approveRequest = async (req, res) => {
+const updateTrainingRequest = async (req, res) => {
   try {
-    const { requestType, requestId } = req.params;
-    const { notes } = req.body;
+    const { requestId } = req.params;
+    const { status, notes } = req.body;
 
-    // Map request types to table names
-    const tableMap = {
-      'training': 'training_requests',
-      'skill-verification': 'skill_verification_requests',
-      'self-learning': 'self_learning_requests',
-      'extra-attempts': 'extra_attempt_requests'
-    };
-
-    const tableName = tableMap[requestType];
-    if (!tableName) {
+    if (!status || !['approved', 'rejected'].includes(status)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid request type'
+        error: 'Status must be "approved" or "rejected"'
       });
     }
 
-    // Update request status
     const result = await query(
-      `UPDATE ${tableName} 
-       SET status = 'approved', 
-           approved_at = CURRENT_TIMESTAMP,
-           approved_by = $1,
-           notes = $2
+      `UPDATE training_requests 
+       SET status = $1, notes = $2, updated_at = CURRENT_TIMESTAMP
        WHERE id = $3
        RETURNING *`,
-      [req.user?.email || 'hr', notes || null, requestId]
+      [status, notes || null, requestId]
     );
 
     if (result.rows.length === 0) {
@@ -351,48 +341,35 @@ const approveRequest = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[RequestsController] Error approving request:', error);
+    console.error('[RequestsController] Error updating training request:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to approve request'
+      error: 'Failed to update training request'
     });
   }
 };
 
 /**
- * Reject a request (generic - works for all request types)
+ * Approve/reject skill verification request
  */
-const rejectRequest = async (req, res) => {
+const updateSkillVerificationRequest = async (req, res) => {
   try {
-    const { requestType, requestId } = req.params;
-    const { reason } = req.body;
+    const { requestId } = req.params;
+    const { status, notes } = req.body;
 
-    // Map request types to table names
-    const tableMap = {
-      'training': 'training_requests',
-      'skill-verification': 'skill_verification_requests',
-      'self-learning': 'self_learning_requests',
-      'extra-attempts': 'extra_attempt_requests'
-    };
-
-    const tableName = tableMap[requestType];
-    if (!tableName) {
+    if (!status || !['approved', 'rejected'].includes(status)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid request type'
+        error: 'Status must be "approved" or "rejected"'
       });
     }
 
-    // Update request status
     const result = await query(
-      `UPDATE ${tableName} 
-       SET status = 'rejected', 
-           rejected_at = CURRENT_TIMESTAMP,
-           rejected_by = $1,
-           rejection_reason = $2
+      `UPDATE skill_verification_requests 
+       SET status = $1, notes = $2, updated_at = CURRENT_TIMESTAMP
        WHERE id = $3
        RETURNING *`,
-      [req.user?.email || 'hr', reason || null, requestId]
+      [status, notes || null, requestId]
     );
 
     if (result.rows.length === 0) {
@@ -409,10 +386,100 @@ const rejectRequest = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[RequestsController] Error rejecting request:', error);
+    console.error('[RequestsController] Error updating skill verification request:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to reject request'
+      error: 'Failed to update skill verification request'
+    });
+  }
+};
+
+/**
+ * Approve/reject self-learning request
+ */
+const updateSelfLearningRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { status, notes } = req.body;
+
+    if (!status || !['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Status must be "approved" or "rejected"'
+      });
+    }
+
+    const result = await query(
+      `UPDATE self_learning_requests 
+       SET status = $1, notes = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3
+       RETURNING *`,
+      [status, notes || null, requestId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Request not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        request: result.rows[0]
+      }
+    });
+  } catch (error) {
+    console.error('[RequestsController] Error updating self-learning request:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update self-learning request'
+    });
+  }
+};
+
+/**
+ * Approve/reject extra attempt request
+ */
+const updateExtraAttemptRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { status, notes } = req.body;
+
+    if (!status || !['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Status must be "approved" or "rejected"'
+      });
+    }
+
+    const result = await query(
+      `UPDATE extra_attempt_requests 
+       SET status = $1, notes = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3
+       RETURNING *`,
+      [status, notes || null, requestId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Request not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        request: result.rows[0]
+      }
+    });
+  } catch (error) {
+    console.error('[RequestsController] Error updating extra attempt request:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update extra attempt request'
     });
   }
 };
@@ -424,35 +491,30 @@ const getEmployeeRequests = async (req, res) => {
   try {
     const { employeeId } = req.params;
 
-    // Verify employee exists
-    const employeeResult = await query(
-      `SELECT id FROM employees WHERE id = $1`,
-      [employeeId]
-    );
-
-    if (employeeResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Employee not found'
-      });
-    }
-
     // Get all requests for this employee
-    const [trainingRequests, skillVerificationRequests, selfLearningRequests, extraAttemptRequests] = await Promise.all([
+    const [trainingRequests, skillRequests, selfLearningRequests, extraAttemptRequests] = await Promise.all([
       query(
-        `SELECT * FROM training_requests WHERE employee_id = $1 ORDER BY created_at DESC`,
+        `SELECT * FROM training_requests 
+         WHERE employee_id = $1 
+         ORDER BY created_at DESC`,
         [employeeId]
       ),
       query(
-        `SELECT * FROM skill_verification_requests WHERE employee_id = $1 ORDER BY created_at DESC`,
+        `SELECT * FROM skill_verification_requests 
+         WHERE employee_id = $1 
+         ORDER BY created_at DESC`,
         [employeeId]
       ),
       query(
-        `SELECT * FROM self_learning_requests WHERE employee_id = $1 ORDER BY created_at DESC`,
+        `SELECT * FROM self_learning_requests 
+         WHERE employee_id = $1 
+         ORDER BY created_at DESC`,
         [employeeId]
       ),
       query(
-        `SELECT * FROM extra_attempt_requests WHERE employee_id = $1 ORDER BY created_at DESC`,
+        `SELECT * FROM extra_attempt_requests 
+         WHERE employee_id = $1 
+         ORDER BY created_at DESC`,
         [employeeId]
       )
     ]);
@@ -461,7 +523,7 @@ const getEmployeeRequests = async (req, res) => {
       success: true,
       data: {
         training: trainingRequests.rows,
-        skillVerification: skillVerificationRequests.rows,
+        skillVerification: skillRequests.rows,
         selfLearning: selfLearningRequests.rows,
         extraAttempts: extraAttemptRequests.rows
       }
@@ -481,8 +543,10 @@ module.exports = {
   createSelfLearningRequest,
   createExtraAttemptRequest,
   getPendingRequests,
-  approveRequest,
-  rejectRequest,
+  updateTrainingRequest,
+  updateSkillVerificationRequest,
+  updateSelfLearningRequest,
+  updateExtraAttemptRequest,
   getEmployeeRequests
 };
 

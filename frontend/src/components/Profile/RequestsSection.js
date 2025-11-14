@@ -4,130 +4,314 @@ import { apiService } from '../../services/api';
 import Button from '../common/Button';
 
 const RequestsSection = ({ employeeId }) => {
-  const [showTrainingForm, setShowTrainingForm] = useState(false);
-  const [showSkillVerificationForm, setShowSkillVerificationForm] = useState(false);
-  const [showSelfLearningForm, setShowSelfLearningForm] = useState(false);
-  const [showExtraAttemptForm, setShowExtraAttemptForm] = useState(false);
+  const [activeForm, setActiveForm] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
-  const handleTrainingRequest = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
+  // Form states
+  const [trainingForm, setTrainingForm] = useState({ courseId: '', courseName: '', reason: '', targetDate: '' });
+  const [skillForm, setSkillForm] = useState({ skillIds: [], reason: '' });
+  const [selfLearningForm, setSelfLearningForm] = useState({ topic: '', description: '', estimatedHours: '', targetDate: '' });
+  const [extraAttemptForm, setExtraAttemptForm] = useState({ courseId: '', courseName: '', currentAttempts: '', maxAttempts: '', reason: '' });
 
-    const formData = new FormData(e.target);
-    const data = {
-      courseId: formData.get('courseId'),
-      courseName: formData.get('courseName'),
-      reason: formData.get('reason')
-    };
-
+  const handleSubmit = async (type, formData) => {
     try {
-      const response = await apiService.createTrainingRequest(employeeId, data);
-      if (response.data && response.data.success) {
-        setMessage({ type: 'success', text: 'Training request submitted successfully!' });
-        setShowTrainingForm(false);
-        e.target.reset();
-      } else {
-        setMessage({ type: 'error', text: response.data?.error || 'Failed to submit request' });
+      setLoading(true);
+      setError(null);
+      setSuccess(null);
+
+      let response;
+      switch (type) {
+        case 'training':
+          response = await apiService.createTrainingRequest(employeeId, formData);
+          break;
+        case 'skill-verification':
+          response = await apiService.createSkillVerificationRequest(employeeId, formData);
+          break;
+        case 'self-learning':
+          response = await apiService.createSelfLearningRequest(employeeId, formData);
+          break;
+        case 'extra-attempt':
+          response = await apiService.createExtraAttemptRequest(employeeId, formData);
+          break;
+        default:
+          throw new Error('Invalid request type');
       }
-    } catch (error) {
-      console.error('Error creating training request:', error);
-      setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to submit training request' });
+
+      if (response.data && response.data.success) {
+        setSuccess(`${type.replace('-', ' ')} request submitted successfully!`);
+        // Reset form
+        setActiveForm(null);
+        // Clear form data
+        if (type === 'training') setTrainingForm({ courseId: '', courseName: '', reason: '', targetDate: '' });
+        else if (type === 'skill-verification') setSkillForm({ skillIds: [], reason: '' });
+        else if (type === 'self-learning') setSelfLearningForm({ topic: '', description: '', estimatedHours: '', targetDate: '' });
+        else if (type === 'extra-attempt') setExtraAttemptForm({ courseId: '', courseName: '', currentAttempts: '', maxAttempts: '', reason: '' });
+        
+        setTimeout(() => setSuccess(null), 5000);
+      } else {
+        setError(response.data?.error || 'Failed to submit request');
+      }
+    } catch (err) {
+      console.error('Error submitting request:', err);
+      setError(err.response?.data?.error || 'Failed to submit request. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSkillVerificationRequest = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
+  const renderForm = () => {
+    if (!activeForm) return null;
 
-    const formData = new FormData(e.target);
-    const skillIdsInput = formData.get('skillIds');
-    const skillIds = skillIdsInput ? skillIdsInput.split(',').map(id => id.trim()) : [];
+    switch (activeForm) {
+      case 'training':
+        return (
+          <div className="mt-4 p-4 rounded border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--bg-tertiary)' }}>
+            <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Request Training</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Course ID *</label>
+                <input
+                  type="text"
+                  value={trainingForm.courseId}
+                  onChange={(e) => setTrainingForm({ ...trainingForm, courseId: e.target.value })}
+                  className="w-full px-3 py-2 rounded border"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Course Name *</label>
+                <input
+                  type="text"
+                  value={trainingForm.courseName}
+                  onChange={(e) => setTrainingForm({ ...trainingForm, courseName: e.target.value })}
+                  className="w-full px-3 py-2 rounded border"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Reason</label>
+                <textarea
+                  value={trainingForm.reason}
+                  onChange={(e) => setTrainingForm({ ...trainingForm, reason: e.target.value })}
+                  className="w-full px-3 py-2 rounded border"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  rows="3"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Target Date</label>
+                <input
+                  type="date"
+                  value={trainingForm.targetDate}
+                  onChange={(e) => setTrainingForm({ ...trainingForm, targetDate: e.target.value })}
+                  className="w-full px-3 py-2 rounded border"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  onClick={() => handleSubmit('training', trainingForm)}
+                  disabled={loading || !trainingForm.courseId || !trainingForm.courseName}
+                >
+                  {loading ? 'Submitting...' : 'Submit Request'}
+                </Button>
+                <Button variant="secondary" onClick={() => setActiveForm(null)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
 
-    const data = {
-      skillIds: skillIds,
-      reason: formData.get('reason')
-    };
+      case 'skill-verification':
+        return (
+          <div className="mt-4 p-4 rounded border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--bg-tertiary)' }}>
+            <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Request Skill Verification</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Skill IDs (comma-separated) *</label>
+                <input
+                  type="text"
+                  value={skillForm.skillIds.join(', ')}
+                  onChange={(e) => setSkillForm({ ...skillForm, skillIds: e.target.value.split(',').map(s => s.trim()).filter(s => s) })}
+                  className="w-full px-3 py-2 rounded border"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  placeholder="skill-1, skill-2, skill-3"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Reason</label>
+                <textarea
+                  value={skillForm.reason}
+                  onChange={(e) => setSkillForm({ ...skillForm, reason: e.target.value })}
+                  className="w-full px-3 py-2 rounded border"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  rows="3"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  onClick={() => handleSubmit('skill-verification', skillForm)}
+                  disabled={loading || skillForm.skillIds.length === 0}
+                >
+                  {loading ? 'Submitting...' : 'Submit Request'}
+                </Button>
+                <Button variant="secondary" onClick={() => setActiveForm(null)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
 
-    try {
-      const response = await apiService.createSkillVerificationRequest(employeeId, data);
-      if (response.data && response.data.success) {
-        setMessage({ type: 'success', text: 'Skill verification request submitted successfully!' });
-        setShowSkillVerificationForm(false);
-        e.target.reset();
-      } else {
-        setMessage({ type: 'error', text: response.data?.error || 'Failed to submit request' });
-      }
-    } catch (error) {
-      console.error('Error creating skill verification request:', error);
-      setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to submit skill verification request' });
-    } finally {
-      setLoading(false);
-    }
-  };
+      case 'self-learning':
+        return (
+          <div className="mt-4 p-4 rounded border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--bg-tertiary)' }}>
+            <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Request Self-Learning</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Topic *</label>
+                <input
+                  type="text"
+                  value={selfLearningForm.topic}
+                  onChange={(e) => setSelfLearningForm({ ...selfLearningForm, topic: e.target.value })}
+                  className="w-full px-3 py-2 rounded border"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Description</label>
+                <textarea
+                  value={selfLearningForm.description}
+                  onChange={(e) => setSelfLearningForm({ ...selfLearningForm, description: e.target.value })}
+                  className="w-full px-3 py-2 rounded border"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  rows="3"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Estimated Hours</label>
+                  <input
+                    type="number"
+                    value={selfLearningForm.estimatedHours}
+                    onChange={(e) => setSelfLearningForm({ ...selfLearningForm, estimatedHours: e.target.value })}
+                    className="w-full px-3 py-2 rounded border"
+                    style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Target Date</label>
+                  <input
+                    type="date"
+                    value={selfLearningForm.targetDate}
+                    onChange={(e) => setSelfLearningForm({ ...selfLearningForm, targetDate: e.target.value })}
+                    className="w-full px-3 py-2 rounded border"
+                    style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  onClick={() => handleSubmit('self-learning', selfLearningForm)}
+                  disabled={loading || !selfLearningForm.topic}
+                >
+                  {loading ? 'Submitting...' : 'Submit Request'}
+                </Button>
+                <Button variant="secondary" onClick={() => setActiveForm(null)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
 
-  const handleSelfLearningRequest = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
+      case 'extra-attempt':
+        return (
+          <div className="mt-4 p-4 rounded border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--bg-tertiary)' }}>
+            <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Request Extra Attempt</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Course ID *</label>
+                <input
+                  type="text"
+                  value={extraAttemptForm.courseId}
+                  onChange={(e) => setExtraAttemptForm({ ...extraAttemptForm, courseId: e.target.value })}
+                  className="w-full px-3 py-2 rounded border"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Course Name *</label>
+                <input
+                  type="text"
+                  value={extraAttemptForm.courseName}
+                  onChange={(e) => setExtraAttemptForm({ ...extraAttemptForm, courseName: e.target.value })}
+                  className="w-full px-3 py-2 rounded border"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Current Attempts</label>
+                  <input
+                    type="number"
+                    value={extraAttemptForm.currentAttempts}
+                    onChange={(e) => setExtraAttemptForm({ ...extraAttemptForm, currentAttempts: e.target.value })}
+                    className="w-full px-3 py-2 rounded border"
+                    style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Max Attempts</label>
+                  <input
+                    type="number"
+                    value={extraAttemptForm.maxAttempts}
+                    onChange={(e) => setExtraAttemptForm({ ...extraAttemptForm, maxAttempts: e.target.value })}
+                    className="w-full px-3 py-2 rounded border"
+                    style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Reason</label>
+                <textarea
+                  value={extraAttemptForm.reason}
+                  onChange={(e) => setExtraAttemptForm({ ...extraAttemptForm, reason: e.target.value })}
+                  className="w-full px-3 py-2 rounded border"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                  rows="3"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  onClick={() => handleSubmit('extra-attempt', extraAttemptForm)}
+                  disabled={loading || !extraAttemptForm.courseId || !extraAttemptForm.courseName}
+                >
+                  {loading ? 'Submitting...' : 'Submit Request'}
+                </Button>
+                <Button variant="secondary" onClick={() => setActiveForm(null)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
 
-    const formData = new FormData(e.target);
-    const data = {
-      courseId: formData.get('courseId'),
-      courseName: formData.get('courseName'),
-      reason: formData.get('reason'),
-      learningPath: formData.get('learningPath')
-    };
-
-    try {
-      const response = await apiService.createSelfLearningRequest(employeeId, data);
-      if (response.data && response.data.success) {
-        setMessage({ type: 'success', text: 'Self-learning request submitted successfully!' });
-        setShowSelfLearningForm(false);
-        e.target.reset();
-      } else {
-        setMessage({ type: 'error', text: response.data?.error || 'Failed to submit request' });
-      }
-    } catch (error) {
-      console.error('Error creating self-learning request:', error);
-      setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to submit self-learning request' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleExtraAttemptRequest = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-
-    const formData = new FormData(e.target);
-    const data = {
-      courseId: formData.get('courseId'),
-      courseName: formData.get('courseName'),
-      currentAttempts: parseInt(formData.get('currentAttempts')),
-      reason: formData.get('reason')
-    };
-
-    try {
-      const response = await apiService.createExtraAttemptRequest(employeeId, data);
-      if (response.data && response.data.success) {
-        setMessage({ type: 'success', text: 'Extra attempt request submitted successfully!' });
-        setShowExtraAttemptForm(false);
-        e.target.reset();
-      } else {
-        setMessage({ type: 'error', text: response.data?.error || 'Failed to submit request' });
-      }
-    } catch (error) {
-      console.error('Error creating extra attempt request:', error);
-      setMessage({ type: 'error', text: error.response?.data?.error || 'Failed to submit extra attempt request' });
-    } finally {
-      setLoading(false);
+      default:
+        return null;
     }
   };
 
@@ -141,292 +325,48 @@ const RequestsSection = ({ employeeId }) => {
     }}>
       <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Requests</h2>
 
-      {/* Message */}
-      {message && (
-        <div className={`mb-4 p-3 rounded ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-          {message.text}
+      {/* Success/Error Messages */}
+      {success && (
+        <div className="mb-4 p-3 rounded border" style={{ backgroundColor: '#d1fae5', borderColor: '#10b981', color: '#065f46' }}>
+          {success}
+        </div>
+      )}
+      {error && (
+        <div className="mb-4 p-3 rounded border" style={{ backgroundColor: '#fee2e2', borderColor: '#ef4444', color: '#991b1b' }}>
+          {error}
         </div>
       )}
 
       {/* Request Buttons */}
-      <div className="grid md:grid-cols-2 gap-4 mb-6">
+      <div className="grid md:grid-cols-2 gap-3 mb-4">
         <Button
-          variant="primary"
-          onClick={() => {
-            setShowTrainingForm(!showTrainingForm);
-            setShowSkillVerificationForm(false);
-            setShowSelfLearningForm(false);
-            setShowExtraAttemptForm(false);
-          }}
+          variant={activeForm === 'training' ? 'primary' : 'secondary'}
+          onClick={() => setActiveForm(activeForm === 'training' ? null : 'training')}
         >
           Request Training
         </Button>
         <Button
-          variant="primary"
-          onClick={() => {
-            setShowSkillVerificationForm(!showSkillVerificationForm);
-            setShowTrainingForm(false);
-            setShowSelfLearningForm(false);
-            setShowExtraAttemptForm(false);
-          }}
+          variant={activeForm === 'skill-verification' ? 'primary' : 'secondary'}
+          onClick={() => setActiveForm(activeForm === 'skill-verification' ? null : 'skill-verification')}
         >
-          Verify Your Skills
+          Request Skill Verification
         </Button>
         <Button
-          variant="primary"
-          onClick={() => {
-            setShowSelfLearningForm(!showSelfLearningForm);
-            setShowTrainingForm(false);
-            setShowSkillVerificationForm(false);
-            setShowExtraAttemptForm(false);
-          }}
+          variant={activeForm === 'self-learning' ? 'primary' : 'secondary'}
+          onClick={() => setActiveForm(activeForm === 'self-learning' ? null : 'self-learning')}
         >
           Request Self-Learning
         </Button>
         <Button
-          variant="primary"
-          onClick={() => {
-            setShowExtraAttemptForm(!showExtraAttemptForm);
-            setShowTrainingForm(false);
-            setShowSkillVerificationForm(false);
-            setShowSelfLearningForm(false);
-          }}
+          variant={activeForm === 'extra-attempt' ? 'primary' : 'secondary'}
+          onClick={() => setActiveForm(activeForm === 'extra-attempt' ? null : 'extra-attempt')}
         >
-          Request Extra Attempts
+          Request Extra Attempt
         </Button>
       </div>
 
-      {/* Training Request Form */}
-      {showTrainingForm && (
-        <div className="mb-4 p-4 rounded border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--bg-tertiary)' }}>
-          <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Request Training</h3>
-          <form onSubmit={handleTrainingRequest}>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  Course ID *
-                </label>
-                <input
-                  type="text"
-                  name="courseId"
-                  required
-                  className="w-full px-3 py-2 rounded border"
-                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  Course Name *
-                </label>
-                <input
-                  type="text"
-                  name="courseName"
-                  required
-                  className="w-full px-3 py-2 rounded border"
-                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  Reason (Optional)
-                </label>
-                <textarea
-                  name="reason"
-                  rows="3"
-                  className="w-full px-3 py-2 rounded border"
-                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" variant="primary" disabled={loading}>
-                  {loading ? 'Submitting...' : 'Submit Request'}
-                </Button>
-                <Button type="button" variant="secondary" onClick={() => setShowTrainingForm(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Skill Verification Request Form */}
-      {showSkillVerificationForm && (
-        <div className="mb-4 p-4 rounded border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--bg-tertiary)' }}>
-          <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Request Skill Verification</h3>
-          <form onSubmit={handleSkillVerificationRequest}>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  Skill IDs (comma-separated) *
-                </label>
-                <input
-                  type="text"
-                  name="skillIds"
-                  required
-                  placeholder="skill-1, skill-2, skill-3"
-                  className="w-full px-3 py-2 rounded border"
-                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                />
-                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Enter skill IDs separated by commas
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  Reason (Optional)
-                </label>
-                <textarea
-                  name="reason"
-                  rows="3"
-                  className="w-full px-3 py-2 rounded border"
-                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" variant="primary" disabled={loading}>
-                  {loading ? 'Submitting...' : 'Submit Request'}
-                </Button>
-                <Button type="button" variant="secondary" onClick={() => setShowSkillVerificationForm(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Self-Learning Request Form */}
-      {showSelfLearningForm && (
-        <div className="mb-4 p-4 rounded border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--bg-tertiary)' }}>
-          <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Request Self-Learning</h3>
-          <form onSubmit={handleSelfLearningRequest}>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  Course ID *
-                </label>
-                <input
-                  type="text"
-                  name="courseId"
-                  required
-                  className="w-full px-3 py-2 rounded border"
-                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  Course Name *
-                </label>
-                <input
-                  type="text"
-                  name="courseName"
-                  required
-                  className="w-full px-3 py-2 rounded border"
-                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  Learning Path (Optional)
-                </label>
-                <input
-                  type="text"
-                  name="learningPath"
-                  className="w-full px-3 py-2 rounded border"
-                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  Reason (Optional)
-                </label>
-                <textarea
-                  name="reason"
-                  rows="3"
-                  className="w-full px-3 py-2 rounded border"
-                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" variant="primary" disabled={loading}>
-                  {loading ? 'Submitting...' : 'Submit Request'}
-                </Button>
-                <Button type="button" variant="secondary" onClick={() => setShowSelfLearningForm(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Extra Attempt Request Form */}
-      {showExtraAttemptForm && (
-        <div className="mb-4 p-4 rounded border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--bg-tertiary)' }}>
-          <h3 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Request Extra Attempts</h3>
-          <form onSubmit={handleExtraAttemptRequest}>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  Course ID *
-                </label>
-                <input
-                  type="text"
-                  name="courseId"
-                  required
-                  className="w-full px-3 py-2 rounded border"
-                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  Course Name *
-                </label>
-                <input
-                  type="text"
-                  name="courseName"
-                  required
-                  className="w-full px-3 py-2 rounded border"
-                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  Current Attempts *
-                </label>
-                <input
-                  type="number"
-                  name="currentAttempts"
-                  required
-                  min="0"
-                  className="w-full px-3 py-2 rounded border"
-                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  Reason (Optional)
-                </label>
-                <textarea
-                  name="reason"
-                  rows="3"
-                  className="w-full px-3 py-2 rounded border"
-                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" variant="primary" disabled={loading}>
-                  {loading ? 'Submitting...' : 'Submit Request'}
-                </Button>
-                <Button type="button" variant="secondary" onClick={() => setShowExtraAttemptForm(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </form>
-        </div>
-      )}
+      {/* Request Forms */}
+      {renderForm()}
     </div>
   );
 };
