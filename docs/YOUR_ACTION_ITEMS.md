@@ -140,7 +140,7 @@ psql $DATABASE_URL -f database/migrations/add_external_api_calls_log_table.sql
 ### צעד 2: בדיקת Health Check
 פתחי בדפדפן או curl:
 ```
-https://your-backend.railway.app/health
+https://directoryproject-production.up.railway.app/health
 ```
 
 **צפוי לראות:**
@@ -165,15 +165,15 @@ https://your-backend.railway.app/health
    - הקלידי `powershell` או `cmd`
    - לחצי Enter
 
-2. העתיקי והדבקי את הפקודה הבאה (החלפי `your-backend.railway.app` ב-URL האמיתי שלך):
+2. העתיקי והדבקי את הפקודה הבאה (החלפי `directoryproject-production.up.railway.app` ב-URL האמיתי שלך):
 
 ```bash
-curl -X POST https://your-backend.railway.app/api/exchange -H "Content-Type: application/json" -d "{\"requester_service\":\"SkillsEngine\",\"payload\":\"{\\\"employee_id\\\":\\\"test-id\\\",\\\"fields\\\":[\\\"competencies\\\"]}\"}"
+curl -X POST https://directoryproject-production.up.railway.app/api/exchange -H "Content-Type: application/json" -d "{\"requester_service\":\"SkillsEngine\",\"payload\":\"{\\\"employee_id\\\":\\\"test-id\\\",\\\"fields\\\":[\\\"competencies\\\"]}\"}"
 ```
 
 **או אם יש לך Git Bash (יותר קל):**
 ```bash
-curl -X POST https://your-backend.railway.app/api/exchange \
+curl -X POST https://directoryproject-production.up.railway.app/api/exchange \
   -H "Content-Type: application/json" \
   -d '{
     "requester_service": "SkillsEngine",
@@ -184,7 +184,7 @@ curl -X POST https://your-backend.railway.app/api/exchange \
 **או דרך דפדפן (Postman/Thunder Client):**
 - פתחי Postman או Thunder Client (extension ב-VS Code)
 - בחרי **POST**
-- URL: `https://your-backend.railway.app/api/exchange`
+- URL: `https://directoryproject-production.up.railway.app/api/exchange`
 - Headers: `Content-Type: application/json`
 - Body (raw JSON):
 ```json
@@ -222,8 +222,8 @@ curl -X POST https://your-backend.railway.app/api/exchange \
 2. מלאי:
    - **Key:** `REACT_APP_API_URL`
    
-   - **Value:** `https://your-backend.railway.app/api`
-     (החלפי `your-backend.railway.app` ב-URL האמיתי של Railway)
+   - **Value:** `https://directoryproject-production.up.railway.app/api`
+     (החלפי `directoryproject-production.up.railway.app` ב-URL האמיתי של Railway)
    - **Environment:** בחרי **Production** (ו-**Preview** אם רוצה)
 3. לחצי **Save**
 
@@ -249,12 +249,12 @@ curl -X POST https://your-backend.railway.app/api/exchange \
 
 **PowerShell (העתיקי שורה אחת):**
 ```powershell
-curl -X POST https://your-backend.railway.app/api/exchange -H "Content-Type: application/json" -d "{\"requester_service\":\"SkillsEngine\",\"payload\":\"{\\\"employee_id\\\":\\\"test\\\",\\\"fields\\\":[\\\"competencies\\\"]}\"}"
+curl -X POST https://directoryproject-production.up.railway.app/api/exchange -H "Content-Type: application/json" -d "{\"requester_service\":\"SkillsEngine\",\"payload\":\"{\\\"employee_id\\\":\\\"test\\\",\\\"fields\\\":[\\\"competencies\\\"]}\"}"
 ```
 
 **או Postman/Thunder Client:**
 - Method: **POST**
-- URL: `https://your-backend.railway.app/api/exchange`
+- URL: `https://directoryproject-production.up.railway.app/api/exchange`
 - Body (raw JSON):
 ```json
 {
@@ -274,13 +274,13 @@ curl -X POST https://your-backend.railway.app/api/exchange -H "Content-Type: app
 
 **PowerShell (החלפי YOUR_INTERNAL_API_SECRET ב-secret האמיתי):**
 ```powershell
-curl -X POST https://your-backend.railway.app/api/internal/skills-engine/update -H "Content-Type: application/json" -H "Authorization: Bearer YOUR_INTERNAL_API_SECRET" -d "{\"employee_id\":\"valid-uuid-here\",\"normalized_skills\":[]}"
+curl -X POST https://directoryproject-production.up.railway.app/api/internal/skills-engine/update -H "Content-Type: application/json" -H "Authorization: Bearer YOUR_INTERNAL_API_SECRET" -d "{\"employee_id\":\"valid-uuid-here\",\"normalized_skills\":[]}"
 ```
 
 **או Postman/Thunder Client (מומלץ):**
 1. פתחי Postman או Thunder Client
 2. Method: **POST** (חשוב!)
-3. URL: `https://your-backend.railway.app/api/internal/skills-engine/update`
+3. URL: `https://directoryproject-production.up.railway.app/api/internal/skills-engine/update`
 4. Headers:
    - `Content-Type: application/json`
    - `Authorization: Bearer YOUR_INTERNAL_API_SECRET` (החלפי ב-secret האמיתי)

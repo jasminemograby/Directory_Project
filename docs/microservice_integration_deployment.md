@@ -84,7 +84,7 @@ MOCKDATA_PATH=./mockData/index.json
 4. Add:
 
 ```
-REACT_APP_API_URL=https://your-backend.railway.app/api
+REACT_APP_API_URL=https://directoryproject-production.up.railway.app/api
 ```
 
 **Important:** After adding variables, trigger a new deployment.
@@ -148,7 +148,7 @@ SELECT * FROM external_api_calls_log LIMIT 1;
 ### 1. Health Check
 
 ```bash
-curl https://your-backend.railway.app/health
+curl https://directoryproject-production.up.railway.app/health
 ```
 
 Expected response:
@@ -164,7 +164,7 @@ Expected response:
 ### 2. Exchange Endpoint Test
 
 ```bash
-curl -X POST https://your-backend.railway.app/api/exchange \
+curl -X POST https://directoryproject-production.up.railway.app/api/exchange \
   -H "Content-Type: application/json" \
   -d '{
     "requester_service": "SkillsEngine",
@@ -177,7 +177,7 @@ Expected: Response with `serviceName: "SkillsEngine"` and `payload` (may be fall
 ### 3. Internal API Test
 
 ```bash
-curl -X POST https://your-backend.railway.app/api/internal/skills-engine/update \
+curl -X POST https://directoryproject-production.up.railway.app/api/internal/skills-engine/update \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_INTERNAL_API_SECRET" \
   -d '{

@@ -33,7 +33,7 @@
 2. **צרי Request חדש:**
    - לחצי **New** → **HTTP Request**
    - בחרי **POST** מהתפריט
-   - הזיני URL: `https://your-backend.railway.app/api/internal/skills-engine/update`
+   - הזיני URL: `https://directoryproject-production.up.railway.app/api/internal/skills-engine/update`
 
 3. **הוסיפי Headers:**
    - לחצי על **Headers**
@@ -69,14 +69,14 @@
    - לחצי על אייקון Thunder Client
    - לחצי **New Request**
    - Method: **POST**
-   - URL: `https://your-backend.railway.app/api/internal/skills-engine/update`
+   - URL: `https://directoryproject-production.up.railway.app/api/internal/skills-engine/update`
 
 3. **הוסיפי Headers ו-Body** (כמו ב-Postman)
 
 ### אופציה 3: PowerShell/curl
 
 ```powershell
-curl -X POST https://your-backend.railway.app/api/internal/skills-engine/update `
+curl -X POST https://directoryproject-production.up.railway.app/api/internal/skills-engine/update `
   -H "Content-Type: application/json" `
   -H "Authorization: Bearer YOUR_SECRET" `
   -d '{\"employee_id\":\"test-uuid\",\"normalized_skills\":[]}'
@@ -140,19 +140,19 @@ curl -X POST https://your-backend.railway.app/api/internal/skills-engine/update 
 
 ### ✅ בדיקה 1: Health Check (עובד בדפדפן)
 ```
-https://your-backend.railway.app/health
+https://directoryproject-production.up.railway.app/health
 ```
 **צפוי:** `{"status": "ok", ...}`
 
 ### ✅ בדיקה 2: API Health Check (עובד בדפדפן)
 ```
-https://your-backend.railway.app/api/health
+https://directoryproject-production.up.railway.app/api/health
 ```
 **צפוי:** `{"status": "ok", ...}`
 
 ### ❌ בדיקה 3: Internal API (לא עובד בדפדפן - צריך Postman)
 ```
-POST https://your-backend.railway.app/api/internal/skills-engine/update
+POST https://directoryproject-production.up.railway.app/api/internal/skills-engine/update
 Headers: Authorization: Bearer SECRET
 Body: {"employee_id": "...", "normalized_skills": []}
 ```
@@ -166,7 +166,7 @@ Body: {"employee_id": "...", "normalized_skills": []}
 - [ ] אני משתמשת ב-**POST** (לא GET)
 - [ ] הוספתי `Authorization: Bearer SECRET` header
 - [ ] ה-Body הוא JSON תקין
-- [ ] ה-URL נכון (החלפתי `your-backend.railway.app`)
+- [ ] ה-URL נכון (החלפתי `directoryproject-production.up.railway.app`)
 
 ---
 

@@ -106,7 +106,7 @@ curl -X POST https://directory-backend.railway.app/api/internal/skills-engine/up
 ### בדיקה 1: דרך Postman
 1. פתחי Postman
 2. Method: **POST**
-3. URL: `https://your-backend.railway.app/api/internal/skills-engine/update`
+3. URL: `https://directoryproject-production.up.railway.app/api/internal/skills-engine/update`
 4. Headers:
    - `Content-Type: application/json`
    - `Authorization: Bearer <YOUR_SECRET>`

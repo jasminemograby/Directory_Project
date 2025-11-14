@@ -228,7 +228,7 @@ The system automatically:
 
 1. **Exchange Endpoint:**
 ```bash
-curl -X POST https://your-backend.railway.app/api/exchange \
+curl -X POST https://directoryproject-production.up.railway.app/api/exchange \
   -H "Content-Type: application/json" \
   -d '{
     "requester_service": "SkillsEngine",
@@ -238,7 +238,7 @@ curl -X POST https://your-backend.railway.app/api/exchange \
 
 2. **Internal API:**
 ```bash
-curl -X POST https://your-backend.railway.app/api/internal/skills-engine/update \
+curl -X POST https://directoryproject-production.up.railway.app/api/internal/skills-engine/update \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_SECRET" \
   -d '{"employee_id": "uuid", "normalized_skills": []}'
@@ -261,7 +261,7 @@ npm test
 3. **Push to GitHub** (Railway auto-deploys)
 4. **Verify Health Check:**
    ```bash
-   curl https://your-backend.railway.app/health
+   curl https://directoryproject-production.up.railway.app/health
    ```
 5. **Test Exchange Endpoint** (see Testing section)
 6. **Share INTERNAL_API_SECRET** with other microservice teams
