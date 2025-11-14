@@ -69,20 +69,21 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
     checkConnectionStatus();
   }, [checkConnectionStatus]);
 
-  // Check if both are connected (only call once)
+  // Check if GitHub is connected (required) - LinkedIn is optional
   const hasCalledComplete = useRef(false);
   useEffect(() => {
-    if (linkedInStatus === 'connected' && githubStatus === 'connected' && !hasCalledComplete.current) {
+    // GitHub is required, LinkedIn is optional
+    if (githubStatus === 'connected' && !hasCalledComplete.current) {
       hasCalledComplete.current = true;
       if (onEnrichmentComplete) {
         onEnrichmentComplete();
       }
     }
-    // Reset if disconnected
-    if (linkedInStatus !== 'connected' || githubStatus !== 'connected') {
+    // Reset if GitHub disconnected
+    if (githubStatus !== 'connected') {
       hasCalledComplete.current = false;
     }
-  }, [linkedInStatus, githubStatus, onEnrichmentComplete]);
+  }, [githubStatus, onEnrichmentComplete]);
 
 
   const handleLinkedInConnect = async () => {
@@ -250,12 +251,12 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
       )}
 
       <p className="text-gray-600 mb-6">
-        Connect your LinkedIn and GitHub accounts to enrich your profile with your professional data, 
+        Connect your GitHub account (required) and optionally LinkedIn to enrich your profile with your professional data, 
         skills, and projects. This information will be used to enhance your profile and skill analysis.
       </p>
 
       <div className="space-y-4">
-        {/* LinkedIn Connection */}
+        {/* LinkedIn Connection (Optional) */}
         <div className="border rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -263,10 +264,15 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
                 <span className="text-white font-bold">in</span>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800">LinkedIn</h3>
+                <h3 className="font-semibold text-gray-800">LinkedIn <span className="text-xs text-gray-500">(Optional)</span></h3>
                 <p className="text-sm text-gray-500">
                   {linkedInStatus === 'connected' ? 'Connected' : 'Not connected'}
                 </p>
+                {linkedInStatus === 'disconnected' && (
+                  <p className="text-xs text-orange-600 mt-1">
+                    Note: LinkedIn requires a Company Page. If unavailable, you can continue with GitHub only.
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -294,7 +300,7 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
           </div>
         </div>
 
-        {/* GitHub Connection */}
+        {/* GitHub Connection (Required) */}
         <div className="border rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -304,7 +310,7 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800">GitHub</h3>
+                <h3 className="font-semibold text-gray-800">GitHub <span className="text-xs text-red-600">(Required)</span></h3>
                 <p className="text-sm text-gray-500">
                   {githubStatus === 'connected' ? 'Connected' : 'Not connected'}
                 </p>

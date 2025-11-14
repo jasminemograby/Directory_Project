@@ -74,21 +74,16 @@ const EmployeeProfile = () => {
     checkingEnrichment.current = true;
     
     try {
-      // Check if both LinkedIn and GitHub are connected
-      const [linkedInResult, githubResult] = await Promise.allSettled([
-        apiService.fetchLinkedInData(currentEmployeeId),
-        apiService.fetchGitHubData(currentEmployeeId)
-      ]);
-
-      const linkedInConnected = linkedInResult.status === 'fulfilled' && 
-                                 linkedInResult.value.data && 
-                                 !linkedInResult.value.data.error;
+      // Check connection status (GitHub is required, LinkedIn is optional)
+      const statusResult = await apiService.getConnectionStatus(currentEmployeeId);
       
-      const githubConnected = githubResult.status === 'fulfilled' && 
-                              githubResult.value.data && 
-                              !githubResult.value.data.error;
-
-      setIsEnriched(linkedInConnected && githubConnected);
+      if (statusResult.data && statusResult.data.data) {
+        const status = statusResult.data.data;
+        // GitHub is required, LinkedIn is optional
+        setIsEnriched(status.github === true);
+      } else {
+        setIsEnriched(false);
+      }
     } catch (error) {
       console.error('Error checking enrichment status:', error);
       setIsEnriched(false);
@@ -200,10 +195,11 @@ const EmployeeProfile = () => {
             {/* Blocking Message */}
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
               <p className="text-yellow-800 font-medium">
-                ⚠️ Please connect your LinkedIn and GitHub accounts to enrich your profile before continuing.
+                ⚠️ Please connect your GitHub account to enrich your profile before continuing.
               </p>
               <p className="text-yellow-700 text-sm mt-2">
-                This step is required to generate your skill profile and enable access to assessments and learning paths.
+                GitHub connection is required to generate your skill profile and enable access to assessments and learning paths.
+                LinkedIn connection is optional but recommended for a more complete profile.
               </p>
             </div>
           </div>
