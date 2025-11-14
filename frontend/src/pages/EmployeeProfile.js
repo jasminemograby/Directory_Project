@@ -1,15 +1,24 @@
 // Employee Profile Page - Main profile page with mandatory profile enrichment
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/common/Layout';
 import EnhanceProfile from '../components/Profile/EnhanceProfile';
+import CareerBlock from '../components/Profile/CareerBlock';
+import SkillsTree from '../components/Profile/SkillsTree';
+import CoursesSection from '../components/Profile/CoursesSection';
+import RequestsSection from '../components/Profile/RequestsSection';
+import Button from '../components/common/Button';
 import { apiService } from '../services/api';
+import { mockDataService } from '../services/mockData';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { ROUTES } from '../utils/constants';
 
 const EmployeeProfile = () => {
   const { employeeId } = useParams();
+  const navigate = useNavigate();
   const [employee, setEmployee] = useState(null);
   const [processedData, setProcessedData] = useState(null);
+  const [profileData, setProfileData] = useState(null); // Additional profile data (career, skills, courses)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEnriched, setIsEnriched] = useState(false);
@@ -48,6 +57,12 @@ const EmployeeProfile = () => {
       } catch (processedError) {
         console.warn('No processed data available yet:', processedError.message);
         // This is OK - processed data might not exist yet
+      }
+
+      // Fetch additional profile data (career, skills, courses) - using mock data for now
+      // TODO: Replace with actual API calls when Skills Engine and Course Builder are integrated
+      const mockProfileData = mockDataService.getEmployeeProfile(currentEmployeeId);
+      setProfileData(mockProfileData);
         setProcessedData(null);
       }
     } catch (error) {
@@ -208,32 +223,92 @@ const EmployeeProfile = () => {
         {/* Profile Content - Only show processed data (NOT raw data) */}
         {isEnriched && employee && (
           <div className="space-y-6">
-            {/* Basic Employee Information */}
+            {/* Top Section - Name, Email, Actions */}
             <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
-              <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Profile Information</h2>
-              
-              <div className="space-y-4">
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Name</label>
-                  <p className="text-gray-900" style={{ color: 'var(--text-primary)' }}>{employee.name || 'N/A'}</p>
+                  <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                    {employee.name || 'Employee Name'}
+                  </h1>
+                  <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
+                    {employee.email || 'email@example.com'}
+                  </p>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Email</label>
-                  <p className="text-gray-900" style={{ color: 'var(--text-primary)' }}>{employee.email || 'N/A'}</p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => navigate(ROUTES.PROFILE_EDIT_ME)}
+                  >
+                    Edit Profile
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => navigate(ROUTES.EMPLOYEE_DASHBOARD)}
+                  >
+                    Dashboard
+                  </Button>
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Role</label>
-                  <p className="text-gray-900" style={{ color: 'var(--text-primary)' }}>{employee.role || 'N/A'}</p>
+              {/* External Data Icons */}
+              <div className="flex items-center gap-4 mt-4 pt-4 border-t" style={{ borderColor: 'var(--bg-secondary)' }}>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>External Data:</span>
+                <div className="flex gap-2">
+                  {/* LinkedIn */}
+                  <a 
+                    href="#" 
+                    className="w-8 h-8 rounded flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--bg-secondary)' }}
+                    title="LinkedIn"
+                  >
+                    <span className="text-xs">in</span>
+                  </a>
+                  {/* GitHub */}
+                  <a 
+                    href="#" 
+                    className="w-8 h-8 rounded flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--bg-secondary)' }}
+                    title="GitHub"
+                  >
+                    <span className="text-xs">GH</span>
+                  </a>
+                  {/* Credly */}
+                  <a 
+                    href="#" 
+                    className="w-8 h-8 rounded flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--bg-secondary)' }}
+                    title="Credly"
+                  >
+                    <span className="text-xs">C</span>
+                  </a>
+                  {/* ORCID */}
+                  <a 
+                    href="#" 
+                    className="w-8 h-8 rounded flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--bg-secondary)' }}
+                    title="ORCID"
+                  >
+                    <span className="text-xs">OR</span>
+                  </a>
+                  {/* Crossref */}
+                  <a 
+                    href="#" 
+                    className="w-8 h-8 rounded flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--bg-secondary)' }}
+                    title="Crossref"
+                  >
+                    <span className="text-xs">CR</span>
+                  </a>
+                  {/* YouTube */}
+                  <a 
+                    href="#" 
+                    className="w-8 h-8 rounded flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--bg-secondary)' }}
+                    title="YouTube"
+                  >
+                    <span className="text-xs">YT</span>
+                  </a>
                 </div>
-
-                {employee.profile_status && (
-                  <div>
-                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Profile Status</label>
-                    <p className="capitalize" style={{ color: 'var(--text-primary)' }}>{employee.profile_status}</p>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -270,27 +345,67 @@ const EmployeeProfile = () => {
               </div>
             )}
 
-            {/* Skills (Processed Data) */}
-            {processedData?.skills && processedData.skills.length > 0 && (
-              <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
-                <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Skills</h2>
-                <div className="flex flex-wrap gap-2">
-                  {processedData.skills.map((skill) => (
-                    <span
-                      key={skill.id}
-                      className="px-3 py-1 rounded-full text-sm font-medium"
-                      style={{
-                        backgroundColor: skill.type === 'verified' ? 'var(--accent-green)' : 'var(--bg-secondary)',
-                        color: skill.type === 'verified' ? 'white' : 'var(--text-primary)'
-                      }}
-                    >
-                      {skill.name}
-                      {skill.type === 'verified' && ' ✓'}
-                    </span>
-                  ))}
-                </div>
-              </div>
+            {/* Career Block */}
+            {profileData && (
+              <CareerBlock
+                currentRole={profileData.currentRole}
+                targetRole={profileData.targetRole}
+                valueProposition={profileData.valueProposition}
+                relevanceScore={profileData.relevanceScore}
+              />
             )}
+
+            {/* Skills Tree */}
+            {profileData && (
+              <SkillsTree
+                competencies={profileData.competencies}
+                onVerifySkills={async () => {
+                  // TODO: Implement skill verification request
+                  console.log('Requesting skill verification...');
+                  // POST to Skills Engine
+                  try {
+                    // await apiService.requestSkillVerification(currentEmployeeId);
+                    alert('Skill verification request submitted!');
+                  } catch (error) {
+                    console.error('Error requesting skill verification:', error);
+                    alert('Failed to submit skill verification request.');
+                  }
+                }}
+              />
+            )}
+
+            {/* Courses Section */}
+            {profileData && (
+              <CoursesSection
+                assignedCourses={profileData.assignedCourses}
+                learningCourses={profileData.learningCourses}
+                completedCourses={profileData.completedCourses}
+              />
+            )}
+
+            {/* Requests Section */}
+            <RequestsSection
+              onRequestTraining={async () => {
+                // TODO: Implement training request
+                console.log('Requesting training...');
+                alert('Training request submitted!');
+              }}
+              onRequestTrainer={async () => {
+                // TODO: Implement trainer request
+                console.log('Requesting to become trainer...');
+                alert('Trainer request submitted!');
+              }}
+              onRequestSkillVerification={async () => {
+                // TODO: Implement skill verification request
+                console.log('Requesting skill verification...');
+                alert('Skill verification request submitted!');
+              }}
+              onRequestSelfLearning={async () => {
+                // TODO: Implement self-learning request
+                console.log('Requesting self-learning...');
+                alert('Self-learning request submitted!');
+              }}
+            />
 
             {/* Message if no processed data yet */}
             {!processedData?.bio && !processedData?.projects?.length && !processedData?.skills?.length && (
