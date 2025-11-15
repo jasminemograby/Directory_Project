@@ -340,9 +340,14 @@ const registerCompanyStep4 = async (req, res, next) => {
           try {
             console.log(`[Step4] Creating employee: ${emp.email} for company ${company.id}`);
             // Use normalized email for insert
-            // Try to insert with current_role first, fallback to role only if it fails
+            // Use SAVEPOINT to allow retry within transaction if current_role column doesn't exist
+            const savepointName = `sp_emp_${emp.email.replace(/[^a-zA-Z0-9]/g, '_')}`;
             let empResult;
+            
             try {
+              // Create savepoint before trying with current_role
+              await client.query(`SAVEPOINT ${savepointName}`);
+              
               // Try with current_role column
               empResult = await client.query(
                 `INSERT INTO employees (
@@ -364,6 +369,9 @@ const registerCompanyStep4 = async (req, res, next) => {
                   'pending',
                 ]
               );
+              
+              // Release savepoint on success
+              await client.query(`RELEASE SAVEPOINT ${savepointName}`);
             } catch (insertError) {
               // If error is about current_role column (syntax error or column not found), try without it
               const errorMessage = insertError.message || '';
@@ -373,7 +381,10 @@ const registerCompanyStep4 = async (req, res, next) => {
                 (errorCode === '42601' && errorMessage.includes('syntax error'));
               
               if (isCurrentRoleError) {
-                console.log(`[Step4] current_role column error detected (${errorCode}), using role only for ${emp.email}`);
+                console.log(`[Step4] current_role column error detected (${errorCode}), rolling back to savepoint and using role only for ${emp.email}`);
+                // Rollback to savepoint to undo the failed INSERT
+                await client.query(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+                
                 // Fallback: use role only (for databases without current_role column yet)
                 empResult = await client.query(
                   `INSERT INTO employees (
@@ -394,7 +405,16 @@ const registerCompanyStep4 = async (req, res, next) => {
                     'pending',
                   ]
                 );
+                
+                // Release savepoint after successful fallback
+                await client.query(`RELEASE SAVEPOINT ${savepointName}`);
               } else {
+                // Release savepoint before re-throwing
+                try {
+                  await client.query(`RELEASE SAVEPOINT ${savepointName}`);
+                } catch (e) {
+                  // Ignore if savepoint doesn't exist
+                }
                 // Re-throw if it's a different error
                 throw insertError;
               }
@@ -588,9 +608,14 @@ const registerCompanyStep4 = async (req, res, next) => {
         if (!hrEmployeeId) {
           try {
             const hrEmailNormalized = hrSettings.hr_email.trim().toLowerCase();
-            // Try to insert with current_role first, fallback to role only if it fails
+            // Use SAVEPOINT to allow retry within transaction if current_role column doesn't exist
+            const savepointName = 'sp_hr_employee';
             let hrEmployeeResult;
+            
             try {
+              // Create savepoint before trying with current_role
+              await client.query(`SAVEPOINT ${savepointName}`);
+              
               // Try with current_role column
               hrEmployeeResult = await client.query(
                 `INSERT INTO employees (
@@ -612,6 +637,9 @@ const registerCompanyStep4 = async (req, res, next) => {
                   'pending',
                 ]
               );
+              
+              // Release savepoint on success
+              await client.query(`RELEASE SAVEPOINT ${savepointName}`);
             } catch (insertError) {
               // If error is about current_role column (syntax error or column not found), try without it
               const errorMessage = insertError.message || '';
@@ -621,7 +649,10 @@ const registerCompanyStep4 = async (req, res, next) => {
                 (errorCode === '42601' && errorMessage.includes('syntax error'));
               
               if (isCurrentRoleError) {
-                console.log(`[Step4] current_role column error detected (${errorCode}), using role only for HR`);
+                console.log(`[Step4] current_role column error detected (${errorCode}), rolling back to savepoint and using role only for HR`);
+                // Rollback to savepoint to undo the failed INSERT
+                await client.query(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+                
                 // Fallback: use role only
                 hrEmployeeResult = await client.query(
                   `INSERT INTO employees (
@@ -642,7 +673,16 @@ const registerCompanyStep4 = async (req, res, next) => {
                     'pending',
                   ]
                 );
+                
+                // Release savepoint after successful fallback
+                await client.query(`RELEASE SAVEPOINT ${savepointName}`);
               } else {
+                // Release savepoint before re-throwing
+                try {
+                  await client.query(`RELEASE SAVEPOINT ${savepointName}`);
+                } catch (e) {
+                  // Ignore if savepoint doesn't exist
+                }
                 // Re-throw if it's a different error
                 throw insertError;
               }
