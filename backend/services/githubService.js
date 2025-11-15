@@ -5,8 +5,36 @@ const crypto = require('crypto');
 
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/external/github/callback`;
 const GITHUB_API_BASE = 'https://api.github.com';
+
+const resolveBackendBaseUrl = (overrideBaseUrl = null) => {
+  if (overrideBaseUrl) {
+    return overrideBaseUrl.replace(/\/$/, '');
+  }
+
+  if (process.env.BACKEND_URL) {
+    return process.env.BACKEND_URL.replace(/\/$/, '');
+  }
+
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`.replace(/\/$/, '');
+  }
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`.replace(/\/$/, '');
+  }
+
+  return 'http://localhost:5000';
+};
+
+const resolveRedirectUri = (overrideBaseUrl = null) => {
+  if (process.env.GITHUB_REDIRECT_URI) {
+    return process.env.GITHUB_REDIRECT_URI;
+  }
+
+  const backendBaseUrl = resolveBackendBaseUrl(overrideBaseUrl);
+  return `${backendBaseUrl}/api/external/github/callback`;
+};
 
 /**
  * Generate OAuth authorization URL for GitHub
@@ -14,7 +42,7 @@ const GITHUB_API_BASE = 'https://api.github.com';
  * @param {string} state - Optional state parameter for CSRF protection
  * @returns {string} Authorization URL
  */
-const getAuthorizationUrl = (employeeId, state = null) => {
+const getAuthorizationUrl = (employeeId, options = {}) => {
   if (!GITHUB_CLIENT_ID) {
     throw new Error('GitHub Client ID not configured');
   }
@@ -26,7 +54,9 @@ const getAuthorizationUrl = (employeeId, state = null) => {
   // Encode employeeId in state for callback (base64 encode for safety)
   // Format: employeeId:randomHex (for CSRF protection)
   const randomHex = crypto.randomBytes(16).toString('hex');
-  const stateParam = state || Buffer.from(`${employeeId}:${randomHex}`).toString('base64');
+  const stateParam = options.state || Buffer.from(`${employeeId}:${randomHex}`).toString('base64');
+
+  const redirectUri = options.redirectUri || resolveRedirectUri(options.baseUrl);
   
   // GitHub OAuth scopes - minimal permissions for profile and public repo data
   const scopes = [
@@ -37,7 +67,7 @@ const getAuthorizationUrl = (employeeId, state = null) => {
 
   const params = new URLSearchParams({
     client_id: GITHUB_CLIENT_ID,
-    redirect_uri: GITHUB_REDIRECT_URI,
+    redirect_uri: redirectUri,
     state: stateParam,
     scope: scopes
   });

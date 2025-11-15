@@ -10,6 +10,7 @@ const { query } = require('../config/database');
 const initiateLinkedInAuth = async (req, res, next) => {
   try {
     const { employeeId } = req.params;
+    const { mode } = req.query;
     
     if (!employeeId) {
       return res.status(400).json({
@@ -175,8 +176,19 @@ const initiateGitHubAuth = async (req, res, next) => {
       });
     }
 
+    // Build base URL dynamically for redirect URI fallback (works across environments)
+    const requestBaseUrl = `${req.protocol}://${req.get('host')}`;
+
     // Generate authorization URL
-    const authUrl = githubService.getAuthorizationUrl(employeeId);
+    const authUrl = githubService.getAuthorizationUrl(employeeId, {
+      baseUrl: requestBaseUrl
+    });
+
+    // If mode=redirect (or Accept header prefers HTML), redirect immediately to GitHub
+    const prefersRedirect = mode === 'redirect' || req.accepts(['html', 'json']) === 'html';
+    if (prefersRedirect) {
+      return res.redirect(authUrl);
+    }
     
     res.json({
       success: true,
@@ -187,6 +199,12 @@ const initiateGitHubAuth = async (req, res, next) => {
     });
   } catch (error) {
     console.error('Error initiating GitHub auth:', error.message);
+    if (error.message && error.message.includes('GitHub Client ID not configured')) {
+      return res.status(503).json({
+        success: false,
+        error: 'GitHub OAuth is not configured. Please set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET in the backend environment.'
+      });
+    }
     next(error);
   }
 };

@@ -1,6 +1,7 @@
 // Enhance Profile Component - LinkedIn & GitHub OAuth Integration
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { apiService } from '../../services/api';
+import { API_BASE_URL } from '../../utils/constants';
 import Button from '../common/Button';
 import LoadingSpinner from '../common/LoadingSpinner';
 
@@ -218,16 +219,11 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
       setLoading(true);
       setError(null);
       setGithubStatus('connecting');
-
-      // Get authorization URL
-      const response = await apiService.initiateGitHubAuth(employeeId);
-      
-      if (response.data && response.data.data && response.data.data.authorization_url) {
-        // Redirect to GitHub OAuth
-        window.location.href = response.data.data.authorization_url;
-      } else {
-        throw new Error('Failed to get GitHub authorization URL');
+      if (!API_BASE_URL) {
+        throw new Error('API base URL not configured');
       }
+      const authorizeEndpoint = `${API_BASE_URL}/external/github/authorize/${employeeId}?mode=redirect`;
+      window.location.href = authorizeEndpoint;
     } catch (error) {
       console.error('Error initiating GitHub auth:', error);
       setError('Failed to connect GitHub. Please try again.');
