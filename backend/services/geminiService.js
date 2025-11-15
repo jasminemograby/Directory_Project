@@ -128,6 +128,26 @@ const generateBio = async (rawData) => {
       hasAnyData = true;
     }
     
+    // LinkedIn Work Experience (positions) - include detailed experience
+    if (linkedInData.positions?.values && linkedInData.positions.values.length > 0) {
+      context += `\nWork Experience:\n`;
+      linkedInData.positions.values.forEach((pos, index) => {
+        context += `${index + 1}. ${pos.title || 'Position'} at ${pos.companyName || 'Company'}`;
+        if (pos.timePeriod) {
+          context += ` (${pos.timePeriod.start?.year || ''} - ${pos.timePeriod.end?.year || 'Present'})`;
+        }
+        context += `\n`;
+        if (pos.description) {
+          context += `   Description: ${pos.description}\n`;
+        }
+        if (pos.location) {
+          context += `   Location: ${pos.location}\n`;
+        }
+        context += `\n`;
+      });
+      hasAnyData = true;
+    }
+    
     // GitHub profile data - include all available fields
     if (githubData.name) {
       context += `GitHub Name: ${githubData.name}\n`;
@@ -189,10 +209,14 @@ const generateBio = async (rawData) => {
     }
 
     // Call Gemini API securely
-    // Improved prompt that works even with minimal data
+    // Improved prompt that includes work experience
     const prompt = `You are a professional bio writer. Based on the following information about a person, generate a short, professional bio (2-3 sentences, maximum 200 words).
 
-IMPORTANT: Even if the information is limited, create a professional bio based on what is available. If there are no projects or repositories, focus on the person's profile information, username, or general professional presence.
+IMPORTANT: 
+- Include work experience from LinkedIn if available
+- Highlight key achievements and professional background
+- Even if the information is limited, create a professional bio based on what is available
+- If there are no projects or repositories, focus on the person's profile information, work experience, or general professional presence
 
 Information available:
 ${context}
@@ -340,8 +364,17 @@ IMPORTANT:
 - Even if there are no repositories, you can create a project summary based on the profile information
 
 For each project, provide:
-1. A clear project title
-2. A brief summary (1-2 sentences, maximum 100 words)
+1. A clear project title (short, descriptive)
+2. A brief summary (1-2 sentences, maximum 100 words) that includes:
+   - What the project does (one-line description)
+   - Key technologies or skills used
+   - Main achievements or impact (if available)
+
+IMPORTANT:
+- Extract projects from GitHub repositories (prioritize repositories with descriptions)
+- Extract projects from LinkedIn work experience (if descriptions mention specific projects)
+- For each project, provide a one-line summary that explains what it does
+- Make summaries concise but informative
 
 Information available:
 ${context}

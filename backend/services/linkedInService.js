@@ -28,13 +28,14 @@ const getAuthorizationUrl = (employeeId, state = null) => {
   const randomHex = crypto.randomBytes(16).toString('hex');
   const stateParam = state || Buffer.from(`${employeeId}:${randomHex}`).toString('base64');
   
-  // LinkedIn OAuth scopes - using OpenID Connect (new API)
+  // LinkedIn OAuth scopes - using OpenID Connect (new API) + Profile API for experience
   // Note: LinkedIn deprecated r_liteprofile, r_basicprofile, r_emailaddress
-  // Using OpenID Connect scopes instead
+  // Using OpenID Connect scopes + w_member_social for work experience
   const scopes = [
     'openid',             // OpenID Connect
     'profile',            // Profile information (name, picture)
-    'email'               // Email address
+    'email',              // Email address
+    'w_member_social'     // Work experience, education, positions (requires approval)
   ].join(' ');
 
   const params = new URLSearchParams({
@@ -237,9 +238,10 @@ const fetchProfileData = async (employeeId) => {
   try {
     const accessToken = await getValidAccessToken(employeeId);
 
-    // LinkedIn OpenID Connect endpoints
+    // LinkedIn OpenID Connect endpoints + Profile API for experience
     // Note: userinfo endpoint returns both profile and email when using OpenID Connect
-    const [profileResponse, emailResponse] = await Promise.all([
+    // Profile API (v2) provides work experience, positions, education
+    const [profileResponse, emailResponse, positionsResponse, experienceResponse] = await Promise.all([
       // Get user info (OpenID Connect - includes profile and email)
       axios.get('https://api.linkedin.com/v2/userinfo', {
         headers: {
@@ -262,15 +264,75 @@ const fetchProfileData = async (employeeId) => {
       }).catch((err) => {
         console.warn('[LinkedIn] Failed to fetch email (optional fallback):', err.message);
         return null;
+      }),
+      
+      // Get positions (work experience) - requires w_member_social scope
+      axios.get('https://api.linkedin.com/v2/positions?q=members&projection=(elements*(id,title,company,timePeriod,description,location))', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      }).catch((err) => {
+        console.warn('[LinkedIn] Failed to fetch positions (optional - may require additional scope approval):', err.message);
+        return null;
+      }),
+      
+      // Get full profile with experience - alternative endpoint
+      axios.get('https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,headline,summary,positions)', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      }).catch((err) => {
+        console.warn('[LinkedIn] Failed to fetch full profile (optional):', err.message);
+        return null;
       })
     ]);
 
+    // Combine all data sources
     const profileData = {
       provider: 'linkedin',
       fetched_at: new Date().toISOString(),
       profile: profileResponse?.data || null,
-      email: emailResponse?.data || null
+      email: emailResponse?.data || null,
+      positions: positionsResponse?.data || null,
+      experience: experienceResponse?.data || null
     };
+    
+    // If we got positions from the positions endpoint, merge into profile
+    if (positionsResponse?.data?.elements && profileData.profile) {
+      if (!profileData.profile.positions) {
+        profileData.profile.positions = { values: [] };
+      }
+      // Merge positions data
+      profileData.profile.positions.values = positionsResponse.data.elements.map(pos => ({
+        title: pos.title || null,
+        companyName: pos.company?.name || null,
+        description: pos.description || null,
+        timePeriod: pos.timePeriod || null,
+        location: pos.location || null
+      }));
+    }
+    
+    // If we got experience from full profile, merge it
+    if (experienceResponse?.data?.positions && profileData.profile) {
+      if (!profileData.profile.positions) {
+        profileData.profile.positions = { values: [] };
+      }
+      // Merge experience positions
+      const experiencePositions = experienceResponse.data.positions.elements || experienceResponse.data.positions.values || [];
+      profileData.profile.positions.values = [
+        ...profileData.profile.positions.values,
+        ...experiencePositions.map(pos => ({
+          title: pos.title || null,
+          companyName: pos.company?.name || null,
+          description: pos.description || null,
+          timePeriod: pos.timePeriod || null
+        }))
+      ];
+    }
 
     // Store raw data in database (per-user)
     console.log(`[LinkedIn] Storing raw data for employee: ${employeeId}`);
