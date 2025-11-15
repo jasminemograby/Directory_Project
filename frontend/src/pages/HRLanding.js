@@ -293,27 +293,35 @@ const HRLanding = () => {
             <button
               onClick={() => navigate(ROUTES.COMPANY_REGISTER_STEP1)}
               style={{
-                padding: '16px 32px',
+                padding: '18px 40px',
                 fontSize: '18px',
-                fontWeight: 600,
+                fontWeight: 700,
                 borderRadius: 'var(--radius-lg)',
                 border: 'none',
                 background: 'white',
                 color: 'var(--primary-base)',
                 cursor: 'pointer',
-                minWidth: '240px',
+                minWidth: '280px',
                 transition: 'all var(--transition-fast) var(--transition-ease)',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)',
+                letterSpacing: '0.01em'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+                e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+                e.currentTarget.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.15)';
                 e.currentTarget.style.backgroundColor = '#f8fafc';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)';
                 e.currentTarget.style.backgroundColor = 'white';
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.outline = '3px solid rgba(255, 255, 255, 0.5)';
+                e.currentTarget.style.outlineOffset = '2px';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.outline = 'none';
               }}
             >
               Register Your Company Now
@@ -323,26 +331,37 @@ const HRLanding = () => {
               <button
                 onClick={() => navigate(ROUTES.LOGIN)}
                 style={{
-                  padding: '16px 32px',
+                  padding: '18px 36px',
                   fontSize: '18px',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   borderRadius: 'var(--radius-lg)',
-                  border: '2px solid white',
+                  border: '3px solid white',
                   background: 'transparent',
                   color: 'white',
                   cursor: 'pointer',
-                  minWidth: '120px',
-                  transition: 'all var(--transition-fast) var(--transition-ease)'
+                  minWidth: '140px',
+                  transition: 'all var(--transition-fast) var(--transition-ease)',
+                  letterSpacing: '0.01em',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.8)';
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+                  e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
                   e.currentTarget.style.borderColor = 'white';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.outline = '3px solid rgba(255, 255, 255, 0.5)';
+                  e.currentTarget.style.outlineOffset = '2px';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.outline = 'none';
                 }}
               >
                 Login
