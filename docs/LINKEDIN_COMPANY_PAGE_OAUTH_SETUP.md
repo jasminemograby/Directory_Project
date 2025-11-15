@@ -187,7 +187,29 @@ Value: https://directoryproject-production.up.railway.app/api/external/linkedin/
 
 ## שלב 5: בדיקה שהכל עובד
 
-### 5.1 בדיקת ה-Redirect URL
+### 5.1 בקשת אישור ל-w_member_social (אופציונלי)
+
+**למה צריך אישור?**
+ה-scope `w_member_social` דורש אישור מ-LinkedIn כי זה גישה למידע רגיש יותר (נסיון תעסוקתי).
+
+**איך לבקש אישור?**
+1. לך ל-LinkedIn Developer Portal
+2. בחר את ה-App שיצרת
+3. לך ל-**"Products"**
+4. לחץ על **"Request access"** ליד **"Share on LinkedIn"**
+5. מלא את הטופס:
+   - **Use case:** "We need to access work experience data to enrich employee profiles"
+   - **Why do you need this?** "To automatically generate professional bios and identify skills from LinkedIn work history"
+6. שלח את הבקשה
+
+**מה קורה אחרי?**
+- LinkedIn יבדוק את הבקשה (יכול לקחת 1-7 ימים)
+- אם תאושר, תקבל אימייל
+- אם לא תאושר, הקוד יעבוד גם בלי נסיון תעסוקתי
+
+**הערה:** גם בלי אישור, הקוד יעבוד - פשוט לא נקבל נסיון תעסוקתי מ-LinkedIn.
+
+### 5.2 בדיקת ה-Redirect URL
 
 1. לך ל-LinkedIn Developer Portal
 2. בטאב **"Auth"**
@@ -196,18 +218,20 @@ Value: https://directoryproject-production.up.railway.app/api/external/linkedin/
    https://directoryproject-production.up.railway.app/api/external/linkedin/callback
    ```
 
-### 5.2 בדיקת ה-Scopes
+### 5.3 בדיקת ה-Scopes
 
 1. ודא שיש לך **"Sign In with LinkedIn using OpenID Connect"** מופעל
 2. זה יאפשר את ה-scopes: `openid`, `profile`, `email`
+3. אם יש לך אישור, גם `w_member_social` יהיה זמין
 
-### 5.3 בדיקה באפליקציה
+### 5.4 בדיקה באפליקציה
 
 1. לך לפרופיל עובד
 2. לחץ **"Connect LinkedIn"**
 3. אמור להיפתח חלון LinkedIn
-4. אשר את ההרשאות
+4. אשר את ההרשאות (אם יש `w_member_social`, תראה בקשה נוספת)
 5. אמור לחזור לאפליקציה עם "LinkedIn connected successfully!"
+6. המידע יישלף אוטומטית, כולל נסיון תעסוקתי (אם יש אישור)
 
 ---
 
