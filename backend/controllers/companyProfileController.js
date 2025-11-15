@@ -41,10 +41,11 @@ const getCompanyHierarchy = async (req, res) => {
         // Get employees for each team
         const teams = await Promise.all(
           teamsResult.rows.map(async (team) => {
+            // Only show approved employees in hierarchy
             const employeesResult = await query(
-              `SELECT id, name, email, role, type, "current_role", target_role
+              `SELECT id, name, email, role, type, "current_role", target_role, profile_status
                FROM employees 
-               WHERE team_id = $1 AND company_id = $2
+               WHERE team_id = $1 AND company_id = $2 AND profile_status = 'approved'
                ORDER BY name`,
               [team.id, companyId]
             );
@@ -64,20 +65,52 @@ const getCompanyHierarchy = async (req, res) => {
           })
         );
 
+        // Get employees directly in department (without team)
+        const deptEmployeesResult = await query(
+          `SELECT id, name, email, role, type, "current_role", target_role, profile_status
+           FROM employees 
+           WHERE department_id = $1 AND company_id = $2 AND team_id IS NULL AND profile_status = 'approved'
+           ORDER BY name`,
+          [dept.id, companyId]
+        );
+
         return {
           id: dept.id,
           name: dept.name,
           type: 'Department',
-          teams: teams
+          teams: teams,
+          employees: deptEmployeesResult.rows.map(emp => ({
+            id: emp.id,
+            name: emp.name,
+            email: emp.email,
+            role: emp.role || emp.current_role,
+            type: emp.type
+          }))
         };
       })
+    );
+
+    // Get employees directly in company (without department or team)
+    const companyEmployeesResult = await query(
+      `SELECT id, name, email, role, type, "current_role", target_role, profile_status
+       FROM employees 
+       WHERE company_id = $1 AND department_id IS NULL AND team_id IS NULL AND profile_status = 'approved'
+       ORDER BY name`,
+      [companyId]
     );
 
     const hierarchy = {
       id: company.id,
       name: company.name,
       type: 'Company',
-      departments: departments
+      departments: departments,
+      employees: companyEmployeesResult.rows.map(emp => ({
+        id: emp.id,
+        name: emp.name,
+        email: emp.email,
+        role: emp.role || emp.current_role,
+        type: emp.type
+      }))
     };
 
     res.json({
