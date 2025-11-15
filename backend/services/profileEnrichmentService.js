@@ -123,12 +123,54 @@ const enrichProfile = async (employeeId) => {
 
     // Step 2: Send to Gemini API securely (with input validation and sanitization) - OUTSIDE transaction
     console.log(`[Enrichment] Sending data to Gemini API for processing...`);
-    const [bio, projects] = await Promise.all([
-      geminiService.generateBio(rawData),
-      geminiService.identifyProjects(rawData)
-    ]);
-
-    console.log(`[Enrichment] Gemini processing complete - Bio: ${!!bio}, Projects: ${projects?.length || 0}`);
+    let bio = null;
+    let projects = [];
+    
+    try {
+      [bio, projects] = await Promise.all([
+        geminiService.generateBio(rawData),
+        geminiService.identifyProjects(rawData)
+      ]);
+      console.log(`[Enrichment] Gemini processing complete - Bio: ${!!bio}, Projects: ${projects?.length || 0}`);
+    } catch (geminiError) {
+      console.error(`[Enrichment] ⚠️ Gemini API error (using fallback):`, geminiError.message);
+      
+      // Fallback: Generate basic bio and projects from raw data if Gemini fails
+      if (geminiError.response?.status === 429 || geminiError.message?.includes('quota')) {
+        console.log(`[Enrichment] Gemini quota exceeded - using fallback data extraction`);
+      }
+      
+      // Extract basic bio from raw data
+      if (rawData.linkedin?.profile) {
+        const linkedInProfile = rawData.linkedin.profile;
+        const name = `${linkedInProfile.localizedFirstName || ''} ${linkedInProfile.localizedLastName || ''}`.trim();
+        const headline = linkedInProfile.headline || '';
+        const summary = linkedInProfile.summary || '';
+        
+        if (name || headline || summary) {
+          bio = `${name ? `${name}. ` : ''}${headline ? `${headline}. ` : ''}${summary ? summary.substring(0, 200) : ''}`.trim();
+        }
+      } else if (rawData.github?.profile) {
+        const githubProfile = rawData.github.profile;
+        const name = githubProfile.name || githubProfile.login || '';
+        const githubBio = githubProfile.bio || '';
+        
+        if (name || githubBio) {
+          bio = `${name ? `${name}. ` : ''}${githubBio ? githubBio.substring(0, 200) : ''}`.trim();
+        }
+      }
+      
+      // Extract basic projects from GitHub repos
+      if (rawData.github?.repositories && Array.isArray(rawData.github.repositories)) {
+        projects = rawData.github.repositories.slice(0, 5).map(repo => ({
+          title: repo.name || 'Untitled Project',
+          summary: repo.description || `GitHub repository: ${repo.name || 'Unknown'}`,
+          source: 'github_fallback'
+        }));
+      }
+      
+      console.log(`[Enrichment] Fallback data extraction complete - Bio: ${!!bio}, Projects: ${projects?.length || 0}`);
+    }
 
     // Step 3-8: All database operations in TRANSACTION for atomicity
     const result = await transaction(async (client) => {
@@ -146,29 +188,34 @@ const enrichProfile = async (employeeId) => {
 
       // Step 4: Store projects in projects table (cleaned and processed) - BATCH INSERT for efficiency
       if (projects && projects.length > 0) {
+        // Determine source - if projects came from fallback (have source field), use it, otherwise use 'gemini_ai' or 'fallback'
+        const projectSource = projects[0]?.source || 'gemini_ai';
+        
         // Delete existing projects from this enrichment source (to avoid duplicates)
         await client.query(
-          `DELETE FROM projects WHERE employee_id = $1 AND source = 'gemini_ai'`,
-          [employeeId]
+          `DELETE FROM projects WHERE employee_id = $1 AND source = $2`,
+          [employeeId, projectSource]
         );
 
         // Batch insert projects for efficiency (instead of loop)
         const validProjects = projects
           .map(p => ({
             title: (p.title || '').trim().substring(0, 255),
-            summary: (p.summary || '').trim().substring(0, 5000)
+            summary: (p.summary || '').trim().substring(0, 5000),
+            source: p.source || projectSource
           }))
           .filter(p => p.title); // Only include projects with valid titles
 
         if (validProjects.length > 0) {
-          // Use batch insert with VALUES clause
-          const values = validProjects.map((_, i) => 
-            `($1, $${i * 2 + 2}, $${i * 2 + 3}, 'gemini_ai', CURRENT_TIMESTAMP)`
-          ).join(', ');
+          // Use batch insert with VALUES clause - each project needs: employee_id, title, summary, source
+          const values = validProjects.map((_, i) => {
+            const baseIndex = i * 3 + 2; // Start from $2 (employeeId is $1)
+            return `($1, $${baseIndex}, $${baseIndex + 1}, $${baseIndex + 2}, CURRENT_TIMESTAMP)`;
+          }).join(', ');
           
           const params = [
             employeeId,
-            ...validProjects.flatMap(p => [p.title, p.summary])
+            ...validProjects.flatMap(p => [p.title, p.summary, p.source])
           ];
 
           await client.query(
@@ -176,7 +223,7 @@ const enrichProfile = async (employeeId) => {
              VALUES ${values}`,
             params
           );
-          console.log(`[Enrichment] ${validProjects.length} projects stored (batch insert)`);
+          console.log(`[Enrichment] ${validProjects.length} projects stored (batch insert, source: ${projectSource})`);
         }
       }
 
