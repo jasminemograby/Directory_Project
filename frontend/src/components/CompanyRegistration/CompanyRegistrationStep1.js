@@ -1,5 +1,5 @@
 // Company Registration Step 1 - Basic Info
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../common/Input';
 import Button from '../common/Button';

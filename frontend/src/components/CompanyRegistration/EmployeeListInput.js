@@ -1,5 +1,5 @@
 // Employee List Input Component
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import Input from '../common/Input';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
