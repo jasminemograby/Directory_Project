@@ -270,7 +270,11 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
 
 
   // Check URL params for OAuth callback success
+  const urlParamsProcessed = useRef(false);
   useEffect(() => {
+    // Only process URL params once
+    if (urlParamsProcessed.current) return;
+    
     const urlParams = new URLSearchParams(window.location.search);
     const linkedInParam = urlParams.get('linkedin');
     const githubParam = urlParams.get('github');
@@ -278,20 +282,27 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
 
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
+      urlParamsProcessed.current = true;
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (linkedInParam === 'connected') {
       setLinkedInStatus('connected');
       setSuccessMessage('LinkedIn connected successfully!');
-      // Fetch data
-      handleFetchData();
+      urlParamsProcessed.current = true;
+      // Only fetch data if not already fetching and enrichment not triggered
+      if (!isFetchingData.current && !enrichmentTriggered.current) {
+        handleFetchData();
+      }
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (githubParam === 'connected') {
       setGithubStatus('connected');
       setSuccessMessage('GitHub connected successfully!');
-      // Fetch data
-      handleFetchData();
+      urlParamsProcessed.current = true;
+      // Only fetch data if not already fetching and enrichment not triggered
+      if (!isFetchingData.current && !enrichmentTriggered.current) {
+        handleFetchData();
+      }
       // Clean URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
