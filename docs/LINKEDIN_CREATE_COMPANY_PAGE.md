@@ -38,40 +38,55 @@ LinkedIn מציע 3 סוגי דפים:
 
 ### 2.3 מילוי פרטי החברה
 
+**⚠️ חשוב:** אם אין לך חברה אמיתית, אפשר להשתמש במידע דמה/זמני. LinkedIn דורש Company Page ל-OAuth Apps, אבל אפשר ליצור דף עם מידע זמני.
+
 **Company Name (שם החברה):**
 ```
-הכנס את שם החברה שלך
-לדוגמה: "Tech Solutions Ltd"
+אם אין לך חברה אמיתית, השתמש בשם דמה:
+לדוגמה: "My Development Company" או "Test Company" או "Personal Projects"
+```
+
+**LinkedIn Address (כתובת LinkedIn):**
+```
+LinkedIn יציע כתובת אוטומטית לפי שם החברה
+לדוגמה: linkedin.com/company/my-development-company
+אפשר להשתמש בהצעה האוטומטית או לשנות
 ```
 
 **Website (אתר):**
 ```
-הכנס את כתובת האתר של החברה
-לדוגמה: "https://techsolutions.com"
+אם אין לך אתר, השתמש באחד מהאופציות:
+1. אתר אישי שלך (אם יש)
+2. GitHub profile: "https://github.com/yourusername"
+3. LinkedIn profile: "https://www.linkedin.com/in/yourprofile"
+4. או כל URL תקין: "https://example.com"
 ```
 
 **Industry (תעשייה):**
 ```
 בחר מהרשימה את התעשייה המתאימה
-לדוגמה: "Technology, Information and Internet"
+אם לא בטוח, בחר: "Technology, Information and Internet"
+או "Computer Software" או "Information Services"
 ```
 
 **Company Size (גודל החברה):**
 ```
 בחר את גודל החברה
-לדוגמה: "1-10 employees" או "11-50 employees"
+אם אין חברה אמיתית, בחר: "1-10 employees" או "Self-employed"
 ```
 
 **Company Type (סוג החברה):**
 ```
 בחר את סוג החברה
-לדוגמה: "Privately Held" או "Public Company"
+אם אין חברה אמיתית, בחר: "Privately Held" או "Sole Proprietorship"
 ```
 
 **Description (תיאור):**
 ```
-כתוב תיאור קצר של החברה (2-3 משפטים)
-לדוגמה: "Tech Solutions Ltd provides innovative software solutions for businesses..."
+אם אין לך חברה אמיתית, כתוב תיאור כללי:
+לדוגמה: "Personal development and professional projects" 
+או "Software development and technology consulting"
+או "Individual developer working on various projects"
 ```
 
 ### 2.4 הוספת לוגו ותמונת כותרת
@@ -99,10 +114,11 @@ LinkedIn מציע 3 סוגי דפים:
 
 ## שלב 3: אימות Company Page
 
-### 3.1 אימות דומיין
+### 3.1 אימות דומיין (אופציונלי - אפשר לדלג)
 
-LinkedIn יבקש לאמת את הדומיין של החברה:
+LinkedIn יבקש לאמת את הדומיין של החברה, אבל **זה לא חובה!**
 
+**אם יש לך אתר:**
 1. LinkedIn יציע לך להוסיף קובץ HTML או meta tag לאתר שלך
 2. בחר את השיטה הנוחה לך:
    - **HTML File Upload** - העלה קובץ HTML לשרת
@@ -118,36 +134,37 @@ LinkedIn יבקש לאמת את הדומיין של החברה:
 linkedin_verification_XXXXX.html
 ```
 
-### 3.2 השלמת האימות
+**אם אין לך אתר (או לא רוצה לאמת):**
+1. **פשוט דלג על האימות** - לחץ **"Skip"** או **"Skip verification"**
+2. הדף יווצר גם בלי אימות
+3. זה לא ימנע ממך ליצור OAuth App
 
-1. הוסף את הקובץ או ה-meta tag לאתר שלך
-2. חזור ל-LinkedIn
-3. לחץ **"Verify"** (או **"אמת"**)
-4. LinkedIn יבדוק את הקובץ/תג
-5. אם הכל תקין, הדף יאומת (תראה סימן ✓)
-
-**הערה:** אם אין לך אתר, אפשר לדלג על האימות, אבל זה מומלץ לאמת.
+**הערה:** אימות דומיין הוא אופציונלי. אם אין לך אתר או לא רוצה לאמת, אפשר לדלג על זה בלי בעיה.
 
 ---
 
 ## שלב 4: הגדרת Company Page
 
-### 4.1 הוספת פרטים נוספים
+### 4.1 הוספת פרטים נוספים (אופציונלי)
 
 1. לך ל-Company Page שיצרת
 2. לחץ **"Edit page"** (או **"ערוך דף"**)
-3. הוסף פרטים נוספים:
-   - **Location** - מיקום החברה
-   - **Phone** - טלפון
-   - **Email** - אימייל
-   - **Founded** - שנת הקמה
-   - **Specialties** - התמחויות
+3. הוסף פרטים נוספים (אפשר לדלג על הכל):
+   - **Location** - מיקום (אופציונלי)
+   - **Phone** - טלפון (אופציונלי)
+   - **Email** - אימייל (אופציונלי)
+   - **Founded** - שנת הקמה (אופציונלי)
+   - **Specialties** - התמחויות (אופציונלי)
+
+**הערה:** אם אין לך חברה אמיתית, אפשר לדלג על כל השדות האלה. הם לא חובה.
 
 ### 4.2 פרסום דף
 
-1. ודא שכל הפרטים נכונים
+1. ודא שכל הפרטים החובה מלאים (שם, תעשייה, גודל, סוג)
 2. לחץ **"Publish"** (או **"פרסם"**)
 3. הדף יפורסם ויהיה זמין
+
+**⚠️ חשוב:** גם אם השתמשת במידע דמה, הדף יפורסם ויהיה זמין ליצירת OAuth App.
 
 ---
 
@@ -283,6 +300,23 @@ https://directoryproject-production.up.railway.app/api/external/linkedin/callbac
 1. ודא שיש לך חשבון LinkedIn פעיל
 2. ודא שיש לך לפחות חיבור אחד (connection)
 3. נסה ליצור דף דרך: https://www.linkedin.com/company/create
+4. אם עדיין לא עובד, נסה ליצור חשבון LinkedIn Business (חינם)
+
+### שגיאה: "Website URL is required"
+
+**פתרון:**
+- השתמש ב-URL תקין, גם אם זה לא אתר אמיתי
+- אפשר להשתמש ב-GitHub profile: `https://github.com/yourusername`
+- או LinkedIn profile: `https://www.linkedin.com/in/yourprofile`
+- או כל URL תקין: `https://example.com`
+
+### שאלה: "אבל אין לי חברה אמיתית!"
+
+**תשובה:**
+- זה בסדר! LinkedIn דורש Company Page ל-OAuth Apps, אבל אפשר ליצור דף עם מידע דמה
+- השתמש בשם דמה, URL כללי, ותיאור כללי
+- הדף יפורסם ויהיה זמין ליצירת OAuth App
+- זה לא ישפיע על היכולת לשלוף מידע מ-LinkedIn
 
 ### שגיאה: "Company Page not found in app creation"
 
