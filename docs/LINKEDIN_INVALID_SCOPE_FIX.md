@@ -39,8 +39,10 @@ The requested permission scope is not valid
 1. לך לטאב **"Auth"**
 2. תחת **"Application credentials"**
 3. ודא שיש לך:
-   - **Client ID** (לדוגמה: `REMOVED_CLIENT_ID`)
-   - **Client Secret** (לדוגמה: `REMOVED_SECRET`)
+   - **Client ID** (העתק את ה-Client ID שלך)
+   - **Client Secret** (לחץ "Show" כדי לראות אותו)
+   
+   **⚠️ חשוב:** אל תשלח את ה-Client Secret בפומבי! רק העתק אותו ל-Railway Variables.
 
 ### שלב 4: ודא שהמשתנים ב-Railway נכונים
 
