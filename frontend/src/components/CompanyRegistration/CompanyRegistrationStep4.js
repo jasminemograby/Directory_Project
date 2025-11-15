@@ -1,5 +1,5 @@
 // Company Registration Step 4 - Full Setup
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../common/Input';
 import Button from '../common/Button';
@@ -17,12 +17,39 @@ const CompanyRegistrationStep4 = () => {
     learningPathPolicy: LEARNING_PATH_POLICY.MANUAL,
     decisionMakerId: '',
     primaryKPI: '',
+    companySize: '',
+    description: '',
+    exerciseLimitEnabled: false,
     exerciseLimit: '',
     passingGrade: '',
     maxAttempts: '',
+    publicPublishEnabled: false,
   });
+  const [companyBasicInfo, setCompanyBasicInfo] = useState(null); // From Step 1
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  
+  // Load company basic info from Step 1 (stored in localStorage or fetch from API)
+  useEffect(() => {
+    const registrationId = localStorage.getItem('companyRegistrationId');
+    if (registrationId) {
+      // Try to fetch company info from API
+      apiService.verifyCompany(registrationId, { checkStatus: true })
+        .then((response) => {
+          if (response.data.success && response.data.data) {
+            setCompanyBasicInfo({
+              name: response.data.data.name,
+              industry: response.data.data.industry,
+              domain: response.data.data.domain,
+            });
+          }
+        })
+        .catch((error) => {
+          console.warn('Could not fetch company info:', error);
+          // Continue without company info - user can still proceed
+        });
+    }
+  }, []);
 
   const handleEmployeesChange = (employees) => {
     setFormData((prev) => ({ ...prev, employees }));
@@ -62,9 +89,60 @@ const CompanyRegistrationStep4 = () => {
     // Validate employees
     if (formData.employees.length === 0) {
       newErrors.employees = 'At least one employee is required';
+    } else {
+      // Validate that all employees have required fields (name, email, currentRole, targetRole)
+      // Department/Team are OPTIONAL - company can have employees without departments/teams
+      formData.employees.forEach((emp, index) => {
+        if (!emp.name || !emp.email || !emp.currentRole || !emp.targetRole) {
+          if (!newErrors.employees) {
+            newErrors.employees = [];
+          }
+          if (Array.isArray(newErrors.employees)) {
+            newErrors.employees.push(`Employee ${index + 1} (${emp.name || 'Unknown'}) is missing required fields (name, email, current role, or target role)`);
+          }
+        }
+      });
     }
 
-    // Departments are optional - no validation needed
+    // Validate departments - IF departments exist, each department MUST have a manager
+    // But if no departments exist, that's fine - company can have employees without departments
+    if (formData.departments && formData.departments.length > 0) {
+      const departmentsWithoutManagers = [];
+      formData.departments.forEach((dept) => {
+        // Check if any employee is assigned as manager of this department
+        const hasManager = formData.employees.some(
+          (emp) => emp.isManager && emp.managerType === 'dept_manager' && emp.managerOfId === dept.id
+        );
+        if (!hasManager) {
+          departmentsWithoutManagers.push(dept.name || dept.id);
+        }
+      });
+      if (departmentsWithoutManagers.length > 0) {
+        newErrors.departments = `The following departments are missing a manager: ${departmentsWithoutManagers.join(', ')}. Please assign a manager to each department before proceeding.`;
+      }
+    }
+
+    // Validate teams - IF teams exist, each team MUST have a manager
+    // But if no teams exist, that's fine - company can have employees without teams
+    if (formData.departments && formData.departments.length > 0) {
+      const teamsWithoutManagers = [];
+      formData.departments.forEach((dept) => {
+        if (dept.teams && dept.teams.length > 0) {
+          dept.teams.forEach((team) => {
+            // Check if any employee is assigned as manager of this team
+            const hasManager = formData.employees.some(
+              (emp) => emp.isManager && emp.managerType === 'team_manager' && emp.managerOfId === team.id
+            );
+            if (!hasManager) {
+              teamsWithoutManagers.push(`${dept.name || 'Unknown'} → ${team.name || team.id}`);
+            }
+          });
+        }
+      });
+      if (teamsWithoutManagers.length > 0) {
+        newErrors.teams = `The following teams are missing a manager: ${teamsWithoutManagers.join(', ')}. Please assign a manager to each team before proceeding.`;
+      }
+    }
 
     // Validate learning path policy
     if (!formData.learningPathPolicy) {
@@ -120,9 +198,13 @@ const CompanyRegistrationStep4 = () => {
         departments: formData.departments || [],
         learningPathPolicy: learningPathPolicy, // Ensure lowercase
         primaryKPI: formData.primaryKPI || '',
-        exerciseLimit: formData.exerciseLimit || '',
+        companySize: formData.companySize || null,
+        description: formData.description || '',
+        exerciseLimitEnabled: formData.exerciseLimitEnabled || false,
+        exerciseLimit: formData.exerciseLimitEnabled ? (formData.exerciseLimit || '4') : null,
         passingGrade: formData.passingGrade || '',
         maxAttempts: formData.maxAttempts || '',
+        publicPublishEnabled: formData.publicPublishEnabled || false,
       };
 
       // Only include decisionMakerId if manual approval
@@ -217,103 +299,100 @@ const CompanyRegistrationStep4 = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="max-w-4xl mx-auto">
         {/* Progress Indicator */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-primary-cyan">Step 3 of 3</span>
-            <span className="text-sm text-gray-500">Full Company Setup</span>
+            <span className="text-sm font-medium" style={{ color: 'var(--primary-cyan)' }}>Step 3 of 3</span>
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Full Company Setup</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-primary-cyan h-2 rounded-full" style={{ width: '100%' }} />
+          <div className="w-full rounded-full h-2" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+            <div className="h-2 rounded-full" style={{ width: '100%', backgroundColor: 'var(--primary-cyan)' }} />
           </div>
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-lg shadow-lg p-6 sm:p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Complete Company Setup</h1>
-          <p className="text-gray-600 mb-6">
+        <div className="rounded-lg p-6 sm:p-8" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Complete Company Setup</h1>
+          <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>
             Please provide all company details including employees, departments, and settings.
           </p>
 
           <form onSubmit={handleSubmit}>
-            {/* Employees Section - CAN BE FIRST (departments optional) */}
-            <div className="mb-8">
-              <EmployeeListInput
-                employees={formData.employees}
-                departments={formData.departments}
-                onChange={handleEmployeesChange}
-                errors={errors}
-              />
-            </div>
+            {/* Company Information Section (Read-Only from Step 1) */}
+                  {companyBasicInfo && (
+                    <div className="mb-8 border-b pb-6" style={{ borderColor: 'var(--bg-secondary)' }}>
+                      <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Company Information</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Company Name</label>
+                          <div className="px-4 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--bg-tertiary)', borderWidth: '1px', borderStyle: 'solid', color: 'var(--text-primary)' }}>
+                            {companyBasicInfo.name}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Industry</label>
+                          <div className="px-4 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--bg-tertiary)', borderWidth: '1px', borderStyle: 'solid', color: 'var(--text-primary)' }}>
+                            {companyBasicInfo.industry}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Domain</label>
+                          <div className="px-4 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--bg-tertiary)', borderWidth: '1px', borderStyle: 'solid', color: 'var(--text-primary)' }}>
+                            {companyBasicInfo.domain}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-            {/* Departments & Teams Section - OPTIONAL */}
-            <div className="mb-8">
-              <DepartmentTeamInput
-                departments={formData.departments}
-                employees={formData.employees}
-                onChange={handleDepartmentsChange}
-                errors={errors}
-              />
-            </div>
-
-            {/* Learning Path Policy Section */}
-            <div className="mb-8">
-              <LearningPathPolicyInput
-                value={{
-                  policy: formData.learningPathPolicy,
-                  decisionMakerId: formData.decisionMakerId,
-                }}
-                onChange={(value) => {
-                  if (typeof value === 'string') {
-                    handleLearningPathPolicyChange(value);
-                  } else if (value && typeof value === 'object') {
-                    if (value.policy) {
-                      handleLearningPathPolicyChange(value.policy);
-                    }
-                    if (value.decisionMakerId !== undefined) {
-                      handleDecisionMakerChange(value.decisionMakerId);
-                    }
-                  }
-                }}
-                employees={formData.employees}
-                errors={errors}
-              />
-            </div>
-
-            {/* Primary KPI Section */}
-            <div className="mb-8">
-              <Input
-                label="Primary KPI(s)"
-                name="primaryKPI"
-                value={formData.primaryKPI}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, primaryKPI: e.target.value }))
-                }
-                placeholder="e.g., Employee skill development, Training completion rate"
-                error={errors.primaryKPI}
-              />
-            </div>
-
-            {/* Organizational Settings Section */}
-            <div className="mb-8 border-t pt-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Organizational Settings</h2>
+            {/* Company Settings Section */}
+            <div className="mb-8 border-b pb-6" style={{ borderColor: 'var(--bg-secondary)' }}>
+              <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Company Settings</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Company Size */}
+              <div className="mb-4">
                 <Input
-                  label="Exercise Limit"
-                  name="exerciseLimit"
+                  label="Company Size (Number of Employees)"
+                  name="companySize"
                   type="number"
-                  min="0"
-                  value={formData.exerciseLimit}
+                  min="1"
+                  value={formData.companySize}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, exerciseLimit: e.target.value }))
+                    setFormData((prev) => ({ ...prev, companySize: e.target.value }))
                   }
-                  placeholder="e.g., 10"
-                  error={errors.exerciseLimit}
+                  placeholder="e.g., 50"
+                  error={errors.companySize}
                 />
-                
+              </div>
+
+              {/* Learning Path Policy Section */}
+              <div className="mb-6">
+                <LearningPathPolicyInput
+                  value={{
+                    policy: formData.learningPathPolicy,
+                    decisionMakerId: formData.decisionMakerId,
+                  }}
+                  onChange={(value) => {
+                    if (typeof value === 'string') {
+                      handleLearningPathPolicyChange(value);
+                    } else if (value && typeof value === 'object') {
+                      if (value.policy) {
+                        handleLearningPathPolicyChange(value.policy);
+                      }
+                      if (value.decisionMakerId !== undefined) {
+                        handleDecisionMakerChange(value.decisionMakerId);
+                      }
+                    }
+                  }}
+                  employees={formData.employees}
+                  errors={errors}
+                />
+              </div>
+
+              {/* Passing Grade and Max Attempts */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <Input
                   label="Passing Grade (%)"
                   name="passingGrade"
@@ -329,7 +408,7 @@ const CompanyRegistrationStep4 = () => {
                 />
                 
                 <Input
-                  label="Max Attempts"
+                  label="Max Test Attempts"
                   name="maxAttempts"
                   type="number"
                   min="1"
@@ -341,12 +420,149 @@ const CompanyRegistrationStep4 = () => {
                   error={errors.maxAttempts}
                 />
               </div>
+
+              {/* Exercise Limit - Conditional Checkbox */}
+              <div className="mb-4">
+                <label className="flex items-center space-x-2 mb-2">
+                    <input
+                      type="checkbox"
+                      name="exerciseLimitEnabled"
+                      checked={formData.exerciseLimitEnabled}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          exerciseLimitEnabled: e.target.checked,
+                          exerciseLimit: e.target.checked ? (prev.exerciseLimit || '4') : '',
+                        }))
+                      }
+                      className="w-4 h-4 rounded"
+                      style={{ color: 'var(--primary-cyan)', borderColor: 'var(--bg-tertiary)' }}
+                    />
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      Limit Number of Exercises
+                    </span>
+                </label>
+                
+                {/* Conditional: Show number input only if checkbox is checked */}
+                {formData.exerciseLimitEnabled && (
+                  <div className="mt-2 ml-6">
+                    <Input
+                      label="Number of Exercises"
+                      name="exerciseLimit"
+                      type="number"
+                      min="1"
+                      value={formData.exerciseLimit}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, exerciseLimit: e.target.value }))
+                      }
+                      placeholder="e.g., 4"
+                      error={errors.exerciseLimit}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Public Publish Enable */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+                  Public Publish Enable
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="publicPublishEnabled"
+                      checked={formData.publicPublishEnabled === true}
+                      onChange={() =>
+                        setFormData((prev) => ({ ...prev, publicPublishEnabled: true }))
+                      }
+                      className="w-4 h-4"
+                      style={{ color: 'var(--primary-cyan)', borderColor: 'var(--bg-tertiary)' }}
+                    />
+                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>Yes - Trainers can publish content publicly</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="publicPublishEnabled"
+                      checked={formData.publicPublishEnabled === false}
+                      onChange={() =>
+                        setFormData((prev) => ({ ...prev, publicPublishEnabled: false }))
+                      }
+                      className="w-4 h-4"
+                      style={{ color: 'var(--primary-cyan)', borderColor: 'var(--bg-tertiary)' }}
+                    />
+                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>No - Internal content only</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Company Bio/Description */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+                  Company Bio/Description
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, description: e.target.value }))
+                  }
+                  rows={4}
+                  className="w-full px-4 py-2 rounded-lg focus:outline-none"
+                  style={{ 
+                    backgroundColor: 'var(--input-bg)', 
+                    borderColor: 'var(--border-default)',
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    color: 'var(--input-text)'
+                  }}
+                  placeholder="Describe your company, its mission, and values..."
+                />
+                {errors.description && (
+                  <p className="mt-1 text-sm" style={{ color: 'var(--border-error)' }}>{errors.description}</p>
+                )}
+              </div>
+
+              {/* Primary KPI Section */}
+              <div className="mb-4">
+                <Input
+                  label="Primary KPI(s)"
+                  name="primaryKPI"
+                  value={formData.primaryKPI}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, primaryKPI: e.target.value }))
+                  }
+                  placeholder="e.g., Employee skill development, Training completion rate"
+                  error={errors.primaryKPI}
+                />
+              </div>
+            </div>
+
+            {/* Employees Section */}
+            <div className="mb-8">
+              <EmployeeListInput
+                employees={formData.employees}
+                departments={formData.departments}
+                onChange={handleEmployeesChange}
+                errors={errors}
+              />
+            </div>
+
+            {/* Departments & Teams Section */}
+            <div className="mb-8">
+              <DepartmentTeamInput
+                departments={formData.departments}
+                employees={formData.employees}
+                onChange={handleDepartmentsChange}
+                errors={errors}
+              />
             </div>
 
             {/* Submit Error */}
             {errors.submit && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{errors.submit}</p>
+              <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: 'var(--border-error)', borderWidth: '1px', borderStyle: 'solid' }}>
+                <p className="text-sm" style={{ color: 'var(--border-error)' }}>{errors.submit}</p>
               </div>
             )}
 

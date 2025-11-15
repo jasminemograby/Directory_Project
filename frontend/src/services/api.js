@@ -94,6 +94,7 @@ export const apiService = {
           }
           throw new Error('Invalid registration step');
         },
+  checkHrEmailAvailability: (email) => api.get('/company/check-email', { params: { email } }),
   verifyCompany: (companyId, data) => api.post(`/company/${companyId}/verify`, data),
   getCompany: (companyId, hrEmail) => {
     if (hrEmail) {

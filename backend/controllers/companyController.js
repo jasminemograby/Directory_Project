@@ -265,7 +265,73 @@ const getCompanyByHrEmail = async (req, res, next) => {
   }
 };
 
+// Check if HR email is already in use (for live validation)
+const checkHrEmailAvailability = async (req, res, next) => {
+  try {
+    const { email } = req.query;
+    
+    if (!email || !email.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required'
+      });
+    }
+    
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    // Check if email exists in company_settings (HR emails)
+    const hrCheck = await query(
+      `SELECT cs.company_id, c.name as company_name
+       FROM company_settings cs
+       JOIN companies c ON c.id = cs.company_id
+       WHERE cs.setting_key = 'hr_email' 
+       AND LOWER(TRIM(cs.setting_value)) = $1
+       LIMIT 1`,
+      [normalizedEmail]
+    );
+    
+    if (hrCheck.rows.length > 0) {
+      return res.json({
+        success: true,
+        available: false,
+        message: 'This email is already registered as HR for a company',
+        companyName: hrCheck.rows[0].company_name
+      });
+    }
+    
+    // Also check if email exists in employees table (might be registered as employee)
+    const employeeCheck = await query(
+      `SELECT e.id, e.company_id, c.name as company_name
+       FROM employees e
+       JOIN companies c ON c.id = e.company_id
+       WHERE LOWER(TRIM(e.email)) = $1
+       LIMIT 1`,
+      [normalizedEmail]
+    );
+    
+    if (employeeCheck.rows.length > 0) {
+      return res.json({
+        success: true,
+        available: false,
+        message: 'This email is already registered as an employee',
+        companyName: employeeCheck.rows[0].company_name
+      });
+    }
+    
+    // Email is available
+    return res.json({
+      success: true,
+      available: true,
+      message: 'Email is available'
+    });
+  } catch (error) {
+    console.error('Error checking HR email availability:', error);
+    next(error);
+  }
+};
+
 module.exports = {
+  checkHrEmailAvailability,
   getCompanyById,
   getCompany,
   getCompanyIdByHrEmail,

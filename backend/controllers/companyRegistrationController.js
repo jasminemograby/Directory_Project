@@ -55,7 +55,21 @@ const registerCompanyStep1 = async (req, res, next) => {
 const registerCompanyStep4 = async (req, res, next) => {
   try {
 
-    const { registrationId, employees, departments = [], learningPathPolicy, decisionMakerId = null, primaryKPI, exerciseLimit, passingGrade, maxAttempts } = req.body;
+    const { 
+      registrationId, 
+      employees, 
+      departments = [], 
+      learningPathPolicy, 
+      decisionMakerId = null, 
+      primaryKPI, 
+      companySize,
+      description,
+      exerciseLimitEnabled,
+      exerciseLimit, 
+      passingGrade, 
+      maxAttempts,
+      publicPublishEnabled
+    } = req.body;
 
     // ==========================================
     // PRE-VALIDATION: Validate ALL data BEFORE any database writes
@@ -348,13 +362,36 @@ const registerCompanyStep4 = async (req, res, next) => {
               // Create savepoint before trying with current_role
               await client.query(`SAVEPOINT ${savepointName}`);
               
-              // Try with current_role column
+              // Try with current_role column and manager fields
+              // Check if employee is a manager and get manager_of_id
+              const isManager = emp.isManager === true;
+              const managerType = isManager ? (emp.managerType || null) : null;
+              let managerOfId = null;
+              
+              if (isManager && emp.managerOfId) {
+                // managerOfId is the ID of the department or team they manage
+                // We need to find the actual database ID from departmentMap or teamMap
+                if (managerType === 'dept_manager') {
+                  const deptInfo = departmentMap.get(emp.managerOfId);
+                  managerOfId = deptInfo ? deptInfo.dbId : null;
+                } else if (managerType === 'team_manager') {
+                  const teamInfo = teamMap.get(emp.managerOfId);
+                  managerOfId = teamInfo ? teamInfo.dbId : null;
+                }
+              }
+              
+              // Get aiEnabled value (only for trainers)
+              const aiEnabled = (emp.type === 'internal_instructor' || emp.type === 'external_instructor') 
+                ? (emp.aiEnabled === true || emp.aiEnabled === 'true') 
+                : false;
+
               empResult = await client.query(
                 `INSERT INTO employees (
                   company_id, name, email, role, current_role, target_role, type,
-                  department_id, team_id, profile_status, created_at, updated_at
+                  department_id, team_id, is_manager, manager_type, manager_of_id,
+                  ai_enabled, profile_status, created_at, updated_at
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 RETURNING id`,
                 [
                   company.id,
@@ -366,6 +403,10 @@ const registerCompanyStep4 = async (req, res, next) => {
                   emp.type,
                   departmentId,
                   teamId,
+                  isManager,
+                  managerType,
+                  managerOfId,
+                  aiEnabled,
                   'pending',
                 ]
               );
@@ -386,12 +427,33 @@ const registerCompanyStep4 = async (req, res, next) => {
                 await client.query(`ROLLBACK TO SAVEPOINT ${savepointName}`);
                 
                 // Fallback: use role only (for databases without current_role column yet)
+                // Still include manager fields and aiEnabled if available
+                const isManager = emp.isManager === true;
+                const managerType = isManager ? (emp.managerType || null) : null;
+                let managerOfId = null;
+                
+                if (isManager && emp.managerOfId) {
+                  if (managerType === 'dept_manager') {
+                    const deptInfo = departmentMap.get(emp.managerOfId);
+                    managerOfId = deptInfo ? deptInfo.dbId : null;
+                  } else if (managerType === 'team_manager') {
+                    const teamInfo = teamMap.get(emp.managerOfId);
+                    managerOfId = teamInfo ? teamInfo.dbId : null;
+                  }
+                }
+                
+                // Get aiEnabled value (only for trainers) - same logic as above
+                const aiEnabledFallback = (emp.type === 'internal_instructor' || emp.type === 'external_instructor') 
+                  ? (emp.aiEnabled === true || emp.aiEnabled === 'true') 
+                  : false;
+
                 empResult = await client.query(
                   `INSERT INTO employees (
                     company_id, name, email, role, target_role, type,
-                    department_id, team_id, profile_status, created_at, updated_at
+                    department_id, team_id, is_manager, manager_type, manager_of_id,
+                    ai_enabled, profile_status, created_at, updated_at
                   )
-                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                   RETURNING id`,
                   [
                     company.id,
@@ -402,6 +464,10 @@ const registerCompanyStep4 = async (req, res, next) => {
                     emp.type,
                     departmentId,
                     teamId,
+                    isManager,
+                    managerType,
+                    managerOfId,
+                    aiEnabledFallback,
                     'pending',
                   ]
                 );
@@ -522,25 +588,42 @@ const registerCompanyStep4 = async (req, res, next) => {
         }
       }
 
-      // Update company with learning path policy and KPI
+      // Update company with learning path policy, KPI, size, and description
       await client.query(
         `UPDATE companies 
          SET learning_path_approval_policy = $1, 
              decision_maker_id = $2,
              primary_kpi = $3,
+             size = $4,
+             description = $5,
              updated_at = CURRENT_TIMESTAMP
-         WHERE id = $4`,
-        [learningPathPolicy, decisionMakerUUID, primaryKPI || null, company.id]
+         WHERE id = $6`,
+        [
+          learningPathPolicy, 
+          decisionMakerUUID, 
+          primaryKPI || null, 
+          companySize || null,
+          description || null,
+          company.id
+        ]
       );
 
-      // Save organizational settings (Exercise limit, Passing grade, Max attempts)
-      if (exerciseLimit !== undefined && exerciseLimit !== null && exerciseLimit !== '') {
+      // Save organizational settings (Exercise limit, Passing grade, Max attempts, Public publish)
+      // Exercise limit - only save if exerciseLimitEnabled is true
+      if (exerciseLimitEnabled && exerciseLimit !== undefined && exerciseLimit !== null && exerciseLimit !== '') {
         await client.query(
           `INSERT INTO company_settings (company_id, setting_key, setting_value, updated_at)
            VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
            ON CONFLICT (company_id, setting_key) 
            DO UPDATE SET setting_value = $3, updated_at = CURRENT_TIMESTAMP`,
           [company.id, 'exercise_limit', exerciseLimit.toString()]
+        );
+      } else {
+        // If exerciseLimitEnabled is false, remove the setting (or set to null)
+        await client.query(
+          `DELETE FROM company_settings 
+           WHERE company_id = $1 AND setting_key = 'exercise_limit'`,
+          [company.id]
         );
       }
 
@@ -560,9 +643,18 @@ const registerCompanyStep4 = async (req, res, next) => {
            VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
            ON CONFLICT (company_id, setting_key) 
            DO UPDATE SET setting_value = $3, updated_at = CURRENT_TIMESTAMP`,
-          [company.id, 'max_attempts', maxAttempts.toString()]
+          [company.id, 'max_test_attempts', maxAttempts.toString()]
         );
       }
+
+      // Save public publish enabled setting
+      await client.query(
+        `INSERT INTO company_settings (company_id, setting_key, setting_value, updated_at)
+         VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+         ON CONFLICT (company_id, setting_key) 
+         DO UPDATE SET setting_value = $3, updated_at = CURRENT_TIMESTAMP`,
+        [company.id, 'public_publish_enabled', publicPublishEnabled ? 'true' : 'false']
+      );
 
       // Create HR employee profile if not already created
       // Get HR info from company_settings

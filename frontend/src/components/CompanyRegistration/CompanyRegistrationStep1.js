@@ -1,5 +1,5 @@
 // Company Registration Step 1 - Basic Info
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../common/Input';
 import Button from '../common/Button';
@@ -19,6 +19,8 @@ const CompanyRegistrationStep1 = () => {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [emailCheckStatus, setEmailCheckStatus] = useState(null); // 'checking', 'available', 'unavailable', null
+  const [emailCheckMessage, setEmailCheckMessage] = useState('');
 
   const validationRules = {
     companyName: [
@@ -45,6 +47,58 @@ const CompanyRegistrationStep1 = () => {
     ],
   };
 
+  // Debounced email check function
+  const checkEmailAvailability = React.useCallback(
+    async (email) => {
+      if (!email || !email.trim()) {
+        setEmailCheckStatus(null);
+        setEmailCheckMessage('');
+        return;
+      }
+
+      // Basic email format validation
+      if (!validators.email(email)) {
+        setEmailCheckStatus(null);
+        setEmailCheckMessage('');
+        return;
+      }
+
+      setEmailCheckStatus('checking');
+      setEmailCheckMessage('Checking email availability...');
+
+      try {
+        const response = await apiService.checkHrEmailAvailability(email);
+        if (response.data.success) {
+          if (response.data.available) {
+            setEmailCheckStatus('available');
+            setEmailCheckMessage('✓ Email is available');
+            // Clear email error if it exists
+            if (errors.hrEmail) {
+              setErrors((prev) => ({ ...prev, hrEmail: null }));
+            }
+          } else {
+            setEmailCheckStatus('unavailable');
+            setEmailCheckMessage(`❌ ${response.data.message}${response.data.companyName ? ` (${response.data.companyName})` : ''}`);
+            // Set error
+            setErrors((prev) => ({
+              ...prev,
+              hrEmail: [response.data.message],
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Error checking email availability:', error);
+        setEmailCheckStatus(null);
+        setEmailCheckMessage('');
+        // Don't set error on check failure - let form validation handle it
+      }
+    },
+    [errors.hrEmail]
+  );
+
+  // Debounce timer ref
+  const emailCheckTimerRef = React.useRef(null);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -52,7 +106,33 @@ const CompanyRegistrationStep1 = () => {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: null }));
     }
+
+    // Live email check for HR email field
+    if (name === 'hrEmail') {
+      // Clear previous timer
+      if (emailCheckTimerRef.current) {
+        clearTimeout(emailCheckTimerRef.current);
+      }
+      
+      // Clear status immediately when user types
+      setEmailCheckStatus(null);
+      setEmailCheckMessage('');
+
+      // Debounce email check (wait 500ms after user stops typing)
+      emailCheckTimerRef.current = setTimeout(() => {
+        checkEmailAvailability(value);
+      }, 500);
+    }
   };
+
+  // Cleanup timer on unmount
+  React.useEffect(() => {
+    return () => {
+      if (emailCheckTimerRef.current) {
+        clearTimeout(emailCheckTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -194,16 +274,42 @@ const CompanyRegistrationStep1 = () => {
                 error={errors.hrName?.[0]}
               />
 
-              <Input
-                label="HR Email"
-                name="hrEmail"
-                type="email"
-                value={formData.hrEmail}
-                onChange={handleChange}
-                placeholder="hr@company.com"
-                required
-                error={errors.hrEmail?.[0]}
-              />
+              {/* HR Email with Live Check */}
+              <div className="mb-4">
+                <Input
+                  label="HR Email"
+                  name="hrEmail"
+                  type="email"
+                  value={formData.hrEmail}
+                  onChange={handleChange}
+                  placeholder="hr@company.com"
+                  required
+                  error={errors.hrEmail?.[0]}
+                  className={
+                    emailCheckStatus === 'available'
+                      ? 'border-green-500'
+                      : emailCheckStatus === 'unavailable'
+                      ? 'border-red-500'
+                      : ''
+                  }
+                />
+                {/* Live email check status */}
+                {emailCheckStatus && (
+                  <p
+                    className={`mt-1 text-sm ${
+                      emailCheckStatus === 'available'
+                        ? 'text-green-600'
+                        : emailCheckStatus === 'unavailable'
+                        ? 'text-red-600'
+                        : emailCheckStatus === 'checking'
+                        ? 'text-gray-500'
+                        : ''
+                    }`}
+                  >
+                    {emailCheckMessage}
+                  </p>
+                )}
+              </div>
 
               <Input
                 label="HR Role/Title"

@@ -25,6 +25,9 @@ router.post(
   companyRegistrationController.registerCompanyStep4
 );
 
+// Check HR email availability (for live validation)
+router.get('/check-email', companyController.checkHrEmailAvailability);
+
 // Get company by HR email (must be before /:id to avoid route conflict)
 router.get('/', (req, res, next) => {
   console.log(`[ROUTE] GET /api/company/ - Route matched for HR email lookup`);
