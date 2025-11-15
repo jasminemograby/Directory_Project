@@ -17,24 +17,42 @@ const getPendingProfiles = async (req, res) => {
       });
     }
 
-    // Get HR's company ID
+    const normalizedEmail = hrEmail.trim().toLowerCase();
+
+    // Get HR's company ID from settings first
+    let companyId = null;
     const hrCheck = await query(
       `SELECT company_id 
        FROM company_settings 
        WHERE setting_key = 'hr_email' 
        AND LOWER(TRIM(setting_value)) = $1
        LIMIT 1`,
-      [hrEmail.trim().toLowerCase()]
+      [normalizedEmail]
     );
 
-    if (hrCheck.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'HR not found or not authorized'
-      });
-    }
+    if (hrCheck.rows.length > 0) {
+      companyId = hrCheck.rows[0].company_id;
+    } else {
+      // Fallback: check employees table (in case settings missing)
+      const employeeCheck = await query(
+        `SELECT company_id 
+         FROM employees 
+         WHERE LOWER(email) = $1
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [normalizedEmail]
+      );
 
-    const companyId = hrCheck.rows[0].company_id;
+      if (employeeCheck.rows.length > 0) {
+        companyId = employeeCheck.rows[0].company_id;
+        console.warn(`[ProfileApproval] HR email missing in company_settings, using employees fallback for ${normalizedEmail}`);
+      } else {
+        return res.status(404).json({
+          success: false,
+          error: 'HR not found or not authorized'
+        });
+      }
+    }
 
     // Get all pending profiles in the company that have been enriched (have processed data)
     // Only show profiles that have been enriched (have bio in external_data_processed)
