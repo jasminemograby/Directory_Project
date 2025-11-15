@@ -52,8 +52,14 @@ api.interceptors.response.use(
           window.location.href = '/login';
           break;
         case HTTP_STATUS.FORBIDDEN:
-          // Redirect to 403 page
-          window.location.href = '/403';
+          // Don't auto-redirect to 403 page for OAuth endpoints - let components handle it
+          // Only redirect if it's not an OAuth-related request
+          const isOAuthRequest = error.config?.url?.includes('/external/') || 
+                                 error.config?.url?.includes('/auth/');
+          if (!isOAuthRequest) {
+            window.location.href = '/403';
+          }
+          // For OAuth requests, let the error propagate to the component
           break;
         case HTTP_STATUS.NOT_FOUND:
           // Don't auto-redirect to 404 - let components handle it
