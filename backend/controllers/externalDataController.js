@@ -10,6 +10,7 @@ const { query } = require('../config/database');
 const initiateLinkedInAuth = async (req, res, next) => {
   try {
     const { employeeId } = req.params;
+    const { mode } = req.query || {};
     const { mode } = req.query;
     
     if (!employeeId) {
