@@ -28,14 +28,16 @@ const getAuthorizationUrl = (employeeId, state = null) => {
   const randomHex = crypto.randomBytes(16).toString('hex');
   const stateParam = state || Buffer.from(`${employeeId}:${randomHex}`).toString('base64');
   
-  // LinkedIn OAuth scopes - using OpenID Connect (new API) + Profile API for experience
+  // LinkedIn OAuth scopes - using OpenID Connect (new API)
   // Note: LinkedIn deprecated r_liteprofile, r_basicprofile, r_emailaddress
-  // Using OpenID Connect scopes + w_member_social for work experience
+  // Using OpenID Connect scopes (basic - always approved)
+  // w_member_social requires LinkedIn approval - removed for now to avoid invalid_scope_error
+  // If you have approval for w_member_social, you can add it back: 'w_member_social'
   const scopes = [
     'openid',             // OpenID Connect
     'profile',            // Profile information (name, picture)
-    'email',              // Email address
-    'w_member_social'     // Work experience, education, positions (requires approval)
+    'email'               // Email address
+    // 'w_member_social'  // Work experience, education, positions (requires LinkedIn approval - add if approved)
   ].join(' ');
 
   const params = new URLSearchParams({
@@ -266,7 +268,9 @@ const fetchProfileData = async (employeeId) => {
         return null;
       }),
       
-      // Get positions (work experience) - requires w_member_social scope
+      // Get positions (work experience) - requires w_member_social scope (may not be available)
+      // Note: These endpoints require w_member_social scope which needs LinkedIn approval
+      // If you have approval, these will work. Otherwise, they will fail gracefully.
       axios.get('https://api.linkedin.com/v2/positions?q=members&projection=(elements*(id,title,company,timePeriod,description,location))', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -274,11 +278,16 @@ const fetchProfileData = async (employeeId) => {
         },
         timeout: 10000
       }).catch((err) => {
-        console.warn('[LinkedIn] Failed to fetch positions (optional - may require additional scope approval):', err.message);
+        // This is expected if w_member_social scope is not approved
+        if (err.response?.status === 403 || err.response?.status === 401) {
+          console.log('[LinkedIn] Positions endpoint requires w_member_social scope approval (not critical)');
+        } else {
+          console.warn('[LinkedIn] Failed to fetch positions:', err.message);
+        }
         return null;
       }),
       
-      // Get full profile with experience - alternative endpoint
+      // Get full profile with experience - alternative endpoint (also requires w_member_social)
       axios.get('https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,headline,summary,positions)', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -286,7 +295,12 @@ const fetchProfileData = async (employeeId) => {
         },
         timeout: 10000
       }).catch((err) => {
-        console.warn('[LinkedIn] Failed to fetch full profile (optional):', err.message);
+        // This is expected if w_member_social scope is not approved
+        if (err.response?.status === 403 || err.response?.status === 401) {
+          console.log('[LinkedIn] Full profile endpoint requires w_member_social scope approval (not critical)');
+        } else {
+          console.warn('[LinkedIn] Failed to fetch full profile:', err.message);
+        }
         return null;
       })
     ]);
