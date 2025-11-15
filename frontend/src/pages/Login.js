@@ -61,7 +61,12 @@ const Login = () => {
             break;
           case 'employee':
           default:
-            navigate(ROUTES.PROFILE);
+            // For employees, navigate to profile with their ID
+            if (user.id) {
+              navigate(`/profile/${user.id}`);
+            } else {
+              navigate(ROUTES.PROFILE_ME || ROUTES.EMPLOYEE_PROFILE);
+            }
             break;
         }
       } else {

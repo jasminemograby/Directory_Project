@@ -11,12 +11,22 @@ const api = axios.create({
   },
 });
 
+// Log API_BASE_URL in development (for debugging)
+if (process.env.NODE_ENV === 'development' || !process.env.REACT_APP_API_URL) {
+  console.log('[API] API_BASE_URL:', API_BASE_URL);
+  console.log('[API] REACT_APP_API_URL env:', process.env.REACT_APP_API_URL || 'not set');
+}
+
 // Request interceptor - Add auth token if available
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Log request URL in development (for debugging)
+    if (process.env.NODE_ENV === 'development' || !process.env.REACT_APP_API_URL) {
+      console.log('[API] Request:', config.method?.toUpperCase(), config.url, 'Full URL:', config.baseURL + config.url);
     }
     return config;
   },
