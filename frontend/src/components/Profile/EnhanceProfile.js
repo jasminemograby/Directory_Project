@@ -69,21 +69,26 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
     checkConnectionStatus();
   }, [checkConnectionStatus]);
 
-  // Check if GitHub is connected (required) - LinkedIn is optional
+  // Check if both LinkedIn and GitHub are connected (both required)
   const hasCalledComplete = useRef(false);
   useEffect(() => {
-    // GitHub is required, LinkedIn is optional
-    if (githubStatus === 'connected' && !hasCalledComplete.current) {
+    // Both LinkedIn and GitHub are required
+    if (linkedInStatus === 'connected' && githubStatus === 'connected' && !hasCalledComplete.current) {
       hasCalledComplete.current = true;
+      // Automatically trigger enrichment after both are connected
+      handleFetchData();
       if (onEnrichmentComplete) {
-        onEnrichmentComplete();
+        // Delay callback to allow enrichment to complete
+        setTimeout(() => {
+          onEnrichmentComplete();
+        }, 2000);
       }
     }
-    // Reset if GitHub disconnected
-    if (githubStatus !== 'connected') {
+    // Reset if either disconnected
+    if (linkedInStatus !== 'connected' || githubStatus !== 'connected') {
       hasCalledComplete.current = false;
     }
-  }, [githubStatus, onEnrichmentComplete]);
+  }, [linkedInStatus, githubStatus, onEnrichmentComplete, handleFetchData]);
 
 
   const handleLinkedInConnect = async () => {
@@ -290,26 +295,34 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
       )}
 
       <p className="text-gray-600 mb-6">
-        Connect your GitHub account (required) and optionally LinkedIn to enrich your profile with your professional data, 
-        skills, and projects. This information will be used to enhance your profile and skill analysis.
+        <strong className="text-red-600">Required:</strong> Connect both LinkedIn and GitHub accounts to enrich your profile with your professional data, 
+        work experience, projects, and skills. This information will be automatically processed and used to enhance your profile.
       </p>
 
       <div className="space-y-4">
-        {/* LinkedIn Connection (Optional) */}
-        <div className="border rounded-lg p-4">
+        {/* LinkedIn Connection (Required - Step 1) */}
+        <div className={`border-2 rounded-lg p-4 ${
+          linkedInStatus === 'connected' 
+            ? 'border-green-500 bg-green-50' 
+            : linkedInStatus === 'connecting'
+            ? 'border-blue-500 bg-blue-50'
+            : 'border-red-500 bg-red-50'
+        }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-blue-600 rounded flex items-center justify-center">
                 <span className="text-white font-bold">in</span>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800">LinkedIn <span className="text-xs text-gray-500">(Optional)</span></h3>
+                <h3 className="font-semibold text-gray-800">
+                  LinkedIn <span className="text-xs text-red-600 font-bold">(Required - Step 1)</span>
+                </h3>
                 <p className="text-sm text-gray-500">
-                  {linkedInStatus === 'connected' ? 'Connected' : 'Not connected'}
+                  {linkedInStatus === 'connected' ? '✅ Connected' : linkedInStatus === 'connecting' ? '⏳ Connecting...' : '❌ Not connected'}
                 </p>
                 {linkedInStatus === 'disconnected' && (
-                  <p className="text-xs text-orange-600 mt-1">
-                    Note: LinkedIn requires a Company Page. If unavailable, you can continue with GitHub only.
+                  <p className="text-xs text-red-600 mt-1 font-semibold">
+                    ⚠️ You must connect LinkedIn first before connecting GitHub
                   </p>
                 )}
               </div>
@@ -331,16 +344,25 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
                 <Button
                   onClick={handleLinkedInConnect}
                   disabled={loading || linkedInStatus === 'connecting'}
+                  variant="primary"
                 >
-                  {linkedInStatus === 'connecting' ? 'Connecting...' : 'Connect'}
+                  {linkedInStatus === 'connecting' ? 'Connecting...' : 'Connect LinkedIn'}
                 </Button>
               )}
             </div>
           </div>
         </div>
 
-        {/* GitHub Connection (Required) */}
-        <div className="border rounded-lg p-4">
+        {/* GitHub Connection (Required - Step 2) */}
+        <div className={`border-2 rounded-lg p-4 ${
+          githubStatus === 'connected' 
+            ? 'border-green-500 bg-green-50' 
+            : githubStatus === 'connecting'
+            ? 'border-blue-500 bg-blue-50'
+            : linkedInStatus === 'connected'
+            ? 'border-yellow-500 bg-yellow-50'
+            : 'border-gray-300 bg-gray-100'
+        }`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gray-800 rounded flex items-center justify-center">
@@ -349,10 +371,17 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800">GitHub <span className="text-xs text-red-600">(Required)</span></h3>
+                <h3 className="font-semibold text-gray-800">
+                  GitHub <span className="text-xs text-red-600 font-bold">(Required - Step 2)</span>
+                </h3>
                 <p className="text-sm text-gray-500">
-                  {githubStatus === 'connected' ? 'Connected' : 'Not connected'}
+                  {githubStatus === 'connected' ? '✅ Connected' : githubStatus === 'connecting' ? '⏳ Connecting...' : linkedInStatus === 'connected' ? '⏸️ Waiting for connection' : '🔒 Locked - Connect LinkedIn first'}
                 </p>
+                {linkedInStatus !== 'connected' && (
+                  <p className="text-xs text-red-600 mt-1 font-semibold">
+                    ⚠️ You must connect LinkedIn first
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -371,9 +400,10 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
               ) : (
                 <Button
                   onClick={handleGitHubConnect}
-                  disabled={loading || githubStatus === 'connecting'}
+                  disabled={loading || githubStatus === 'connecting' || linkedInStatus !== 'connected'}
+                  variant="primary"
                 >
-                  {githubStatus === 'connecting' ? 'Connecting...' : 'Connect'}
+                  {githubStatus === 'connecting' ? 'Connecting...' : linkedInStatus !== 'connected' ? 'Connect LinkedIn First' : 'Connect GitHub'}
                 </Button>
               )}
             </div>

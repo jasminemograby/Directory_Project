@@ -107,8 +107,8 @@ const EmployeeProfile = () => {
       
       if (statusResult.data && statusResult.data.data) {
         const status = statusResult.data.data;
-        // GitHub is required, LinkedIn is optional
-        setIsEnriched(status.github === true);
+        // Both LinkedIn and GitHub are required
+        setIsEnriched(status.linkedin === true && status.github === true);
       } else {
         setIsEnriched(false);
       }
