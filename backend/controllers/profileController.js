@@ -87,7 +87,7 @@ const getEmployeeProfile = async (req, res) => {
     if (!relevanceScoreData) {
       relevanceScoreData = await mockSkillsEngineService.getRelevanceScore(
         employeeId,
-        employee."current_role",
+        employee.current_role,
         employee.target_role
       );
     }
