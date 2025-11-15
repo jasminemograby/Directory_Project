@@ -54,10 +54,10 @@ const getPendingProfiles = async (req, res) => {
       }
     }
 
-    // Get all pending profiles in the company that have been enriched (have processed data)
-    // Only show profiles that have been enriched (have bio in external_data_processed)
+    // Get all pending profiles in the company
+    // Show profiles that are pending - either have processed data OR have raw data waiting to be processed
     const pendingResult = await query(
-      `SELECT 
+      `SELECT DISTINCT
         e.id,
         e.name,
         e.email,
@@ -68,14 +68,23 @@ const getPendingProfiles = async (req, res) => {
         e.profile_status,
         e.created_at,
         d.name as department_name,
-        t.name as team_name
+        t.name as team_name,
+        CASE 
+          WHEN edp.bio IS NOT NULL THEN true 
+          ELSE false 
+        END as has_processed_data,
+        CASE 
+          WHEN edr.id IS NOT NULL THEN true 
+          ELSE false 
+        END as has_raw_data
        FROM employees e
        LEFT JOIN departments d ON e.department_id = d.id
        LEFT JOIN teams t ON e.team_id = t.id
-       INNER JOIN external_data_processed edp ON e.id = edp.employee_id
+       LEFT JOIN external_data_processed edp ON e.id = edp.employee_id
+       LEFT JOIN external_data_raw edr ON e.id = edr.employee_id AND edr.processed = false
        WHERE e.company_id = $1 
        AND e.profile_status = 'pending'
-       AND edp.bio IS NOT NULL
+       AND (edp.bio IS NOT NULL OR edr.id IS NOT NULL)
        ORDER BY e.created_at DESC`,
       [companyId]
     );
