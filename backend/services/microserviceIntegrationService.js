@@ -84,7 +84,16 @@ const recordFailure = (serviceName) => {
 // Cache for mock data (loaded once)
 let mockDataCache = null;
 // Use absolute path from project root, or relative from backend/services
-const MOCK_DATA_PATH = process.env.MOCKDATA_PATH || path.resolve(__dirname, '../../mockData/index.json');
+// Try multiple possible paths for production (Railway uses /app as root)
+const possiblePaths = [
+  process.env.MOCKDATA_PATH,
+  path.resolve(__dirname, '../../mockData/index.json'),
+  path.resolve(__dirname, '../../../mockData/index.json'),
+  '/app/mockData/index.json',
+  path.join(process.cwd(), 'mockData', 'index.json')
+].filter(Boolean); // Remove undefined values
+
+const MOCK_DATA_PATH = possiblePaths[0]; // Use first available path
 
 /**
  * Load mock data from file (cached)
@@ -94,16 +103,23 @@ const loadMockData = async () => {
     return mockDataCache;
   }
 
-  try {
-    const data = await fs.readFile(MOCK_DATA_PATH, 'utf8');
-    mockDataCache = JSON.parse(data);
-    console.log('[MockData] Loaded mock data from:', MOCK_DATA_PATH);
-    return mockDataCache;
-  } catch (error) {
-    console.error('[MockData] Failed to load mock data:', error.message);
-    // Return empty structure if file doesn't exist
-    return {};
+  // Try all possible paths
+  for (const tryPath of possiblePaths) {
+    try {
+      const data = await fs.readFile(tryPath, 'utf8');
+      mockDataCache = JSON.parse(data);
+      console.log('[MockData] Loaded mock data from:', tryPath);
+      return mockDataCache;
+    } catch (error) {
+      // Try next path
+      continue;
+    }
   }
+  
+  // If all paths failed, return empty structure
+  console.warn('[MockData] Failed to load mock data from all paths:', possiblePaths);
+  console.warn('[MockData] Using empty mock data structure');
+  return {};
 };
 
 /**

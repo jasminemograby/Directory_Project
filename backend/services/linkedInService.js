@@ -48,7 +48,13 @@ const getAuthorizationUrl = (employeeId, state = null) => {
     scope: scopes
   });
 
-  return `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`;
+  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`;
+  
+  // Log scopes for debugging (don't log full URL for security)
+  console.log(`[LinkedIn] Generating authorization URL with scopes: ${scopes}`);
+  console.log(`[LinkedIn] Scopes count: ${scopes.split(' ').length}`);
+  
+  return authUrl;
 };
 
 /**
