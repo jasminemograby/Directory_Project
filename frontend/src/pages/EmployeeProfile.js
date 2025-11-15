@@ -140,6 +140,7 @@ const EmployeeProfile = () => {
 
   const checkingEnrichment = useRef(false);
   const hasLoadedData = useRef(false);
+  const profileCache = useRef(new Map()); // Cache profiles by employeeId
   
   const checkEnrichmentStatus = useCallback(async () => {
     if (!currentEmployeeId || checkingEnrichment.current) return;
