@@ -5,7 +5,7 @@ import Layout from '../components/common/Layout';
 import Button from '../components/common/Button';
 import { apiService } from '../services/api';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { ROUTES } from '../utils/constants';
+import { ROUTES, getProfilePath } from '../utils/constants';
 
 const SuperAdminProfile = () => {
   const navigate = useNavigate();
@@ -262,7 +262,7 @@ const SuperAdminProfile = () => {
                           borderBottom: '1px solid var(--bg-secondary)',
                           backgroundColor: 'transparent'
                         }}
-                        onClick={() => navigate(`${ROUTES.PROFILE}/${employee.id}`)}
+                        onClick={() => navigate(getProfilePath(employee.id))}
                       >
                         <td className="py-3 px-4" style={{ color: 'var(--text-primary)' }}>{employee.name}</td>
                         <td className="py-3 px-4" style={{ color: 'var(--text-secondary)' }}>{employee.email}</td>
@@ -296,7 +296,7 @@ const SuperAdminProfile = () => {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`${ROUTES.PROFILE}/${employee.id}`);
+                              navigate(getProfilePath(employee.id));
                             }}
                           >
                             View Profile

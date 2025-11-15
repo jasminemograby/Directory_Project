@@ -1,11 +1,33 @@
 // Hierarchy Tree Component - Foldable tree view of organization structure
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../utils/constants';
+import { getProfilePath } from '../../utils/constants';
 
 const HierarchyTree = ({ hierarchy, onEmployeeClick, showTitle = false }) => {
   const [expanded, setExpanded] = useState({});
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!hierarchy) return;
+    setExpanded((prev) => {
+      if (Object.keys(prev).length > 0) {
+        return prev;
+      }
+      const initial = {};
+      const markExpanded = (node, path = '') => {
+        if (!node || !node.id) return;
+        const currentPath = path ? `${path}.${node.id}` : node.id;
+        initial[currentPath] = true;
+      };
+
+      if (Array.isArray(hierarchy)) {
+        hierarchy.forEach((node) => markExpanded(node));
+      } else {
+        markExpanded(hierarchy);
+      }
+      return initial;
+    });
+  }, [hierarchy]);
 
   const toggleExpand = (path) => {
     setExpanded(prev => ({
@@ -19,7 +41,7 @@ const HierarchyTree = ({ hierarchy, onEmployeeClick, showTitle = false }) => {
       onEmployeeClick(employeeId, employeeName);
     } else {
       // Default: navigate to employee profile
-      navigate(`${ROUTES.PROFILE}/${employeeId}`);
+      navigate(getProfilePath(employeeId));
     }
   };
 

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { apiService } from '../services/api';
-import { ROUTES } from '../utils/constants';
+import { ROUTES, getProfilePath } from '../utils/constants';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
 import PendingProfilesApproval from '../components/HR/PendingProfilesApproval';
@@ -306,7 +306,7 @@ const HRDashboard = () => {
           <HierarchyTree
             hierarchy={hierarchy}
             onEmployeeClick={(employeeId) => {
-              navigate(`${ROUTES.PROFILE}/${employeeId}`);
+              navigate(getProfilePath(employeeId));
             }}
           />
         ) : (

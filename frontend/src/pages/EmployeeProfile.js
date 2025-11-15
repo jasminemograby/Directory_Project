@@ -12,7 +12,8 @@ import HierarchyTree from '../components/Profile/HierarchyTree';
 import { apiService } from '../services/api';
 import { mockDataService } from '../services/mockData';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { ROUTES } from '../utils/constants';
+import DecisionMakerApprovals from '../components/Profile/DecisionMakerApprovals';
+import { ROUTES, getProfilePath } from '../utils/constants';
 import { useApp } from '../contexts/AppContext';
 
 const EmployeeProfile = () => {
@@ -23,10 +24,14 @@ const EmployeeProfile = () => {
   const [processedData, setProcessedData] = useState(null);
   const [profileData, setProfileData] = useState(null); // Additional profile data (career, skills, courses)
   const [hierarchy, setHierarchy] = useState(null); // Hierarchy for managers
+  const [hierarchyStatus, setHierarchyStatus] = useState('idle');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEnriched, setIsEnriched] = useState(false);
   const [activeTab, setActiveTab] = useState('overview'); // overview, dashboard, learning-path, requests, courses
+  const [company, setCompany] = useState(null);
+  const [isDecisionMaker, setIsDecisionMaker] = useState(false);
+  const profileCache = useRef(new Map()); // Cache profiles by employeeId
 
   // Get employee ID from localStorage if not in URL (for mock login)
   // Use useMemo to prevent unnecessary recalculations
@@ -63,6 +68,8 @@ const EmployeeProfile = () => {
       if (employeeResponse.data && employeeResponse.data.data) {
         const emp = employeeResponse.data.data;
         setEmployee(emp);
+        setHierarchy(null);
+        setHierarchyStatus(emp.is_manager ? 'loading' : 'not-manager');
         
         // If employee is a manager, fetch hierarchy
         if (emp.is_manager) {
@@ -71,17 +78,29 @@ const EmployeeProfile = () => {
               const hierarchyResponse = await apiService.getDepartmentHierarchy(currentEmployeeId);
               if (hierarchyResponse.data && hierarchyResponse.data.data && hierarchyResponse.data.data.hierarchy) {
                 setHierarchy(hierarchyResponse.data.data.hierarchy);
+                setHierarchyStatus('ready');
+              } else {
+                setHierarchy(null);
+                setHierarchyStatus('empty');
               }
             } else if (emp.manager_type === 'team_manager') {
               const hierarchyResponse = await apiService.getTeamHierarchy(currentEmployeeId);
               if (hierarchyResponse.data && hierarchyResponse.data.data && hierarchyResponse.data.data.hierarchy) {
                 setHierarchy(hierarchyResponse.data.data.hierarchy);
+                setHierarchyStatus('ready');
+              } else {
+                setHierarchy(null);
+                setHierarchyStatus('empty');
               }
             }
           } catch (hierarchyError) {
             console.warn('Could not fetch hierarchy for manager:', hierarchyError.message);
             // Don't fail the entire profile load if hierarchy fails
+            setHierarchyStatus('error');
           }
+        } else {
+          setHierarchy(null);
+          setHierarchyStatus('not-manager');
         }
       } else {
         setError('Employee profile not found. Please check your employee ID.');
@@ -144,9 +163,25 @@ const EmployeeProfile = () => {
     }
   }, [employee, processedData, profileData, hierarchy, currentEmployeeId]);
 
+  useEffect(() => {
+    const fetchCompanyDetails = async () => {
+      if (!employee?.company_id) return;
+      try {
+        const response = await apiService.getCompany(employee.company_id);
+        if (response.data && response.data.success) {
+          setCompany(response.data.data);
+          setIsDecisionMaker(response.data.data.decision_maker_id === employee.id);
+        }
+      } catch (err) {
+        console.warn('Error fetching company details:', err.message || err);
+      }
+    };
+
+    fetchCompanyDetails();
+  }, [employee]);
+
   const checkingEnrichment = useRef(false);
   const hasLoadedData = useRef(false);
-  const profileCache = useRef(new Map()); // Cache profiles by employeeId
   
   const checkEnrichmentStatus = useCallback(async () => {
     if (!currentEmployeeId || checkingEnrichment.current) return;
@@ -246,6 +281,20 @@ const EmployeeProfile = () => {
     }, 5000);
   }, [fetchEmployeeData, checkEnrichmentStatus]);
 
+  const tabs = useMemo(() => {
+    const baseTabs = [
+      { id: 'overview', label: 'Overview' },
+      { id: 'dashboard', label: 'Dashboard' },
+      { id: 'learning-path', label: 'Learning Path' },
+      { id: 'requests', label: 'Requests' },
+      { id: 'courses', label: 'Courses' }
+    ];
+    if (isDecisionMaker) {
+      baseTabs.push({ id: 'approvals', label: 'Approvals' });
+    }
+    return baseTabs;
+  }, [isDecisionMaker]);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen pt-16">
@@ -308,15 +357,6 @@ const EmployeeProfile = () => {
         </div>
     );
   }
-
-  // Tab navigation items
-  const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'learning-path', label: 'Learning Path' },
-    { id: 'requests', label: 'Requests' },
-    { id: 'courses', label: 'Courses' },
-  ];
 
   return (
     <>
@@ -389,6 +429,13 @@ const EmployeeProfile = () => {
 
               {/* Main Content Area */}
               <div className="lg:col-span-3">
+                {isDecisionMaker && (
+                  <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                    <p className="text-sm font-medium text-emerald-800">
+                      You are the decision maker for {company?.name || 'this company'}. Review and approve pending learning requests in the Approvals tab.
+                    </p>
+                  </div>
+                )}
                 {/* Navigation Tabs */}
                 <div className={`rounded-t-lg border-b ${
                   theme === 'day-mode' 
@@ -441,11 +488,16 @@ const EmployeeProfile = () => {
                               <HierarchyTree
                                 hierarchy={hierarchy}
                                 onEmployeeClick={(empId) => {
-                                  navigate(`${ROUTES.PROFILE}/${empId}`);
+                                  navigate(getProfilePath(empId));
                                 }}
                               />
                             ) : (
-                              <p style={{ color: 'var(--text-secondary)' }}>Loading hierarchy...</p>
+                              <p style={{ color: 'var(--text-secondary)' }}>
+                                {hierarchyStatus === 'loading' && 'Loading hierarchy...'}
+                                {hierarchyStatus === 'empty' && 'No hierarchy data yet. Assign team members to this manager.'}
+                                {hierarchyStatus === 'error' && 'Unable to load hierarchy. Please try again later.'}
+                                {hierarchyStatus === 'not-manager' && ''}
+                              </p>
                             )}
                           </div>
                         </div>
@@ -477,6 +529,9 @@ const EmployeeProfile = () => {
                       completedCourses={profileData.courses.completed || []}
                       taughtCourses={profileData.courses.taught || []}
                     />
+                  )}
+                  {activeTab === 'approvals' && isDecisionMaker && (
+                    <DecisionMakerApprovals employeeId={employee.id} />
                   )}
                 </div>
               </div>

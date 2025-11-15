@@ -1,6 +1,50 @@
 // Requests Controller - Handles all request types (training, skill verification, self-learning, extra attempts)
 const { query } = require('../config/database');
 
+const fetchPendingRequestsByCompany = async (companyId) => {
+  const [trainingRequests, skillRequests, selfLearningRequests, extraAttemptRequests] = await Promise.all([
+    query(
+      `SELECT tr.*, e.name as employee_name, e.email as employee_email
+         FROM training_requests tr
+         JOIN employees e ON tr.employee_id = e.id
+         WHERE tr.company_id = $1 AND tr.status = 'pending'
+         ORDER BY tr.created_at DESC`,
+      [companyId]
+    ),
+    query(
+      `SELECT svr.*, e.name as employee_name, e.email as employee_email
+         FROM skill_verification_requests svr
+         JOIN employees e ON svr.employee_id = e.id
+         WHERE svr.company_id = $1 AND svr.status = 'pending'
+         ORDER BY svr.created_at DESC`,
+      [companyId]
+    ),
+    query(
+      `SELECT slr.*, e.name as employee_name, e.email as employee_email
+         FROM self_learning_requests slr
+         JOIN employees e ON slr.employee_id = e.id
+         WHERE slr.company_id = $1 AND slr.status = 'pending'
+         ORDER BY slr.created_at DESC`,
+      [companyId]
+    ),
+    query(
+      `SELECT ear.*, e.name as employee_name, e.email as employee_email
+         FROM extra_attempt_requests ear
+         JOIN employees e ON ear.employee_id = e.id
+         WHERE ear.company_id = $1 AND ear.status = 'pending'
+         ORDER BY ear.created_at DESC`,
+      [companyId]
+    )
+  ]);
+
+  return {
+    training: trainingRequests.rows,
+    skillVerification: skillRequests.rows,
+    selfLearning: selfLearningRequests.rows,
+    extraAttempts: extraAttemptRequests.rows
+  };
+};
+
 /**
  * Create training request
  */
@@ -266,53 +310,75 @@ const getPendingRequests = async (req, res) => {
 
     const companyId = hrCheck.rows[0].company_id;
 
-    // Get all pending requests
-    const [trainingRequests, skillRequests, selfLearningRequests, extraAttemptRequests] = await Promise.all([
-      query(
-        `SELECT tr.*, e.name as employee_name, e.email as employee_email
-         FROM training_requests tr
-         JOIN employees e ON tr.employee_id = e.id
-         WHERE tr.company_id = $1 AND tr.status = 'pending'
-         ORDER BY tr.created_at DESC`,
-        [companyId]
-      ),
-      query(
-        `SELECT svr.*, e.name as employee_name, e.email as employee_email
-         FROM skill_verification_requests svr
-         JOIN employees e ON svr.employee_id = e.id
-         WHERE svr.company_id = $1 AND svr.status = 'pending'
-         ORDER BY svr.created_at DESC`,
-        [companyId]
-      ),
-      query(
-        `SELECT slr.*, e.name as employee_name, e.email as employee_email
-         FROM self_learning_requests slr
-         JOIN employees e ON slr.employee_id = e.id
-         WHERE slr.company_id = $1 AND slr.status = 'pending'
-         ORDER BY slr.created_at DESC`,
-        [companyId]
-      ),
-      query(
-        `SELECT ear.*, e.name as employee_name, e.email as employee_email
-         FROM extra_attempt_requests ear
-         JOIN employees e ON ear.employee_id = e.id
-         WHERE ear.company_id = $1 AND ear.status = 'pending'
-         ORDER BY ear.created_at DESC`,
-        [companyId]
-      )
-    ]);
+    const data = await fetchPendingRequestsByCompany(companyId);
 
     res.json({
       success: true,
-      data: {
-        training: trainingRequests.rows,
-        skillVerification: skillRequests.rows,
-        selfLearning: selfLearningRequests.rows,
-        extraAttempts: extraAttemptRequests.rows
-      }
+      data
     });
   } catch (error) {
     console.error('[RequestsController] Error getting pending requests:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch pending requests'
+    });
+  }
+};
+
+const getPendingRequestsForDecisionMaker = async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+
+    if (!employeeId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Employee ID is required'
+      });
+    }
+
+    const employeeResult = await query(
+      `SELECT id, company_id FROM employees WHERE id = $1`,
+      [employeeId]
+    );
+
+    if (employeeResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Employee not found'
+      });
+    }
+
+    const employee = employeeResult.rows[0];
+
+    const companyResult = await query(
+      `SELECT id, decision_maker_id FROM companies WHERE id = $1`,
+      [employee.company_id]
+    );
+
+    if (companyResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Company not found'
+      });
+    }
+
+    const company = companyResult.rows[0];
+
+    if (!company.decision_maker_id || company.decision_maker_id !== employeeId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Employee is not the decision maker for this company'
+      });
+    }
+
+    const data = await fetchPendingRequestsByCompany(company.id);
+
+    res.json({
+      success: true,
+      data
+    });
+  } catch (error) {
+    console.error('[RequestsController] Error getting decision maker pending requests:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch pending requests'
@@ -558,11 +624,12 @@ module.exports = {
   createSkillVerificationRequest,
   createSelfLearningRequest,
   createExtraAttemptRequest,
+  getEmployeeRequests,
   getPendingRequests,
+  getPendingRequestsForDecisionMaker,
   updateTrainingRequest,
   updateSkillVerificationRequest,
   updateSelfLearningRequest,
-  updateExtraAttemptRequest,
-  getEmployeeRequests
+  updateExtraAttemptRequest
 };
 

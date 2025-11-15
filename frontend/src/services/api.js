@@ -137,6 +137,7 @@ export const apiService = {
   createExtraAttemptRequest: (employeeId, data) => api.post(`/requests/extra-attempt/${employeeId}`, data),
   getEmployeeRequests: (employeeId) => api.get(`/requests/employee/${employeeId}`),
   getPendingRequests: (hrEmail) => api.get('/requests/pending', { params: { hrEmail } }),
+  getDecisionMakerPendingRequests: (employeeId) => api.get(`/requests/pending/decision-maker/${employeeId}`),
   updateTrainingRequest: (requestId, status, notes) => api.put(`/requests/training/${requestId}`, { status, notes }),
   updateSkillVerificationRequest: (requestId, status, notes) => api.put(`/requests/skill-verification/${requestId}`, { status, notes }),
   updateSelfLearningRequest: (requestId, status, notes) => api.put(`/requests/self-learning/${requestId}`, { status, notes }),

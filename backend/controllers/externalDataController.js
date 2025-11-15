@@ -108,8 +108,9 @@ const handleLinkedInCallback = async (req, res, next) => {
 
     // Redirect to frontend success page
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    console.log(`[LinkedIn Callback] Redirecting to: ${frontendUrl}/profile?linkedin=connected&employeeId=${employeeId}`);
-    res.redirect(`${frontendUrl}/profile?linkedin=connected&employeeId=${employeeId}`);
+    const redirectUrl = `${frontendUrl}/profile/${employeeId}?linkedin=connected`;
+    console.log(`[LinkedIn Callback] Redirecting to: ${redirectUrl}`);
+    res.redirect(redirectUrl);
   } catch (error) {
     console.error('[LinkedIn Callback] ❌ Error handling LinkedIn callback:', error.message);
     console.error('[LinkedIn Callback] Error stack:', error.stack);
@@ -243,7 +244,9 @@ const handleGitHubCallback = async (req, res, next) => {
 
     // Redirect to frontend success page
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}/profile?github=connected&employeeId=${employeeId}`);
+    const redirectUrl = `${frontendUrl}/profile/${employeeId}?github=connected`;
+    console.log(`[GitHub Callback] Redirecting to: ${redirectUrl}`);
+    res.redirect(redirectUrl);
   } catch (error) {
     console.error('Error handling GitHub callback:', error.message);
     res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile?error=${encodeURIComponent(error.message)}`);

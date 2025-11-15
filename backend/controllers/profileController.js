@@ -44,6 +44,10 @@ const getEmployeeProfile = async (req, res) => {
     }
 
     const employee = employeeResult.rows[0];
+    const sanitizedRole = employee.role && employee.role.toLowerCase() === 'postgres' ? null : employee.role;
+    const sanitizedCurrentRole = employee.current_role || sanitizedRole || null;
+    employee.role = sanitizedRole;
+    employee.current_role = sanitizedCurrentRole;
 
     // Get value proposition (generate if not exists)
     let valueProposition = employee.value_proposition;
@@ -139,12 +143,12 @@ const getEmployeeProfile = async (req, res) => {
           id: employee.id,
           name: employee.name,
           email: employee.email,
-          role: employee.role,
+          role: sanitizedRole,
           profileStatus: employee.profile_status,
           companyId: employee.company_id
         },
         career: {
-          currentRole: employee.current_role || employee.role,
+          currentRole: sanitizedCurrentRole,
           targetRole: employee.target_role,
           valueProposition: valueProposition,
           relevanceScore: relevanceScore

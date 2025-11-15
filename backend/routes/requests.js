@@ -15,6 +15,7 @@ router.get('/employee/:employeeId', verifySameCompany, requestsController.getEmp
 
 // HR endpoints - Get pending requests
 router.get('/pending', requestsController.getPendingRequests);
+router.get('/pending/decision-maker/:employeeId', requestsController.getPendingRequestsForDecisionMaker);
 
 // HR endpoints - Approve/reject requests
 router.put('/training/:requestId', requestsController.updateTrainingRequest);

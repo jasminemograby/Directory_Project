@@ -58,12 +58,16 @@ const getEmployee = async (req, res, next) => {
     }
 
     const employee = result.rows[0];
+    const sanitizedRole = employee.role && employee.role.toLowerCase() === 'postgres' ? null : employee.role;
+    const sanitizedCurrentRole = employee.current_role || sanitizedRole || null;
     
     // Return employee with department and team names
     res.json({
       success: true,
       data: {
         ...employee,
+        role: sanitizedRole || null,
+        current_role: sanitizedCurrentRole,
         department_name: employee.department_name || null,
         team_name: employee.team_name || null,
         company_name: employee.company_name || null
@@ -81,7 +85,10 @@ const getEmployee = async (req, res, next) => {
  */
 const getEmployees = async (req, res, next) => {
   try {
-    const { companyId, departmentId, teamId } = req.query;
+    const { companyId, departmentId, teamId, company_id, department_id, team_id } = req.query;
+    const companyIdParam = companyId || company_id;
+    const departmentIdParam = departmentId || department_id;
+    const teamIdParam = teamId || team_id;
 
     let sql = `SELECT 
       id,
@@ -101,21 +108,21 @@ const getEmployees = async (req, res, next) => {
     const params = [];
     let paramIndex = 1;
 
-    if (companyId) {
+    if (companyIdParam) {
       sql += ` AND company_id = $${paramIndex}`;
-      params.push(companyId);
+      params.push(companyIdParam);
       paramIndex++;
     }
 
-    if (departmentId) {
+    if (departmentIdParam) {
       sql += ` AND department_id = $${paramIndex}`;
-      params.push(departmentId);
+      params.push(departmentIdParam);
       paramIndex++;
     }
 
-    if (teamId) {
+    if (teamIdParam) {
       sql += ` AND team_id = $${paramIndex}`;
-      params.push(teamId);
+      params.push(teamIdParam);
       paramIndex++;
     }
 

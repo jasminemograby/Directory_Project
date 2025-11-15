@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
 import { apiService } from '../services/api';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { ROUTES } from '../utils/constants';
+import { ROUTES, getProfilePath } from '../utils/constants';
 import { useApp } from '../contexts/AppContext';
 
 const ProfileEdit = () => {
@@ -102,7 +102,7 @@ const ProfileEdit = () => {
         setSuccess('Profile updated successfully!');
         setTimeout(() => {
           if (currentEmployeeId) {
-            navigate(`${ROUTES.PROFILE}/${currentEmployeeId}`);
+            navigate(getProfilePath(currentEmployeeId));
           } else {
             navigate(ROUTES.PROFILE_ME || '/profile/me');
           }
@@ -120,7 +120,7 @@ const ProfileEdit = () => {
 
   const handleCancel = () => {
     if (currentEmployeeId) {
-      navigate(`${ROUTES.PROFILE}/${currentEmployeeId}`);
+    navigate(getProfilePath(currentEmployeeId));
     } else {
       navigate(ROUTES.PROFILE_ME || '/profile/me');
     }
@@ -154,7 +154,7 @@ const ProfileEdit = () => {
                 variant="primary" 
                 onClick={() => {
                   if (currentEmployeeId) {
-                    navigate(`${ROUTES.PROFILE}/${currentEmployeeId}`);
+                    navigate(getProfilePath(currentEmployeeId));
                   } else {
                     navigate(ROUTES.PROFILE_ME || '/profile/me');
                   }

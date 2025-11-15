@@ -24,7 +24,7 @@ const EmployeeEnrollment = ({ companyId }) => {
       setError(null);
       
       // Only fetch APPROVED employees for enrollment
-      const response = await apiService.getEmployees({ company_id: companyId, approved: true });
+      const response = await apiService.getEmployees({ companyId, approved: true });
       if (response.data && response.data.data) {
         const employeesList = Array.isArray(response.data.data) 
           ? response.data.data 

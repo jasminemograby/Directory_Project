@@ -72,6 +72,9 @@ export const ROUTES = {
   ERROR_500: '/500',
 };
 
+export const getProfilePath = (employeeId) =>
+  ROUTES.PROFILE.replace(':employeeId', employeeId);
+
 export const USER_ROLES = {
   ADMIN: 'admin',
   HR: 'hr',

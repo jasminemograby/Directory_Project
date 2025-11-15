@@ -12,7 +12,7 @@ import Button from '../components/common/Button';
 import { apiService } from '../services/api';
 import { mockDataService } from '../services/mockData';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { ROUTES } from '../utils/constants';
+import { ROUTES, getProfilePath } from '../utils/constants';
 
 const TeamLeaderProfile = () => {
   const { employeeId } = useParams();
@@ -197,7 +197,7 @@ const TeamLeaderProfile = () => {
               <HierarchyTree
                 hierarchy={hierarchy}
                 onEmployeeClick={(employeeId, employeeName) => {
-                  navigate(`${ROUTES.PROFILE}/${employeeId}`);
+                  navigate(getProfilePath(employeeId));
                 }}
               />
             )}

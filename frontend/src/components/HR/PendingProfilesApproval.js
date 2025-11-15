@@ -5,7 +5,7 @@ import { apiService } from '../../services/api';
 import { authService } from '../../utils/auth';
 import Button from '../common/Button';
 import LoadingSpinner from '../common/LoadingSpinner';
-import { ROUTES } from '../../utils/constants';
+import { getProfilePath } from '../../utils/constants';
 
 const PendingProfilesApproval = () => {
   const navigate = useNavigate();
@@ -295,7 +295,7 @@ const PendingProfilesApproval = () => {
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={() => navigate(`${ROUTES.PROFILE}/${selectedProfile.employee.id}`)}
+                  onClick={() => navigate(getProfilePath(selectedProfile.employee.id))}
                 >
                   View Full Profile
                 </Button>
