@@ -48,9 +48,11 @@ The requested permission scope is not valid
 2. בחר את ה-Service (Backend)
 3. לך ל-**"Variables"**
 4. ודא שיש:
-   - `LINKEDIN_CLIENT_ID` = ה-Client ID שלך
-   - `LINKEDIN_CLIENT_SECRET` = ה-Client Secret שלך
+   - `LINKEDIN_CLIENT_ID` = ה-Client ID שלך (לדוגמה: `REMOVED_CLIENT_ID`)
+   - `LINKEDIN_CLIENT_SECRET` = ה-Client Secret שלך (העתק מ-LinkedIn Developer Portal)
    - `LINKEDIN_REDIRECT_URI` = `https://directoryproject-production.up.railway.app/api/external/linkedin/callback`
+   
+   **⚠️ חשוב:** אל תשלח את ה-Client Secret בפומבי! רק העתק אותו ל-Railway Variables.
 
 ### שלב 5: בדוק את ה-App Status
 
