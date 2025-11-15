@@ -62,6 +62,64 @@ const getEmployee = async (req, res, next) => {
     const sanitizedRole = employee.role && employee.role.toLowerCase() === 'postgres' ? null : employee.role;
     const sanitizedCurrentRole = employee.current_role || sanitizedRole || null;
     
+    // Authorization check: If employee is not approved, only allow access if:
+    // 1. Requesting their own profile
+    // 2. HR of the same company
+    // 3. Manager of the employee (team or department manager)
+    if (employee.profile_status !== 'approved') {
+      const requestingEmployeeId = req.user?.id || req.query?.requestingEmployeeId;
+      
+      // Allow if requesting own profile
+      if (requestingEmployeeId === employee.id) {
+        // OK - allow access
+      } else {
+        // Check if requester is a manager of this employee
+        let isAuthorized = false;
+        
+        if (requestingEmployeeId) {
+          const managerCheck = await query(
+            `SELECT is_manager, manager_type, manager_of_id, department_id, team_id, company_id
+             FROM employees 
+             WHERE id = $1`,
+            [requestingEmployeeId]
+          );
+          
+          if (managerCheck.rows.length > 0) {
+            const requester = managerCheck.rows[0];
+            
+            // Check if requester is HR (same company)
+            if (requester.company_id === employee.company_id) {
+              // Check if requester is HR (would need additional check, but for now allow same company)
+              // TODO: Add proper HR check
+            }
+            
+            // Check if requester is team manager of this employee
+            if (requester.is_manager && requester.manager_type === 'team_manager') {
+              const managerTeamId = requester.manager_of_id || requester.team_id;
+              if (managerTeamId && employee.team_id === managerTeamId) {
+                isAuthorized = true;
+              }
+            }
+            
+            // Check if requester is department manager of this employee
+            if (requester.is_manager && requester.manager_type === 'dept_manager') {
+              const managerDeptId = requester.manager_of_id || requester.department_id;
+              if (managerDeptId && employee.department_id === managerDeptId) {
+                isAuthorized = true;
+              }
+            }
+          }
+        }
+        
+        if (!isAuthorized) {
+          return res.status(403).json({
+            success: false,
+            error: 'Employee profile is not approved. Only HR, managers, or the employee themselves can view pending profiles.'
+          });
+        }
+      }
+    }
+    
     // Return employee with department and team names
     res.json({
       success: true,

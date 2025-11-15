@@ -115,7 +115,12 @@ export const apiService = {
   getAdminLogs: (params) => api.get('/admin/logs', { params }),
   
   // Employee endpoints
-  getEmployee: (employeeId) => api.get(`/employee/${employeeId}`),
+  getEmployee: (employeeId) => {
+    // Add requestingEmployeeId if available (for authorization checks)
+    const requestingEmployeeId = localStorage.getItem('currentEmployeeId') || localStorage.getItem('employeeId');
+    const params = requestingEmployeeId ? { requestingEmployeeId } : {};
+    return api.get(`/employee/${employeeId}`, { params });
+  },
   updateEmployee: (employeeId, data) => api.put(`/employee/${employeeId}`, data),
   createEmployee: (data) => api.post('/employee', data),
   getEmployees: (params) => api.get('/employee', { params }),

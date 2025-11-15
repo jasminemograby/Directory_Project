@@ -412,7 +412,8 @@ const getTeamHierarchy = async (req, res) => {
       });
     }
 
-    const effectiveTeamId = manager_of_id || team_id;
+    // Determine which team to show - prioritize manager_of_id, fallback to team_id
+    let effectiveTeamId = manager_of_id || team_id;
 
     if (!effectiveTeamId) {
       return res.json({
@@ -424,21 +425,29 @@ const getTeamHierarchy = async (req, res) => {
       });
     }
     
-    // Verify manager_of_id matches team_id (if set)
-    if (manager_of_id && team_id && manager_of_id !== team_id) {
-      return res.status(403).json({
-        success: false,
-        error: 'Employee is not the manager of this team'
-      });
+    // Get team details - try manager_of_id first, then team_id
+    let teamResult = null;
+    if (manager_of_id) {
+      teamResult = await query(
+        `SELECT id, name, department_id, manager_id FROM teams WHERE id = $1`,
+        [manager_of_id]
+      );
+    }
+    
+    // If not found with manager_of_id, try team_id
+    if (!teamResult || teamResult.rows.length === 0) {
+      if (team_id && team_id !== manager_of_id) {
+        teamResult = await query(
+          `SELECT id, name, department_id, manager_id FROM teams WHERE id = $1`,
+          [team_id]
+        );
+        if (teamResult.rows.length > 0) {
+          effectiveTeamId = team_id;
+        }
+      }
     }
 
-    // Get team details
-    const teamResult = await query(
-      `SELECT id, name, department_id, manager_id FROM teams WHERE id = $1`,
-      [effectiveTeamId]
-    );
-
-    if (teamResult.rows.length === 0) {
+    if (!teamResult || teamResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         error: 'Team not found'
@@ -447,12 +456,23 @@ const getTeamHierarchy = async (req, res) => {
 
     const team = teamResult.rows[0];
     
-    // Verify employee is the manager of this team
-    if (team.manager_id && team.manager_id !== employeeId) {
-      return res.status(403).json({
-        success: false,
-        error: 'Employee is not the manager of this team'
-      });
+    // Verify employee is the manager of this team (if manager_id is set in teams table)
+    // If manager_id is not set, allow if employee is marked as manager
+    if (team.manager_id) {
+      if (team.manager_id !== employeeId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Employee is not the manager of this team'
+        });
+      }
+    } else {
+      // If team.manager_id is not set, verify employee is marked as manager
+      if (!is_manager || manager_type !== 'team_manager') {
+        return res.status(403).json({
+          success: false,
+          error: 'Employee is not authorized to view this team hierarchy'
+        });
+      }
     }
 
     // Get all employees in the team
@@ -525,7 +545,8 @@ const getDepartmentHierarchy = async (req, res) => {
       });
     }
 
-    const effectiveDepartmentId = manager_of_id || department_id;
+    // Determine which department to show - prioritize manager_of_id, fallback to department_id
+    let effectiveDepartmentId = manager_of_id || department_id;
 
     if (!effectiveDepartmentId) {
       return res.json({
@@ -537,21 +558,29 @@ const getDepartmentHierarchy = async (req, res) => {
       });
     }
     
-    // Verify manager_of_id matches department_id (if set)
-    if (manager_of_id && department_id && manager_of_id !== department_id) {
-      return res.status(403).json({
-        success: false,
-        error: 'Employee is not the manager of this department'
-      });
+    // Get department details - try manager_of_id first, then department_id
+    let deptResult = null;
+    if (manager_of_id) {
+      deptResult = await query(
+        `SELECT id, name, manager_id FROM departments WHERE id = $1`,
+        [manager_of_id]
+      );
+    }
+    
+    // If not found with manager_of_id, try department_id
+    if (!deptResult || deptResult.rows.length === 0) {
+      if (department_id && department_id !== manager_of_id) {
+        deptResult = await query(
+          `SELECT id, name, manager_id FROM departments WHERE id = $1`,
+          [department_id]
+        );
+        if (deptResult.rows.length > 0) {
+          effectiveDepartmentId = department_id;
+        }
+      }
     }
 
-    // Get department details - verify this employee is the manager
-    const deptResult = await query(
-      `SELECT id, name, manager_id FROM departments WHERE id = $1`,
-      [effectiveDepartmentId]
-    );
-
-    if (deptResult.rows.length === 0) {
+    if (!deptResult || deptResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         error: 'Department not found'
@@ -560,12 +589,23 @@ const getDepartmentHierarchy = async (req, res) => {
 
     const department = deptResult.rows[0];
     
-    // Verify employee is the manager of this department
-    if (department.manager_id && department.manager_id !== employeeId) {
-      return res.status(403).json({
-        success: false,
-        error: 'Employee is not the manager of this department'
-      });
+    // Verify employee is the manager of this department (if manager_id is set in departments table)
+    // If manager_id is not set, allow if employee is marked as manager
+    if (department.manager_id) {
+      if (department.manager_id !== employeeId) {
+        return res.status(403).json({
+          success: false,
+          error: 'Employee is not the manager of this department'
+        });
+      }
+    } else {
+      // If department.manager_id is not set, verify employee is marked as manager
+      if (!is_manager || manager_type !== 'dept_manager') {
+        return res.status(403).json({
+          success: false,
+          error: 'Employee is not authorized to view this department hierarchy'
+        });
+      }
     }
 
     // Get all teams in the department
