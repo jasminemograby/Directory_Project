@@ -10,8 +10,6 @@ const { query } = require('../config/database');
 const initiateLinkedInAuth = async (req, res, next) => {
   try {
     const { employeeId } = req.params;
-    const { mode } = req.query || {};
-    const { mode } = req.query;
     
     if (!employeeId) {
       return res.status(400).json({
@@ -176,6 +174,8 @@ const initiateGitHubAuth = async (req, res, next) => {
         error: 'Employee not found'
       });
     }
+
+    const { mode } = req.query || {};
 
     // Build base URL dynamically for redirect URI fallback (works across environments)
     const requestBaseUrl = `${req.protocol}://${req.get('host')}`;
