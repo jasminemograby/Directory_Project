@@ -478,7 +478,6 @@ const EmployeeProfile = () => {
           </div>
         )}
       </div>
-    </div>
     </>
   );
 };
