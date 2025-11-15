@@ -235,14 +235,9 @@ const enrichProfile = async (employeeId) => {
           }
         }
         
-        // Step 9: Auto-approve profile after successful enrichment
-        await client.query(
-          `UPDATE employees 
-           SET profile_status = 'approved', updated_at = CURRENT_TIMESTAMP 
-           WHERE id = $1 AND profile_status = 'pending'`,
-          [employeeId]
-        );
-        console.log(`[Enrichment] ✅ Profile auto-approved after enrichment`);
+        // Step 9: Keep profile as 'pending' after enrichment - HR needs to approve
+        // Profile status remains 'pending' until HR manually approves
+        console.log(`[Enrichment] ✅ Profile enriched - status remains 'pending' for HR approval`);
       }
 
       return { bio, projects };

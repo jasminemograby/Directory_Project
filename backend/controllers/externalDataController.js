@@ -362,7 +362,7 @@ const collectAllData = async (req, res, next) => {
       data: results,
       enrichment: enrichmentResult,
       message: enrichmentResult && !enrichmentResult.error 
-        ? 'Profile enriched and approved automatically. You can now view your complete profile.'
+        ? 'Profile enriched successfully. Waiting for HR approval.'
         : null
     });
   } catch (error) {

@@ -176,6 +176,8 @@ export const apiService = {
   getTaughtCourses: (trainerId) => api.get(`/profile/trainer/${trainerId}/courses/taught`),
   getAssignedCourses: (employeeId) => api.get(`/profile/employee/${employeeId}/courses/assigned`),
   getLearningCourses: (employeeId) => api.get(`/profile/employee/${employeeId}/courses/learning`),
+  getDepartmentHierarchy: (employeeId) => api.get(`/profile/department-manager/${employeeId}/hierarchy`),
+  getTeamHierarchy: (employeeId) => api.get(`/profile/team-leader/${employeeId}/hierarchy`),
   
   // Notifications endpoints
   getNotifications: (userEmail, params = {}) => 

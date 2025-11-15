@@ -383,9 +383,11 @@ const getTeamHierarchy = async (req, res) => {
   try {
     const { employeeId } = req.params;
 
-    // Get employee's team
+    // Get employee's team and verify they are a team manager
     const employeeResult = await query(
-      `SELECT team_id, company_id FROM employees WHERE id = $1`,
+      `SELECT team_id, company_id, is_manager, manager_type, manager_of_id 
+       FROM employees 
+       WHERE id = $1`,
       [employeeId]
     );
 
@@ -396,7 +398,15 @@ const getTeamHierarchy = async (req, res) => {
       });
     }
 
-    const { team_id, company_id } = employeeResult.rows[0];
+    const { team_id, company_id, is_manager, manager_type, manager_of_id } = employeeResult.rows[0];
+
+    // Verify employee is a team manager
+    if (!is_manager || manager_type !== 'team_manager') {
+      return res.status(403).json({
+        success: false,
+        error: 'Employee is not a team manager'
+      });
+    }
 
     if (!team_id) {
       return res.json({
@@ -405,6 +415,14 @@ const getTeamHierarchy = async (req, res) => {
           hierarchy: null,
           message: 'Employee is not assigned to a team'
         }
+      });
+    }
+    
+    // Verify manager_of_id matches team_id (if set)
+    if (manager_of_id && manager_of_id !== team_id) {
+      return res.status(403).json({
+        success: false,
+        error: 'Employee is not the manager of this team'
       });
     }
 
@@ -422,6 +440,14 @@ const getTeamHierarchy = async (req, res) => {
     }
 
     const team = teamResult.rows[0];
+    
+    // Verify employee is the manager of this team
+    if (team.manager_id !== employeeId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Employee is not the manager of this team'
+      });
+    }
 
     // Get all employees in the team
     const employeesResult = await query(
@@ -468,9 +494,11 @@ const getDepartmentHierarchy = async (req, res) => {
   try {
     const { employeeId } = req.params;
 
-    // Get employee's department
+    // Get employee's department and verify they are a department manager
     const employeeResult = await query(
-      `SELECT department_id, company_id FROM employees WHERE id = $1`,
+      `SELECT department_id, company_id, is_manager, manager_type, manager_of_id 
+       FROM employees 
+       WHERE id = $1`,
       [employeeId]
     );
 
@@ -481,7 +509,15 @@ const getDepartmentHierarchy = async (req, res) => {
       });
     }
 
-    const { department_id, company_id } = employeeResult.rows[0];
+    const { department_id, company_id, is_manager, manager_type, manager_of_id } = employeeResult.rows[0];
+
+    // Verify employee is a department manager
+    if (!is_manager || manager_type !== 'dept_manager') {
+      return res.status(403).json({
+        success: false,
+        error: 'Employee is not a department manager'
+      });
+    }
 
     if (!department_id) {
       return res.json({
@@ -492,10 +528,18 @@ const getDepartmentHierarchy = async (req, res) => {
         }
       });
     }
+    
+    // Verify manager_of_id matches department_id (if set)
+    if (manager_of_id && manager_of_id !== department_id) {
+      return res.status(403).json({
+        success: false,
+        error: 'Employee is not the manager of this department'
+      });
+    }
 
-    // Get department details
+    // Get department details - verify this employee is the manager
     const deptResult = await query(
-      `SELECT id, name FROM departments WHERE id = $1`,
+      `SELECT id, name, manager_id FROM departments WHERE id = $1`,
       [department_id]
     );
 
@@ -507,6 +551,14 @@ const getDepartmentHierarchy = async (req, res) => {
     }
 
     const department = deptResult.rows[0];
+    
+    // Verify employee is the manager of this department
+    if (department.manager_id !== employeeId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Employee is not the manager of this department'
+      });
+    }
 
     // Get all teams in the department
     const teamsResult = await query(

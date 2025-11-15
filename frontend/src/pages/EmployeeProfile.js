@@ -9,6 +9,7 @@ import ProfileDashboardView from '../components/Profile/ProfileDashboardView';
 import ProfileLearningPathView from '../components/Profile/ProfileLearningPathView';
 import ProfileCoursesTab from '../components/Profile/ProfileCoursesTab';
 import RequestsSection from '../components/Profile/RequestsSection';
+import HierarchyTree from '../components/Profile/HierarchyTree';
 import { apiService } from '../services/api';
 import { mockDataService } from '../services/mockData';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -22,6 +23,7 @@ const EmployeeProfile = () => {
   const [employee, setEmployee] = useState(null);
   const [processedData, setProcessedData] = useState(null);
   const [profileData, setProfileData] = useState(null); // Additional profile data (career, skills, courses)
+  const [hierarchy, setHierarchy] = useState(null); // Hierarchy for managers
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEnriched, setIsEnriched] = useState(false);
@@ -47,7 +49,28 @@ const EmployeeProfile = () => {
       // Fetch basic employee data
       const employeeResponse = await apiService.getEmployee(currentEmployeeId);
       if (employeeResponse.data && employeeResponse.data.data) {
-        setEmployee(employeeResponse.data.data);
+        const emp = employeeResponse.data.data;
+        setEmployee(emp);
+        
+        // If employee is a manager, fetch hierarchy
+        if (emp.is_manager) {
+          try {
+            if (emp.manager_type === 'dept_manager') {
+              const hierarchyResponse = await apiService.getDepartmentHierarchy(currentEmployeeId);
+              if (hierarchyResponse.data && hierarchyResponse.data.data && hierarchyResponse.data.data.hierarchy) {
+                setHierarchy(hierarchyResponse.data.data.hierarchy);
+              }
+            } else if (emp.manager_type === 'team_manager') {
+              const hierarchyResponse = await apiService.getTeamHierarchy(currentEmployeeId);
+              if (hierarchyResponse.data && hierarchyResponse.data.data && hierarchyResponse.data.data.hierarchy) {
+                setHierarchy(hierarchyResponse.data.data.hierarchy);
+              }
+            }
+          } catch (hierarchyError) {
+            console.warn('Could not fetch hierarchy for manager:', hierarchyError.message);
+            // Don't fail the entire profile load if hierarchy fails
+          }
+        }
       } else {
         setError('Employee profile not found. Please check your employee ID.');
       }
@@ -133,7 +156,15 @@ const EmployeeProfile = () => {
     let isMounted = true;
     
     // Reset hasLoaded when employeeId changes
-    hasLoadedData.current = false;
+    if (hasLoadedData.current && employeeId !== currentEmployeeId) {
+      hasLoadedData.current = false;
+    }
+    
+    // Prevent multiple loads for the same employeeId
+    if (hasLoadedData.current) {
+      console.log('[EmployeeProfile] Data already loaded for employee:', currentEmployeeId);
+      return;
+    }
     
     const loadData = async () => {
       if (isMounted && !hasLoadedData.current) {
@@ -154,7 +185,7 @@ const EmployeeProfile = () => {
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentEmployeeId]); // Only depend on currentEmployeeId to prevent infinite loop
+  }, [currentEmployeeId, employeeId]); // Only depend on currentEmployeeId and employeeId to prevent infinite loop
 
 
   // Use ref to prevent multiple calls
@@ -370,11 +401,35 @@ const EmployeeProfile = () => {
                     : 'bg-slate-800 border border-gray-700 border-t-0'
                 }`}>
                   {activeTab === 'overview' && (
-                    <ProfileOverviewTab
-                      employee={employee}
-                      processedData={processedData}
-                      profileData={profileData}
-                    />
+                    <>
+                      {/* Hierarchy Section for Managers */}
+                      {employee?.is_manager && hierarchy && (
+                        <div className="mb-6">
+                          <div className="rounded-lg p-6" style={{ 
+                            backgroundColor: 'var(--bg-card)', 
+                            boxShadow: 'var(--shadow-card)', 
+                            borderColor: 'var(--bg-secondary)', 
+                            borderWidth: '1px', 
+                            borderStyle: 'solid' 
+                          }}>
+                            <h3 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+                              {employee.manager_type === 'dept_manager' ? 'Department Hierarchy' : 'Team Hierarchy'}
+                            </h3>
+                            <HierarchyTree
+                              hierarchy={hierarchy}
+                              onEmployeeClick={(empId) => {
+                                navigate(`${ROUTES.PROFILE}/${empId}`);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      <ProfileOverviewTab
+                        employee={employee}
+                        processedData={processedData}
+                        profileData={profileData}
+                      />
+                    </>
                   )}
 
                   {activeTab === 'dashboard' && (
