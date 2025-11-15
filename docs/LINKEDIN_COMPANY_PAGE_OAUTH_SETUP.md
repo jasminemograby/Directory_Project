@@ -42,12 +42,14 @@ Directory Project - Employee Profiles
 - הכנס את האימייל שלך
 
 **Privacy Policy URL:**
-- הכנס קישור למדיניות פרטיות (אם יש)
-- או: `https://your-domain.com/privacy`
+- **אופציונלי** - LinkedIn לא דורש את זה
+- אם יש לך, הכנס קישור למדיניות פרטיות
+- אם אין, אפשר להשאיר ריק או לדלג
 
 **Terms of Service URL:**
-- הכנס קישור לתנאי שירות (אם יש)
-- או: `https://your-domain.com/terms`
+- **אופציונלי** - LinkedIn לא דורש את זה
+- אם יש לך, הכנס קישור לתנאי שירות
+- אם אין, אפשר להשאיר ריק או לדלג
 
 **App Type:**
 - בחר: **"Web application"**
