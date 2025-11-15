@@ -196,16 +196,14 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
       setLoading(true);
       setError(null);
       setLinkedInStatus('connecting');
-
-      // Get authorization URL
-      const response = await apiService.initiateLinkedInAuth(employeeId);
       
-      if (response.data && response.data.data && response.data.data.authorization_url) {
-        // Redirect to LinkedIn OAuth
-        window.location.href = response.data.data.authorization_url;
-      } else {
-        throw new Error('Failed to get LinkedIn authorization URL');
+      if (!API_BASE_URL) {
+        throw new Error('API base URL not configured');
       }
+      
+      // Direct redirect to LinkedIn OAuth (same pattern as GitHub)
+      const authorizeEndpoint = `${API_BASE_URL}/external/linkedin/authorize/${employeeId}?mode=redirect`;
+      window.location.href = authorizeEndpoint;
     } catch (error) {
       console.error('Error initiating LinkedIn auth:', error);
       setError('Failed to connect LinkedIn. Please try again.');
@@ -360,6 +358,14 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
                 <>
                   <span className="text-green-600 font-medium mr-2">Connected ✓</span>
                   <Button
+                    onClick={handleLinkedInConnect}
+                    disabled={loading || linkedInStatus === 'connecting'}
+                    variant="primary"
+                    className="mr-2"
+                  >
+                    {linkedInStatus === 'connecting' ? 'Reconnecting...' : 'Reconnect LinkedIn'}
+                  </Button>
+                  <Button
                     onClick={() => handleDisconnect('linkedin')}
                     disabled={loading}
                     variant="secondary"
@@ -416,6 +422,14 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
               {githubStatus === 'connected' ? (
                 <>
                   <span className="text-green-600 font-medium mr-2">Connected ✓</span>
+                  <Button
+                    onClick={handleGitHubConnect}
+                    disabled={loading || githubStatus === 'connecting'}
+                    variant="primary"
+                    className="mr-2"
+                  >
+                    {githubStatus === 'connecting' ? 'Reconnecting...' : 'Reconnect GitHub'}
+                  </Button>
                   <Button
                     onClick={() => handleDisconnect('github')}
                     disabled={loading}

@@ -10,6 +10,9 @@ const { query } = require('../config/database');
 const initiateLinkedInAuth = async (req, res, next) => {
   try {
     const { employeeId } = req.params;
+    const { mode } = req.query || {};
+    
+    console.log(`[LinkedIn Auth] Initiating OAuth for employee: ${employeeId}, mode: ${mode}`);
     
     if (!employeeId) {
       return res.status(400).json({
@@ -33,6 +36,16 @@ const initiateLinkedInAuth = async (req, res, next) => {
 
     // Generate authorization URL
     const authUrl = linkedInService.getAuthorizationUrl(employeeId);
+    console.log(`[LinkedIn Auth] Generated auth URL: ${authUrl.substring(0, 100)}...`);
+    
+    // If mode=redirect (or Accept header prefers HTML), redirect immediately to LinkedIn
+    const prefersRedirect = mode === 'redirect' || req.accepts(['html', 'json']) === 'html';
+    console.log(`[LinkedIn Auth] Prefers redirect: ${prefersRedirect} (mode=${mode}, accepts=${req.accepts(['html', 'json'])})`);
+    
+    if (prefersRedirect) {
+      console.log(`[LinkedIn Auth] Redirecting to LinkedIn OAuth: ${authUrl}`);
+      return res.redirect(authUrl);
+    }
     
     res.json({
       success: true,
@@ -42,7 +55,8 @@ const initiateLinkedInAuth = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Error initiating LinkedIn auth:', error.message);
+    console.error('[LinkedIn Auth] Error initiating LinkedIn auth:', error.message);
+    console.error('[LinkedIn Auth] Error stack:', error.stack);
     next(error);
   }
 };
@@ -154,6 +168,9 @@ const fetchLinkedInData = async (req, res, next) => {
 const initiateGitHubAuth = async (req, res, next) => {
   try {
     const { employeeId } = req.params;
+    const { mode } = req.query || {};
+    
+    console.log(`[GitHub Auth] Initiating OAuth for employee: ${employeeId}, mode: ${mode}`);
     
     if (!employeeId) {
       return res.status(400).json({
@@ -175,19 +192,22 @@ const initiateGitHubAuth = async (req, res, next) => {
       });
     }
 
-    const { mode } = req.query || {};
-
     // Build base URL dynamically for redirect URI fallback (works across environments)
     const requestBaseUrl = `${req.protocol}://${req.get('host')}`;
+    console.log(`[GitHub Auth] Request base URL: ${requestBaseUrl}`);
 
     // Generate authorization URL
     const authUrl = githubService.getAuthorizationUrl(employeeId, {
       baseUrl: requestBaseUrl
     });
+    console.log(`[GitHub Auth] Generated auth URL: ${authUrl.substring(0, 100)}...`);
 
     // If mode=redirect (or Accept header prefers HTML), redirect immediately to GitHub
     const prefersRedirect = mode === 'redirect' || req.accepts(['html', 'json']) === 'html';
+    console.log(`[GitHub Auth] Prefers redirect: ${prefersRedirect} (mode=${mode}, accepts=${req.accepts(['html', 'json'])})`);
+    
     if (prefersRedirect) {
+      console.log(`[GitHub Auth] Redirecting to GitHub OAuth: ${authUrl}`);
       return res.redirect(authUrl);
     }
     
@@ -199,7 +219,8 @@ const initiateGitHubAuth = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Error initiating GitHub auth:', error.message);
+    console.error('[GitHub Auth] Error initiating GitHub auth:', error.message);
+    console.error('[GitHub Auth] Error stack:', error.stack);
     if (error.message && error.message.includes('GitHub Client ID not configured')) {
       return res.status(503).json({
         success: false,
