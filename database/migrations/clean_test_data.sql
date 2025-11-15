@@ -120,44 +120,60 @@ BEGIN
         RAISE NOTICE 'Cleaned external_data_links';
     END IF;
 
-    -- 16. Delete employees (depends on departments, teams, companies)
-    -- This will cascade to any remaining dependencies
-    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'employees') THEN
-        DELETE FROM employees;
-        RAISE NOTICE 'Cleaned employees';
+    -- 16. Update foreign key references to NULL before deleting employees
+    -- This prevents foreign key constraint violations
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'teams') THEN
+        UPDATE teams SET manager_id = NULL WHERE manager_id IS NOT NULL;
+        RAISE NOTICE 'Updated teams.manager_id to NULL';
     END IF;
 
-    -- 17. Delete teams (depends on departments)
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'departments') THEN
+        UPDATE departments SET manager_id = NULL WHERE manager_id IS NOT NULL;
+        RAISE NOTICE 'Updated departments.manager_id to NULL';
+    END IF;
+
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'companies') THEN
+        UPDATE companies SET decision_maker_id = NULL WHERE decision_maker_id IS NOT NULL;
+        RAISE NOTICE 'Updated companies.decision_maker_id to NULL';
+    END IF;
+
+    -- 17. Delete teams (depends on departments, but manager_id is now NULL)
     IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'teams') THEN
         DELETE FROM teams;
         RAISE NOTICE 'Cleaned teams';
     END IF;
 
-    -- 18. Delete departments (depends on companies)
+    -- 18. Delete departments (depends on companies, but manager_id is now NULL)
     IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'departments') THEN
         DELETE FROM departments;
         RAISE NOTICE 'Cleaned departments';
     END IF;
 
-    -- 19. Delete company settings (depends on companies)
+    -- 19. Delete employees (now safe to delete since all foreign key references are NULL)
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'employees') THEN
+        DELETE FROM employees;
+        RAISE NOTICE 'Cleaned employees';
+    END IF;
+
+    -- 20. Delete company settings (depends on companies)
     IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'company_settings') THEN
         DELETE FROM company_settings;
         RAISE NOTICE 'Cleaned company_settings';
     END IF;
 
-    -- 20. Delete courses if table exists (depends on companies)
+    -- 21. Delete courses if table exists (depends on companies)
     IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'courses') THEN
         DELETE FROM courses;
         RAISE NOTICE 'Cleaned courses';
     END IF;
 
-    -- 21. Delete companies (no dependencies from other tables)
+    -- 22. Delete companies (no dependencies from other tables)
     IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'companies') THEN
         DELETE FROM companies;
         RAISE NOTICE 'Cleaned companies';
     END IF;
 
-    -- 22. Reset sequences (optional, but good practice)
+    -- 23. Reset sequences (optional, but good practice)
     -- This ensures new IDs start from 1
     FOR seq_record IN 
         SELECT sequence_name 
