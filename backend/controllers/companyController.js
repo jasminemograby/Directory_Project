@@ -75,6 +75,21 @@ const getCompanyById = async (companyId) => {
     hrSettingsResult.rows.forEach(row => {
       hrSettings[row.setting_key] = row.setting_value;
     });
+    
+    // Get HR employee ID from employees table
+    let hrEmployeeId = null;
+    if (hrSettings.hr_email) {
+      const hrEmployeeResult = await query(
+        `SELECT id FROM employees 
+         WHERE company_id = $1 
+         AND LOWER(TRIM(email)) = LOWER(TRIM($2))
+         LIMIT 1`,
+        [companyId, hrSettings.hr_email]
+      );
+      if (hrEmployeeResult.rows.length > 0) {
+        hrEmployeeId = hrEmployeeResult.rows[0].id;
+      }
+    }
 
     // Get statistics
     const [departmentsCount, teamsCount, employeesCount] = await Promise.all([
@@ -105,6 +120,7 @@ const getCompanyById = async (companyId) => {
     return {
       ...company,
       hr: {
+        id: hrEmployeeId || null,
         name: hrSettings.hr_name || null,
         email: hrSettings.hr_email || null,
         role: hrSettings.hr_role || null,

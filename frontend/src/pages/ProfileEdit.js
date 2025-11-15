@@ -1,15 +1,17 @@
 // Profile Edit Page - Employee can edit allowed fields
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Layout from '../components/common/Layout';
+import Header from '../components/common/Header';
 import Button from '../components/common/Button';
 import { apiService } from '../services/api';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { ROUTES } from '../utils/constants';
+import { useApp } from '../contexts/AppContext';
 
 const ProfileEdit = () => {
   const { employeeId } = useParams();
   const navigate = useNavigate();
+  const { theme } = useApp();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -24,7 +26,8 @@ const ProfileEdit = () => {
   });
 
   // Get current employee ID (from URL or localStorage)
-  const currentEmployeeId = employeeId || localStorage.getItem('currentEmployeeId');
+  // Prioritize URL parameter, then localStorage
+  const currentEmployeeId = employeeId || localStorage.getItem('currentEmployeeId') || localStorage.getItem('hrEmployeeId');
 
   const fetchEmployeeData = async () => {
     try {
@@ -99,7 +102,11 @@ const ProfileEdit = () => {
       if (response.data && response.data.success) {
         setSuccess('Profile updated successfully!');
         setTimeout(() => {
-          navigate(ROUTES.PROFILE_ME || `/profile/${currentEmployeeId}`);
+          if (currentEmployeeId) {
+            navigate(`${ROUTES.PROFILE}/${currentEmployeeId}`);
+          } else {
+            navigate(ROUTES.PROFILE_ME || '/profile/me');
+          }
         }, 1500);
       } else {
         setError(response.data?.error || 'Failed to update profile');
@@ -113,37 +120,69 @@ const ProfileEdit = () => {
   };
 
   const handleCancel = () => {
-    navigate(ROUTES.PROFILE_ME || `/profile/${currentEmployeeId}`);
+    if (currentEmployeeId) {
+      navigate(`${ROUTES.PROFILE}/${currentEmployeeId}`);
+    } else {
+      navigate(ROUTES.PROFILE_ME || '/profile/me');
+    }
   };
 
   if (loading) {
     return (
-      <Layout>
-        <div className="flex justify-center items-center min-h-screen">
-          <LoadingSpinner />
+      <>
+        <Header />
+        <div className={`min-h-screen pt-16 ${
+          theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
+        }`}>
+          <div className="flex justify-center items-center min-h-screen">
+            <LoadingSpinner />
+          </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
   if (error && !employee) {
     return (
-      <Layout>
-        <div className="max-w-4xl mx-auto p-6">
-          <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)' }}>
-            <p className="text-red-600">{error}</p>
-            <Button variant="primary" onClick={() => navigate(ROUTES.PROFILE_ME || '/profile/me')} className="mt-4">
-              Back to Profile
-            </Button>
+      <>
+        <Header />
+        <div className={`min-h-screen pt-16 ${
+          theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
+        }`}>
+          <div className="max-w-4xl mx-auto p-6">
+            <div className={`rounded-lg p-6 ${
+              theme === 'day-mode' 
+                ? 'bg-red-50 border-red-200' 
+                : 'bg-red-900/20 border-red-800'
+            }`}>
+              <p className={theme === 'day-mode' ? 'text-red-800' : 'text-red-300'}>{error}</p>
+              <Button 
+                variant="primary" 
+                onClick={() => {
+                  if (currentEmployeeId) {
+                    navigate(`${ROUTES.PROFILE}/${currentEmployeeId}`);
+                  } else {
+                    navigate(ROUTES.PROFILE_ME || '/profile/me');
+                  }
+                }} 
+                className="mt-4"
+              >
+                Back to Profile
+              </Button>
+            </div>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout>
-      <div className="max-w-4xl mx-auto p-6">
+    <>
+      <Header />
+      <div className={`min-h-screen pt-16 ${
+        theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
+      }`}>
+        <div className="max-w-4xl mx-auto p-6">
         <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
           <h1 className="text-3xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>
             Edit Profile
@@ -275,7 +314,8 @@ const ProfileEdit = () => {
           </form>
         </div>
       </div>
-    </Layout>
+      </div>
+    </>
   );
 };
 

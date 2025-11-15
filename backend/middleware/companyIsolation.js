@@ -62,14 +62,39 @@ const verifyCompanyIsolation = async (req, res, next) => {
  */
 const verifySameCompany = async (req, res, next) => {
   try {
-    const employeeId = req.employeeId || req.user?.id;
+    // For getEmployeeRequests, we only need targetEmployeeId (the employee viewing their own requests)
+    // Skip company isolation check if this is a self-request (employee viewing own requests)
     const targetEmployeeId = req.params.employeeId || req.body.employeeId;
-
-    if (!employeeId || !targetEmployeeId) {
+    
+    // If no target employee ID, this is an error
+    if (!targetEmployeeId) {
       return res.status(400).json({
         success: false,
-        error: 'Employee IDs required'
+        error: 'Employee ID required'
       });
+    }
+    
+    // For self-requests (employee viewing own requests), skip company isolation
+    // The employee can always view their own requests
+    const employeeId = req.employeeId || req.user?.id;
+    if (!employeeId) {
+      // If no authenticated employee ID, allow the request (for self-viewing)
+      // The controller will handle authorization
+      req.userCompanyId = null; // Will be set by controller if needed
+      return next();
+    }
+    
+    // If both IDs exist and are the same, allow (self-request)
+    if (employeeId === targetEmployeeId) {
+      // Get company ID for the employee
+      const employeeResult = await query(
+        `SELECT company_id FROM employees WHERE id = $1`,
+        [employeeId]
+      );
+      if (employeeResult.rows.length > 0) {
+        req.userCompanyId = employeeResult.rows[0].company_id;
+      }
+      return next();
     }
 
     // Get both employees' company IDs

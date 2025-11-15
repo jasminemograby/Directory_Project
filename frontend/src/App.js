@@ -49,7 +49,7 @@ function App() {
           <Route path={ROUTES.PROFILE} element={<EmployeeProfile />} />
           <Route path={ROUTES.PROFILE_ME} element={<EmployeeProfile />} />
           
-          {/* Profile Edit */}
+          {/* Profile Edit - No Layout wrapper (uses Header internally) */}
           <Route path={ROUTES.PROFILE_EDIT_ME} element={<ProfileEdit />} />
           <Route path={ROUTES.PROFILE_EDIT} element={<ProfileEdit />} />
           

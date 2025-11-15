@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { apiService } from '../services/api';
+import { authService } from '../utils/auth';
 import { ROUTES } from '../utils/constants';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
@@ -321,13 +322,49 @@ const HRDashboard = () => {
         <div className="grid md:grid-cols-3 gap-4">
           <Button
             variant="primary"
-            onClick={() => {
-              const hrEmployeeId = localStorage.getItem('hrEmployeeId') || localStorage.getItem('currentEmployeeId');
+            onClick={async () => {
+              // Get HR employee ID from company data or localStorage
+              let hrEmployeeId = null;
+              
+              // First, try to get from company data (most reliable)
+              if (company && company.hr && company.hr.id) {
+                hrEmployeeId = company.hr.id;
+              } else {
+                // Fallback to localStorage
+                hrEmployeeId = localStorage.getItem('hrEmployeeId') || localStorage.getItem('currentEmployeeId');
+              }
+              
+              // If still no ID, try to fetch from API using HR email
+              if (!hrEmployeeId) {
+                try {
+                  const hrEmail = localStorage.getItem('hrEmail') || authService.getUserEmail();
+                  if (hrEmail && company && company.id) {
+                    // Fetch HR employee by email and company
+                    const response = await apiService.getEmployees({ company_id: company.id });
+                    if (response.data && response.data.data && response.data.data.employees) {
+                      const hrEmployee = response.data.data.employees.find(
+                        emp => emp.email && emp.email.toLowerCase() === hrEmail.toLowerCase()
+                      );
+                      if (hrEmployee) {
+                        hrEmployeeId = hrEmployee.id;
+                        localStorage.setItem('hrEmployeeId', hrEmployeeId);
+                        localStorage.setItem('currentEmployeeId', hrEmployeeId);
+                      }
+                    }
+                  }
+                } catch (err) {
+                  console.warn('Could not fetch HR employee ID:', err);
+                }
+              }
+              
               if (hrEmployeeId) {
                 // Navigate to profile with employee ID in URL
-                navigate(ROUTES.EMPLOYEE_PROFILE);
-                // EmployeeProfile will get the ID from localStorage
+                navigate(`${ROUTES.PROFILE}/${hrEmployeeId}`);
+                // Also update localStorage to ensure consistency
+                localStorage.setItem('currentEmployeeId', hrEmployeeId);
+                localStorage.setItem('hrEmployeeId', hrEmployeeId);
               } else {
+                // Fallback: navigate without ID (will show error)
                 navigate(ROUTES.EMPLOYEE_PROFILE);
               }
             }}
