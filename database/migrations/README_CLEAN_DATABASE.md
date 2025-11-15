@@ -9,7 +9,7 @@ This script (`clean_test_data.sql`) removes **ALL** test data from the database 
 
 ## ⚠️ WARNING
 
-**This script will DELETE ALL DATA from the following tables:**
+**This script will DELETE ALL DATA from the following tables (only if they exist):**
 - `companies`
 - `employees`
 - `departments`
@@ -20,10 +20,18 @@ This script (`clean_test_data.sql`) removes **ALL** test data from the database 
 - `projects`
 - `skills`
 - `company_settings`
-- `courses`
-- `course_participation`
-- `employee_assessment`
+- `courses` (if exists)
+- `completed_courses` (if exists)
+- `course_participation` (if exists)
+- `employee_assessment` (if exists)
 - `trainer_courses` (if exists)
+- `extra_attempt_requests` (if exists)
+- `notifications` (if exists)
+- `critical_requests` (if exists)
+- `consent_records` (if exists)
+- `audit_logs` (if exists)
+- `trainers` (if exists)
+- `external_data_links` (if exists)
 
 **The script does NOT drop tables** - it only deletes data. The table structure remains intact.
 
@@ -59,8 +67,11 @@ SELECT COUNT(*) as external_data_raw_count FROM external_data_raw;
 SELECT COUNT(*) as external_data_processed_count FROM external_data_processed;
 SELECT COUNT(*) as projects_count FROM projects;
 SELECT COUNT(*) as skills_count FROM skills;
-SELECT COUNT(*) as courses_count FROM courses;
 SELECT COUNT(*) as company_settings_count FROM company_settings;
+
+-- Optional tables (may not exist)
+SELECT COUNT(*) as completed_courses_count FROM completed_courses WHERE EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'completed_courses');
+SELECT COUNT(*) as courses_count FROM courses WHERE EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'courses');
 ```
 
 All counts should return `0`.

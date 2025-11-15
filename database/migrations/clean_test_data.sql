@@ -26,64 +26,138 @@ BEGIN
     -- Delete in correct order to respect foreign key constraints
 
     -- 1. Delete OAuth tokens (no dependencies)
-    DELETE FROM oauth_tokens;
-    RAISE NOTICE 'Cleaned oauth_tokens';
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'oauth_tokens') THEN
+        DELETE FROM oauth_tokens;
+        RAISE NOTICE 'Cleaned oauth_tokens';
+    END IF;
 
     -- 2. Delete external data (depends on employees)
-    DELETE FROM external_data_raw;
-    RAISE NOTICE 'Cleaned external_data_raw';
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'external_data_raw') THEN
+        DELETE FROM external_data_raw;
+        RAISE NOTICE 'Cleaned external_data_raw';
+    END IF;
 
-    DELETE FROM external_data_processed;
-    RAISE NOTICE 'Cleaned external_data_processed';
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'external_data_processed') THEN
+        DELETE FROM external_data_processed;
+        RAISE NOTICE 'Cleaned external_data_processed';
+    END IF;
 
     -- 3. Delete projects (depends on employees)
-    DELETE FROM projects;
-    RAISE NOTICE 'Cleaned projects';
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'projects') THEN
+        DELETE FROM projects;
+        RAISE NOTICE 'Cleaned projects';
+    END IF;
 
     -- 4. Delete skills (depends on employees)
-    DELETE FROM skills;
-    RAISE NOTICE 'Cleaned skills';
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'skills') THEN
+        DELETE FROM skills;
+        RAISE NOTICE 'Cleaned skills';
+    END IF;
 
-    -- 5. Delete course participation (depends on employees and courses)
-    DELETE FROM course_participation;
-    RAISE NOTICE 'Cleaned course_participation';
+    -- 5. Delete completed courses if table exists (depends on employees and courses)
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'completed_courses') THEN
+        DELETE FROM completed_courses;
+        RAISE NOTICE 'Cleaned completed_courses';
+    END IF;
 
-    -- 6. Delete employee assessment (depends on employees and courses)
-    DELETE FROM employee_assessment;
-    RAISE NOTICE 'Cleaned employee_assessment';
+    -- 6. Delete course participation if table exists (depends on employees and courses)
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'course_participation') THEN
+        DELETE FROM course_participation;
+        RAISE NOTICE 'Cleaned course_participation';
+    END IF;
 
-    -- 7. Delete trainer courses if table exists (depends on employees and courses)
-    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'trainer_courses') THEN
+    -- 7. Delete employee assessment if table exists (depends on employees and courses)
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'employee_assessment') THEN
+        DELETE FROM employee_assessment;
+        RAISE NOTICE 'Cleaned employee_assessment';
+    END IF;
+
+    -- 8. Delete trainer courses if table exists (depends on employees and courses)
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'trainer_courses') THEN
         DELETE FROM trainer_courses;
         RAISE NOTICE 'Cleaned trainer_courses';
     END IF;
 
-    -- 8. Delete employees (depends on departments, teams, companies)
+    -- 9. Delete extra attempt requests if table exists
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'extra_attempt_requests') THEN
+        DELETE FROM extra_attempt_requests;
+        RAISE NOTICE 'Cleaned extra_attempt_requests';
+    END IF;
+
+    -- 10. Delete notifications if table exists
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'notifications') THEN
+        DELETE FROM notifications;
+        RAISE NOTICE 'Cleaned notifications';
+    END IF;
+
+    -- 11. Delete critical requests if table exists
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'critical_requests') THEN
+        DELETE FROM critical_requests;
+        RAISE NOTICE 'Cleaned critical_requests';
+    END IF;
+
+    -- 12. Delete consent records if table exists
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'consent_records') THEN
+        DELETE FROM consent_records;
+        RAISE NOTICE 'Cleaned consent_records';
+    END IF;
+
+    -- 13. Delete audit logs if table exists
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'audit_logs') THEN
+        DELETE FROM audit_logs;
+        RAISE NOTICE 'Cleaned audit_logs';
+    END IF;
+
+    -- 14. Delete trainers if table exists
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'trainers') THEN
+        DELETE FROM trainers;
+        RAISE NOTICE 'Cleaned trainers';
+    END IF;
+
+    -- 15. Delete external data links if table exists
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'external_data_links') THEN
+        DELETE FROM external_data_links;
+        RAISE NOTICE 'Cleaned external_data_links';
+    END IF;
+
+    -- 16. Delete employees (depends on departments, teams, companies)
     -- This will cascade to any remaining dependencies
-    DELETE FROM employees;
-    RAISE NOTICE 'Cleaned employees';
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'employees') THEN
+        DELETE FROM employees;
+        RAISE NOTICE 'Cleaned employees';
+    END IF;
 
-    -- 9. Delete teams (depends on departments)
-    DELETE FROM teams;
-    RAISE NOTICE 'Cleaned teams';
+    -- 17. Delete teams (depends on departments)
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'teams') THEN
+        DELETE FROM teams;
+        RAISE NOTICE 'Cleaned teams';
+    END IF;
 
-    -- 10. Delete departments (depends on companies)
-    DELETE FROM departments;
-    RAISE NOTICE 'Cleaned departments';
+    -- 18. Delete departments (depends on companies)
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'departments') THEN
+        DELETE FROM departments;
+        RAISE NOTICE 'Cleaned departments';
+    END IF;
 
-    -- 11. Delete company settings (depends on companies)
-    DELETE FROM company_settings;
-    RAISE NOTICE 'Cleaned company_settings';
+    -- 19. Delete company settings (depends on companies)
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'company_settings') THEN
+        DELETE FROM company_settings;
+        RAISE NOTICE 'Cleaned company_settings';
+    END IF;
 
-    -- 12. Delete courses (depends on companies)
-    DELETE FROM courses;
-    RAISE NOTICE 'Cleaned courses';
+    -- 20. Delete courses if table exists (depends on companies)
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'courses') THEN
+        DELETE FROM courses;
+        RAISE NOTICE 'Cleaned courses';
+    END IF;
 
-    -- 13. Delete companies (no dependencies from other tables)
-    DELETE FROM companies;
-    RAISE NOTICE 'Cleaned companies';
+    -- 21. Delete companies (no dependencies from other tables)
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'companies') THEN
+        DELETE FROM companies;
+        RAISE NOTICE 'Cleaned companies';
+    END IF;
 
-    -- 14. Reset sequences (optional, but good practice)
+    -- 22. Reset sequences (optional, but good practice)
     -- This ensures new IDs start from 1
     FOR seq_record IN 
         SELECT sequence_name 
@@ -98,6 +172,8 @@ BEGIN
 END $$;
 
 -- Verification queries (run these after the migration to verify)
+-- Uncomment and run these queries to verify all tables are empty:
+-- 
 -- SELECT COUNT(*) as companies_count FROM companies;
 -- SELECT COUNT(*) as employees_count FROM employees;
 -- SELECT COUNT(*) as departments_count FROM departments;
@@ -107,4 +183,7 @@ END $$;
 -- SELECT COUNT(*) as external_data_processed_count FROM external_data_processed;
 -- SELECT COUNT(*) as projects_count FROM projects;
 -- SELECT COUNT(*) as skills_count FROM skills;
+-- SELECT COUNT(*) as company_settings_count FROM company_settings;
+-- 
+-- All counts should return 0
 
