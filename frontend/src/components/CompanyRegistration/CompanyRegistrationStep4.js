@@ -333,8 +333,17 @@ const CompanyRegistrationStep4 = () => {
                         </div>
                         <div>
                           <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Industry</label>
-                          <div className="px-4 py-2 rounded-lg" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--bg-tertiary)', borderWidth: '1px', borderStyle: 'solid', color: 'var(--text-primary)' }}>
-                            {companyBasicInfo.industry}
+                          <div className="px-4 py-2 rounded-lg" style={{ 
+                            backgroundColor: 'var(--input-bg)', 
+                            borderColor: 'var(--border-default)', 
+                            borderWidth: '1px', 
+                            borderStyle: 'solid', 
+                            color: 'var(--input-text)',
+                            minHeight: '2.5rem',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}>
+                            {companyBasicInfo.industry || 'N/A'}
                           </div>
                         </div>
                         <div>
