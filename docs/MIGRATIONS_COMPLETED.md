@@ -7,31 +7,17 @@
 
 ## ✅ Migrations Run
 
-All 4 migrations have been successfully run in **Subabase SQL Editor**:
+**Previously Run (4 migrations):**
+1. ✅ `fix_email_unique_per_company.sql` - Completed
+2. ✅ `add_employee_manager_fields.sql` - Completed
+3. ✅ `add_company_size_and_description.sql` - Completed
+4. ✅ `add_company_settings_fields.sql` - Completed
 
-1. ✅ `fix_email_unique_per_company.sql`
-   - Removed global UNIQUE constraint on `employees.email`
-   - Added UNIQUE(company_id, email) constraint
-   - Status: ✅ Completed
-
-2. ✅ `add_employee_manager_fields.sql`
-   - Added `is_manager` (BOOLEAN)
-   - Added `manager_type` (VARCHAR)
-   - Added `manager_of_id` (UUID)
-   - Added foreign key constraints
-   - Status: ✅ Completed
-
-3. ✅ `add_company_size_and_description.sql`
-   - Added `size` (VARCHAR) to `companies` table
-   - Added `description` (TEXT) to `companies` table
-   - Status: ✅ Completed
-
-4. ✅ `add_company_settings_fields.sql`
-   - Added `max_test_attempts` (INTEGER) to `company_settings`
-   - Added `passing_grade` (INTEGER) to `company_settings`
-   - Added `exercise_limit` (INTEGER) to `company_settings`
-   - Added `public_publish_enabled` (BOOLEAN) to `company_settings`
-   - Status: ✅ Completed
+**⚠️ Missing Migration (CRITICAL):**
+5. ⚠️ `add_ai_enabled_column.sql` - **NEEDS TO BE RUN**
+   - Adds `ai_enabled` (BOOLEAN) to `employees` table
+   - Required for trainer registration
+   - **Status:** ⚠️ **NOT RUN YET** - Run in Subabase SQL Editor
 
 ---
 

@@ -219,17 +219,22 @@ const CompanyRegistrationStep1 = () => {
 
             {/* Industry */}
             <div className="mb-4">
-              <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
-                Industry <span className="text-red-500">*</span>
+              <label htmlFor="industry" className="block text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+                Industry <span style={{ color: 'var(--border-error)' }}>*</span>
               </label>
               <select
                 id="industry"
                 name="industry"
                 value={formData.industry}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-cyan focus:border-transparent ${
-                  errors.industry ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className="w-full px-4 py-2 rounded-lg focus:outline-none"
+                style={{
+                  backgroundColor: 'var(--input-bg)',
+                  borderColor: errors.industry ? 'var(--border-error)' : 'var(--border-default)',
+                  borderWidth: '1px',
+                  borderStyle: 'solid',
+                  color: 'var(--input-text)'
+                }}
                 required
               >
                 <option value="">Select industry</option>
@@ -242,7 +247,7 @@ const CompanyRegistrationStep1 = () => {
                 <option value="Other">Other</option>
               </select>
               {errors.industry?.[0] && (
-                <p className="mt-1 text-sm text-red-600">{errors.industry[0]}</p>
+                <p className="mt-1 text-sm" style={{ color: 'var(--border-error)' }}>{errors.industry[0]}</p>
               )}
             </div>
 
