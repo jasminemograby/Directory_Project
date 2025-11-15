@@ -69,6 +69,85 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
     checkConnectionStatus();
   }, [checkConnectionStatus]);
 
+  const handleFetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('[EnhanceProfile] Starting data collection for employee:', employeeId);
+
+      // Collect all external data (this also triggers Gemini enrichment)
+      const response = await apiService.collectAllExternalData(employeeId);
+      console.log('[EnhanceProfile] Collect response:', {
+        success: response.data?.success,
+        hasLinkedIn: !!response.data?.data?.linkedin,
+        hasGitHub: !!response.data?.data?.github,
+        enrichment: response.data?.enrichment ? {
+          hasBio: !!response.data.enrichment.bio,
+          projectsCount: response.data.enrichment.projects?.length || 0,
+          error: response.data.enrichment.error
+        } : null
+      });
+      
+      if (response.data && response.data.data) {
+        const { linkedin, github } = response.data.data;
+
+        if (linkedin && !linkedin.error) {
+          setLinkedInStatus('connected');
+          setLinkedInData(linkedin);
+        }
+
+        if (github && !github.error) {
+          setGithubStatus('connected');
+          setGithubData(github);
+        }
+
+        // Check enrichment result - AUTOMATIC ENRICHMENT AFTER CONNECTION
+        const enrichment = response.data.enrichment;
+        if (enrichment) {
+          if (enrichment.error) {
+            console.error('[EnhanceProfile] Enrichment error:', enrichment.error);
+            setError(`Enrichment failed: ${enrichment.error}. Please try again.`);
+          } else {
+            console.log('[EnhanceProfile] ✅ Automatic enrichment successful:', {
+              hasBio: !!enrichment.bio,
+              projectsCount: enrichment.projects?.length || 0,
+              skillsCount: enrichment.skills?.length || 0
+            });
+            setSuccessMessage('✅ Profile enriched and approved automatically! Redirecting to your complete profile...');
+            
+            // Trigger enrichment complete callback - profile is now enriched and approved
+            if (linkedInStatus === 'connected' && githubStatus === 'connected') {
+              // Wait a bit for processed data to be available and profile status to update
+              setTimeout(() => {
+                if (onEnrichmentComplete) {
+                  console.log('[EnhanceProfile] Triggering enrichment complete callback - profile is now enriched and approved');
+                  onEnrichmentComplete();
+                }
+              }, 3000); // Increased delay to ensure backend processing is complete
+            }
+          }
+        } else {
+          // If no enrichment result but both are connected, still trigger callback
+          if (linkedInStatus === 'connected' && githubStatus === 'connected') {
+            console.log('[EnhanceProfile] Both connected but enrichment not yet complete, waiting...');
+            // Wait longer for enrichment to complete
+            setTimeout(() => {
+              if (onEnrichmentComplete) {
+                console.log('[EnhanceProfile] Triggering callback after delay');
+                onEnrichmentComplete();
+              }
+            }, 5000);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[EnhanceProfile] Error fetching external data:', error);
+      setError('Failed to fetch profile data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [employeeId, linkedInStatus, githubStatus, onEnrichmentComplete]);
+
   // Check if both LinkedIn and GitHub are connected (both required)
   const hasCalledComplete = useRef(false);
   useEffect(() => {
@@ -169,84 +248,6 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
     }
   };
 
-  const handleFetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      console.log('[EnhanceProfile] Starting data collection for employee:', employeeId);
-
-      // Collect all external data (this also triggers Gemini enrichment)
-      const response = await apiService.collectAllExternalData(employeeId);
-      console.log('[EnhanceProfile] Collect response:', {
-        success: response.data?.success,
-        hasLinkedIn: !!response.data?.data?.linkedin,
-        hasGitHub: !!response.data?.data?.github,
-        enrichment: response.data?.enrichment ? {
-          hasBio: !!response.data.enrichment.bio,
-          projectsCount: response.data.enrichment.projects?.length || 0,
-          error: response.data.enrichment.error
-        } : null
-      });
-      
-      if (response.data && response.data.data) {
-        const { linkedin, github } = response.data.data;
-
-        if (linkedin && !linkedin.error) {
-          setLinkedInStatus('connected');
-          setLinkedInData(linkedin);
-        }
-
-        if (github && !github.error) {
-          setGithubStatus('connected');
-          setGithubData(github);
-        }
-
-        // Check enrichment result - AUTOMATIC ENRICHMENT AFTER CONNECTION
-        const enrichment = response.data.enrichment;
-        if (enrichment) {
-          if (enrichment.error) {
-            console.error('[EnhanceProfile] Enrichment error:', enrichment.error);
-            setError(`Enrichment failed: ${enrichment.error}. Please try again.`);
-          } else {
-            console.log('[EnhanceProfile] ✅ Automatic enrichment successful:', {
-              hasBio: !!enrichment.bio,
-              projectsCount: enrichment.projects?.length || 0,
-              skillsCount: enrichment.skills?.length || 0
-            });
-            setSuccessMessage('✅ Profile enriched and approved automatically! Redirecting to your complete profile...');
-            
-            // Trigger enrichment complete callback - profile is now enriched and approved
-            if (githubStatus === 'connected' || (github && !github.error)) {
-              // Wait a bit for processed data to be available and profile status to update
-              setTimeout(() => {
-                if (onEnrichmentComplete) {
-                  console.log('[EnhanceProfile] Triggering enrichment complete callback - profile is now enriched and approved');
-                  onEnrichmentComplete();
-                }
-              }, 3000); // Increased delay to ensure backend processing is complete
-            }
-          }
-        } else {
-          // If no enrichment result but GitHub is connected, still trigger callback
-          if (githubStatus === 'connected' || (github && !github.error)) {
-            console.log('[EnhanceProfile] GitHub connected but enrichment not yet complete, waiting...');
-            // Wait longer for enrichment to complete
-            setTimeout(() => {
-              if (onEnrichmentComplete) {
-                console.log('[EnhanceProfile] Triggering callback after delay');
-                onEnrichmentComplete();
-              }
-            }, 5000);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('[EnhanceProfile] Error fetching external data:', error);
-      setError('Failed to fetch profile data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [employeeId, githubStatus, onEnrichmentComplete]);
 
   // Check URL params for OAuth callback success
   useEffect(() => {

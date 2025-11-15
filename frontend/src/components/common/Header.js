@@ -7,7 +7,8 @@ const Header = () => {
   const { theme, toggleTheme, getDesignToken } = useApp();
   const [logoError, setLogoError] = useState(false);
 
-  const logoUrl = `${API_BASE_URL}/api/logo/${theme === 'day-mode' ? 'light' : 'dark'}`;
+  // API_BASE_URL already includes /api, so we don't need to add /api again
+  const logoUrl = `${API_BASE_URL}/logo/${theme === 'day-mode' ? 'light' : 'dark'}`;
 
   const headerConfig = getDesignToken('header');
   

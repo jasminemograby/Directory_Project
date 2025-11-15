@@ -83,7 +83,8 @@ const recordFailure = (serviceName) => {
 
 // Cache for mock data (loaded once)
 let mockDataCache = null;
-const MOCK_DATA_PATH = process.env.MOCKDATA_PATH || path.join(__dirname, '../../mockData/index.json');
+// Use absolute path from project root, or relative from backend/services
+const MOCK_DATA_PATH = process.env.MOCKDATA_PATH || path.resolve(__dirname, '../../mockData/index.json');
 
 /**
  * Load mock data from file (cached)
