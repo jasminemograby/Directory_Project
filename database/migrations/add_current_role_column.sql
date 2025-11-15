@@ -11,7 +11,7 @@ BEGIN
         AND table_name = 'employees' 
         AND column_name = 'current_role'
     ) THEN
-        ALTER TABLE employees ADD COLUMN current_role VARCHAR(255);
+        ALTER TABLE employees ADD COLUMN "current_role" VARCHAR(255);
         RAISE NOTICE 'Column current_role added successfully';
     ELSE
         RAISE NOTICE 'Column current_role already exists';
