@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/common/Header';
 import { apiService } from '../services/api';
-import { authService } from '../utils/auth';
 import { ROUTES } from '../utils/constants';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Button from '../components/common/Button';
