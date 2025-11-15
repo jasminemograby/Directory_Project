@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../../utils/constants';
 
-const HierarchyTree = ({ hierarchy, onEmployeeClick }) => {
+const HierarchyTree = ({ hierarchy, onEmployeeClick, showTitle = false }) => {
   const [expanded, setExpanded] = useState({});
   const navigate = useNavigate();
 
@@ -61,17 +61,17 @@ const HierarchyTree = ({ hierarchy, onEmployeeClick }) => {
 
         {isExpanded && (
           <div className="mt-1">
-            {/* Teams */}
-            {node.teams && node.teams.map(team => 
-              renderNode({ ...team, type: 'Team' }, level + 1, currentPath)
-            )}
-
-            {/* Departments (if nested) */}
+            {/* Departments - Company has departments */}
             {node.departments && node.departments.map(dept => 
               renderNode({ ...dept, type: 'Department' }, level + 1, currentPath)
             )}
 
-            {/* Employees */}
+            {/* Teams - Department has teams */}
+            {node.teams && node.teams.map(team => 
+              renderNode({ ...team, type: 'Team' }, level + 1, currentPath)
+            )}
+
+            {/* Employees - Team has employees */}
             {node.employees && node.employees.map(employee => (
               <div 
                 key={employee.id}
@@ -97,10 +97,25 @@ const HierarchyTree = ({ hierarchy, onEmployeeClick }) => {
                     {employee.role}
                   </span>
                 )}
+                <button
+                  className="text-xs px-2 py-1 rounded ml-auto"
+                  style={{ 
+                    backgroundColor: 'var(--primary-base)', 
+                    color: 'white',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEmployeeClick(employee.id, employee.name);
+                  }}
+                >
+                  View Profile
+                </button>
               </div>
             ))}
 
-            {/* Children (generic) */}
+            {/* Children (generic fallback) */}
             {node.children && node.children.map(child => 
               renderNode(child, level + 1, currentPath)
             )}
@@ -125,21 +140,11 @@ const HierarchyTree = ({ hierarchy, onEmployeeClick }) => {
   }
 
   return (
-    <div className="rounded-lg p-6" style={{ 
-      backgroundColor: 'var(--bg-card)', 
-      boxShadow: 'var(--shadow-card)', 
-      borderColor: 'var(--bg-secondary)', 
-      borderWidth: '1px', 
-      borderStyle: 'solid' 
-    }}>
-      <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Organization Hierarchy</h2>
-      
-      <div className="space-y-1">
-        {Array.isArray(hierarchy) 
-          ? hierarchy.map(node => renderNode(node))
-          : renderNode(hierarchy)
-        }
-      </div>
+    <div className="space-y-1">
+      {Array.isArray(hierarchy) 
+        ? hierarchy.map(node => renderNode(node))
+        : renderNode(hierarchy)
+      }
     </div>
   );
 };

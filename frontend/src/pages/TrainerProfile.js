@@ -1,7 +1,6 @@
 // Trainer Profile Page - Employee Profile + Trainer-specific fields
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Header from '../components/common/Header';
 import EnhanceProfile from '../components/Profile/EnhanceProfile';
 import ProfileBasicInfoCard from '../components/Profile/ProfileBasicInfoCard';
 import ProfileOverviewTab from '../components/Profile/ProfileOverviewTab';
@@ -164,20 +163,15 @@ const TrainerProfile = () => {
 
   if (loading) {
     return (
-      <>
-        <Header />
-        <div className="flex items-center justify-center min-h-screen pt-16">
-          <LoadingSpinner />
-        </div>
-      </>
+      <div className="flex items-center justify-center min-h-screen pt-16">
+        <LoadingSpinner />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <>
-        <Header />
-        <div className={`min-h-screen pt-16 ${
+      <div className={`min-h-screen pt-16 ${
           theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
         }`}>
           <div className="max-w-4xl mx-auto p-6">
@@ -190,7 +184,6 @@ const TrainerProfile = () => {
             </div>
           </div>
         </div>
-      </>
     );
   }
 
@@ -205,9 +198,7 @@ const TrainerProfile = () => {
   ];
 
   return (
-    <>
-      <Header />
-      <div className={`min-h-screen pt-16 ${
+    <div className={`min-h-screen pt-16 ${
         theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
       }`}>
 
@@ -379,7 +370,6 @@ const TrainerProfile = () => {
           </div>
         )}
       </div>
-    </>
   );
 };
 

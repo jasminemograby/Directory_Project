@@ -26,11 +26,16 @@ import CompanyRegistrationStep1 from './components/CompanyRegistration/CompanyRe
 import CompanyRegistrationVerification from './components/CompanyRegistration/CompanyRegistrationVerification';
 import CompanyRegistrationStep4 from './components/CompanyRegistration/CompanyRegistrationStep4';
 
+// Global Header Component - Only one instance at root level
+import Header from './components/common/Header';
+
 function App() {
   return (
     <AppProvider>
       <ErrorBoundary>
         <Router>
+          {/* Single Global Header - Only here at root level */}
+          <Header />
           <Routes>
           {/* Public Routes */}
           <Route path={ROUTES.HOME} element={<HRLanding />} />

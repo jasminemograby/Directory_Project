@@ -48,25 +48,20 @@ const Login = () => {
             navigate(ROUTES.HR_DASHBOARD);
             break;
           case 'trainer':
-            navigate('/trainer/profile');
-            break;
           case 'team_manager':
-            navigate('/team-leader/profile');
-            break;
           case 'department_manager':
-            navigate('/department-manager/profile');
-            break;
-          case 'admin':
-            navigate(ROUTES.ADMIN_DASHBOARD);
-            break;
           case 'employee':
           default:
-            // For employees, navigate to profile with their ID
+            // All employees (trainer, manager, regular) see their employee profile
+            // Only HR sees company dashboard
             if (user.id) {
               navigate(`/profile/${user.id}`);
             } else {
               navigate(ROUTES.PROFILE_ME || ROUTES.EMPLOYEE_PROFILE);
             }
+            break;
+          case 'admin':
+            navigate(ROUTES.ADMIN_DASHBOARD);
             break;
         }
       } else {

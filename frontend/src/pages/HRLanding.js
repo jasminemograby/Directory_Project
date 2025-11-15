@@ -1,7 +1,6 @@
 // HR Landing Page - Redesigned
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/common/Header';
 import { ROUTES } from '../utils/constants';
 
 const HRLanding = () => {
@@ -9,9 +8,12 @@ const HRLanding = () => {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      {/* Single Header with Logo, Theme Toggle, and Home */}
-      <div style={{ position: 'relative', zIndex: 10 }}>
-        <Header />
+      {/* Navigation Bar - Header is now global, this is just navigation */}
+      <div style={{ 
+        position: 'relative', 
+        zIndex: 10,
+        marginTop: '64px' // Space for global header
+      }}>
         <div style={{ 
           height: '64px', 
           display: 'flex', 

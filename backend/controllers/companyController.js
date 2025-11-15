@@ -242,7 +242,7 @@ const getCompanyByHrEmail = async (req, res, next) => {
     if (!companyId) {
       return res.status(404).json({
         success: false,
-        error: 'Company not found for this HR email',
+        error: `No company found for HR email: ${hrEmail}. Please complete company registration first.`,
       });
     }
 

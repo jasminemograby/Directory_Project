@@ -1,7 +1,6 @@
 // Profile Edit Page - Employee can edit allowed fields
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Header from '../components/common/Header';
 import Button from '../components/common/Button';
 import { apiService } from '../services/api';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -129,24 +128,19 @@ const ProfileEdit = () => {
 
   if (loading) {
     return (
-      <>
-        <Header />
-        <div className={`min-h-screen pt-16 ${
-          theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
-        }`}>
-          <div className="flex justify-center items-center min-h-screen">
-            <LoadingSpinner />
-          </div>
+      <div className={`min-h-screen pt-16 ${
+        theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
+      }`}>
+        <div className="flex justify-center items-center min-h-screen">
+          <LoadingSpinner />
         </div>
-      </>
+      </div>
     );
   }
 
   if (error && !employee) {
     return (
-      <>
-        <Header />
-        <div className={`min-h-screen pt-16 ${
+      <div className={`min-h-screen pt-16 ${
           theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
         }`}>
           <div className="max-w-4xl mx-auto p-6">
@@ -172,14 +166,11 @@ const ProfileEdit = () => {
             </div>
           </div>
         </div>
-      </>
     );
   }
 
   return (
-    <>
-      <Header />
-      <div className={`min-h-screen pt-16 ${
+    <div className={`min-h-screen pt-16 ${
         theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
       }`}>
         <div className="max-w-4xl mx-auto p-6">
@@ -316,7 +307,6 @@ const ProfileEdit = () => {
         </div>
       </div>
       </div>
-    </>
   );
 };
 

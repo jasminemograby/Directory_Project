@@ -1,7 +1,6 @@
 // HR Dashboard Page
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Header from '../components/common/Header';
 import { apiService } from '../services/api';
 import { ROUTES } from '../utils/constants';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -121,7 +120,12 @@ const HRDashboard = () => {
         
         // If 404, maybe company doesn't exist yet - show helpful message
         if (err.response?.status === 404) {
-          setError('Company not found. Please complete company registration first.');
+          const errorMsg = err.response?.data?.error || 'Company not found';
+          if (errorMsg.includes('HR email')) {
+            setError(errorMsg);
+          } else {
+            setError('Company not found. Please complete company registration first.');
+          }
         } else {
           setError(err.response?.data?.error || 'Failed to load company data. Please try again.');
         }
@@ -179,7 +183,6 @@ const HRDashboard = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)' }}>
-      <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
       {/* Success Message */}
       {successMessage && (
@@ -334,12 +337,6 @@ const HRDashboard = () => {
             }}
           >
             Analytics
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => navigate(ROUTES.COMPANY_REGISTER_STEP1)}
-          >
-            Register Another Company
           </Button>
           <Button
             variant="tertiary"

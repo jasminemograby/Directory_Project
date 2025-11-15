@@ -1,7 +1,6 @@
 // Employee Profile Page - Main profile page with Navigation Tabs
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Header from '../components/common/Header';
 import EnhanceProfile from '../components/Profile/EnhanceProfile';
 import ProfileBasicInfoCard from '../components/Profile/ProfileBasicInfoCard';
 import ProfileOverviewTab from '../components/Profile/ProfileOverviewTab';
@@ -38,6 +37,19 @@ const EmployeeProfile = () => {
   const fetchEmployeeData = useCallback(async () => {
     if (!currentEmployeeId) {
       setError('Please set an employee ID. For testing, you can set it in localStorage: localStorage.setItem("currentEmployeeId", "your-employee-uuid")');
+      setLoading(false);
+      return;
+    }
+
+    // Check cache first
+    const cacheKey = `profile_${currentEmployeeId}`;
+    const cached = profileCache.current.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < 30000) { // 30 second cache
+      console.log('[EmployeeProfile] Using cached profile data for:', currentEmployeeId);
+      setEmployee(cached.employee);
+      setProcessedData(cached.processedData);
+      setProfileData(cached.profileData);
+      setHierarchy(cached.hierarchy);
       setLoading(false);
       return;
     }
@@ -101,6 +113,16 @@ const EmployeeProfile = () => {
         // Fallback to mock data if API fails
         setProfileData(mockDataService.getEmployeeProfile(currentEmployeeId));
       }
+
+      // Cache the fetched data
+      const cacheKey = `profile_${currentEmployeeId}`;
+      profileCache.current.set(cacheKey, {
+        employee,
+        processedData: processedData || null,
+        profileData: profileData || null,
+        hierarchy: hierarchy || null,
+        timestamp: Date.now()
+      });
     } catch (error) {
       console.error('Error fetching employee data:', error);
       // Don't redirect to 404 - show error message instead
@@ -219,20 +241,15 @@ const EmployeeProfile = () => {
 
   if (loading) {
     return (
-      <>
-        <Header />
-        <div className="flex justify-center items-center min-h-screen pt-16">
-          <LoadingSpinner />
-        </div>
-      </>
+      <div className="flex justify-center items-center min-h-screen pt-16">
+        <LoadingSpinner />
+      </div>
     );
   }
 
   if (error) {
     return (
-      <>
-        <Header />
-        <div className={`min-h-screen pt-16 ${
+      <div className={`min-h-screen pt-16 ${
           theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
         }`}>
           <div className="max-w-4xl mx-auto p-6">
@@ -282,7 +299,6 @@ const EmployeeProfile = () => {
             </div>
           </div>
         </div>
-      </>
     );
   }
 
@@ -296,9 +312,7 @@ const EmployeeProfile = () => {
   ];
 
   return (
-    <>
-      <Header />
-      <div className={`min-h-screen pt-16 ${
+    <div className={`min-h-screen pt-16 ${
         theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
       }`}>
 
@@ -403,7 +417,7 @@ const EmployeeProfile = () => {
                   {activeTab === 'overview' && (
                     <>
                       {/* Hierarchy Section for Managers */}
-                      {employee?.is_manager && hierarchy && (
+                      {employee?.is_manager && (
                         <div className="mb-6">
                           <div className="rounded-lg p-6" style={{ 
                             backgroundColor: 'var(--bg-card)', 
@@ -415,12 +429,16 @@ const EmployeeProfile = () => {
                             <h3 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
                               {employee.manager_type === 'dept_manager' ? 'Department Hierarchy' : 'Team Hierarchy'}
                             </h3>
-                            <HierarchyTree
-                              hierarchy={hierarchy}
-                              onEmployeeClick={(empId) => {
-                                navigate(`${ROUTES.PROFILE}/${empId}`);
-                              }}
-                            />
+                            {hierarchy ? (
+                              <HierarchyTree
+                                hierarchy={hierarchy}
+                                onEmployeeClick={(empId) => {
+                                  navigate(`${ROUTES.PROFILE}/${empId}`);
+                                }}
+                              />
+                            ) : (
+                              <p style={{ color: 'var(--text-secondary)' }}>Loading hierarchy...</p>
+                            )}
                           </div>
                         </div>
                       )}

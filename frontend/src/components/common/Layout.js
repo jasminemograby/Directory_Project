@@ -1,7 +1,6 @@
 // Layout Component with Navigation
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import Header from './Header';
 import { ROUTES } from '../../utils/constants';
 import { authService } from '../../utils/auth';
 
@@ -33,12 +32,10 @@ const Layout = ({ children }) => {
   
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>
-      {/* Global Header - only show if not landing page */}
-      {!isLandingPage && <Header />}
-      
-      {/* Navigation Bar - only show if not landing page */}
+      {/* Navigation Bar - only show if not landing page (Header is now global) */}
       {!isLandingPage && (
-      <nav className="shadow-sm border-b mt-16" style={{ 
+      <nav className="shadow-sm border-b" style={{
+        marginTop: '64px', // Space for global header 
         backgroundColor: 'var(--bg-card)', 
         borderColor: 'var(--border-default)' 
       }}>
@@ -83,8 +80,8 @@ const Layout = ({ children }) => {
               </Link>
             </div>
 
-                  {/* Right Side - User (only if authenticated) */}
-                  {isAuthenticated && (
+                  {/* Right Side - User (only if authenticated AND has valid token) */}
+                  {isAuthenticated && authService.getToken() && userEmail && (
                     <div className="flex items-center space-x-4">
                       {/* User Menu */}
                       <div className="flex items-center space-x-2">

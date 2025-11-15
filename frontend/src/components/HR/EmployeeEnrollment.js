@@ -23,9 +23,15 @@ const EmployeeEnrollment = ({ companyId }) => {
       setLoading(true);
       setError(null);
       
-      const response = await apiService.getEmployees({ company_id: companyId });
+      // Only fetch APPROVED employees for enrollment
+      const response = await apiService.getEmployees({ company_id: companyId, approved: true });
       if (response.data && response.data.data) {
-        setEmployees(response.data.data.employees || []);
+        const employeesList = Array.isArray(response.data.data) 
+          ? response.data.data 
+          : (response.data.data.employees || []);
+        // Filter to only approved employees
+        const approvedEmployees = employeesList.filter(emp => emp.profile_status === 'approved');
+        setEmployees(approvedEmployees);
       }
     } catch (err) {
       console.error('Error fetching employees:', err);
@@ -230,9 +236,14 @@ const EmployeeEnrollment = ({ companyId }) => {
               borderColor: 'var(--bg-tertiary)' 
             }}>
               {employees.length === 0 ? (
-                <p className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>
-                  No employees found
-                </p>
+                <div className="text-center py-4">
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                    ⏳ No approved employees yet
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                    Employees must complete profile enrichment and get HR approval first.
+                  </p>
+                </div>
               ) : (
                 employees.map(employee => (
                   <label

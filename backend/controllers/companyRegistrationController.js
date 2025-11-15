@@ -910,7 +910,7 @@ const checkVerificationStatus = async (req, res, next) => {
     const { checkStatus, emailUpdate } = req.body;
 
     const result = await query(
-      'SELECT id, name, domain, verification_status FROM companies WHERE id = $1',
+      'SELECT id, name, industry, domain, verification_status FROM companies WHERE id = $1',
       [id]
     );
 
@@ -934,6 +934,7 @@ const checkVerificationStatus = async (req, res, next) => {
       data: {
         id: company.id,
         name: company.name,
+        industry: company.industry || null, // Include industry
         domain: company.domain,
         verification_status: company.verification_status,
       },

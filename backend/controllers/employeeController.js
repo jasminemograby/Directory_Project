@@ -119,6 +119,14 @@ const getEmployees = async (req, res, next) => {
       paramIndex++;
     }
 
+    // Filter by approval status if requested
+    const { approved } = req.query;
+    if (approved === 'true' || approved === true) {
+      sql += ` AND profile_status = $${paramIndex}`;
+      params.push('approved');
+      paramIndex++;
+    }
+
     sql += ` ORDER BY created_at DESC`;
 
     const result = await query(sql, params);
