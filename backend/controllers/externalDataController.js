@@ -96,6 +96,16 @@ const handleLinkedInCallback = async (req, res, next) => {
       throw tokenError; // Re-throw to be caught by outer catch
     }
 
+    // Automatically fetch LinkedIn data after successful token exchange
+    try {
+      console.log(`[LinkedIn Callback] Automatically fetching LinkedIn profile data for employee: ${employeeId}`);
+      await linkedInService.fetchProfileData(employeeId);
+      console.log(`[LinkedIn Callback] ✅ LinkedIn data fetched and stored successfully`);
+    } catch (fetchError) {
+      console.warn('[LinkedIn Callback] ⚠️ Failed to fetch LinkedIn data automatically (non-critical):', fetchError.message);
+      // Don't fail the callback if data fetch fails - user can fetch manually later
+    }
+
     // Redirect to frontend success page
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     console.log(`[LinkedIn Callback] Redirecting to: ${frontendUrl}/profile?linkedin=connected&employeeId=${employeeId}`);
@@ -219,9 +229,21 @@ const handleGitHubCallback = async (req, res, next) => {
 
     // Exchange code for token
     await githubService.exchangeCodeForToken(code, employeeId);
+    console.log(`[GitHub Callback] ✅ Token exchange successful for employee: ${employeeId}`);
+
+    // Automatically fetch GitHub data after successful token exchange
+    try {
+      console.log(`[GitHub Callback] Automatically fetching GitHub profile data for employee: ${employeeId}`);
+      await githubService.fetchProfileData(employeeId);
+      console.log(`[GitHub Callback] ✅ GitHub data fetched and stored successfully`);
+    } catch (fetchError) {
+      console.warn('[GitHub Callback] ⚠️ Failed to fetch GitHub data automatically (non-critical):', fetchError.message);
+      // Don't fail the callback if data fetch fails - user can fetch manually later
+    }
 
     // Redirect to frontend success page
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile?github=connected&employeeId=${employeeId}`);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    res.redirect(`${frontendUrl}/profile?github=connected&employeeId=${employeeId}`);
   } catch (error) {
     console.error('Error handling GitHub callback:', error.message);
     res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/profile?error=${encodeURIComponent(error.message)}`);
