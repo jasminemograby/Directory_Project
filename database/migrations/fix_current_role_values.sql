@@ -3,7 +3,7 @@ DO $$
 BEGIN
     -- Update current_role with role value when it is NULL or equals the database role name (e.g., 'postgres')
     UPDATE employees
-    SET current_role = role,
+    SET "current_role" = role,
         updated_at = CURRENT_TIMESTAMP
     WHERE (current_role IS NULL OR LOWER(current_role) = 'postgres')
       AND role IS NOT NULL;
