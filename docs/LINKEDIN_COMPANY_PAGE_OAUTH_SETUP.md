@@ -95,12 +95,19 @@ http://localhost:5000/api/external/linkedin/callback
   - `profile` - מידע פרופיל (שם, תמונה)
   - `email` - כתובת אימייל
 
-**חשוב:** LinkedIn deprecated את ה-scopes הישנים:
-- ❌ `r_liteprofile` (deprecated)
-- ❌ `r_basicprofile` (deprecated)
-- ❌ `r_emailaddress` (deprecated)
+✅ **Share on LinkedIn** (אופציונלי - לנסיון תעסוקתי)
+- זה יאפשר את ה-scope:
+  - `w_member_social` - גישה לנסיון תעסוקתי, תפקידים, השכלה
 
-**אנחנו משתמשים רק ב-OpenID Connect scopes!**
+**חשוב:** 
+- LinkedIn deprecated את ה-scopes הישנים:
+  - ❌ `r_liteprofile` (deprecated)
+  - ❌ `r_basicprofile` (deprecated)
+  - ❌ `r_emailaddress` (deprecated)
+- `w_member_social` דורש **אישור מ-LinkedIn** - זה יכול לקחת כמה ימים
+- אם לא תקבל אישור, הקוד יעבוד גם בלי נסיון תעסוקתי (graceful degradation)
+
+**אנחנו משתמשים ב-OpenID Connect scopes + w_member_social (אם מאושר)**
 
 ### 2.4 שמירה
 
