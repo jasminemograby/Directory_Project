@@ -387,7 +387,7 @@ const registerCompanyStep4 = async (req, res, next) => {
 
               empResult = await client.query(
                 `INSERT INTO employees (
-                  company_id, name, email, role, current_role, target_role, type,
+                  company_id, name, email, role, "current_role", target_role, type,
                   department_id, team_id, is_manager, manager_type, manager_of_id,
                   ai_enabled, profile_status, created_at, updated_at
                 )
@@ -711,7 +711,7 @@ const registerCompanyStep4 = async (req, res, next) => {
               // Try with current_role column
               hrEmployeeResult = await client.query(
                 `INSERT INTO employees (
-                  company_id, name, email, role, current_role, target_role, type,
+                  company_id, name, email, role, "current_role", target_role, type,
                   department_id, team_id, profile_status, created_at, updated_at
                 )
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
