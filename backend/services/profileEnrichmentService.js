@@ -141,16 +141,20 @@ const enrichProfile = async (employeeId) => {
       }
       
       // Extract basic bio from raw data
+      // Try LinkedIn first (usually has better professional info)
       if (rawData.linkedin?.profile) {
         const linkedInProfile = rawData.linkedin.profile;
-        const name = `${linkedInProfile.localizedFirstName || ''} ${linkedInProfile.localizedLastName || ''}`.trim();
+        const name = `${linkedInProfile.localizedFirstName || linkedInProfile.given_name || ''} ${linkedInProfile.localizedLastName || linkedInProfile.family_name || ''}`.trim();
         const headline = linkedInProfile.headline || '';
         const summary = linkedInProfile.summary || '';
         
         if (name || headline || summary) {
           bio = `${name ? `${name}. ` : ''}${headline ? `${headline}. ` : ''}${summary ? summary.substring(0, 200) : ''}`.trim();
         }
-      } else if (rawData.github?.profile) {
+      }
+      
+      // If no LinkedIn bio, try GitHub
+      if (!bio && rawData.github?.profile) {
         const githubProfile = rawData.github.profile;
         const name = githubProfile.name || githubProfile.login || '';
         const githubBio = githubProfile.bio || '';
@@ -160,12 +164,33 @@ const enrichProfile = async (employeeId) => {
         }
       }
       
+      // If still no bio, create a minimal one from available data
+      if (!bio) {
+        if (rawData.linkedin?.profile?.name) {
+          bio = `${rawData.linkedin.profile.name}. Professional profile.`;
+        } else if (rawData.github?.profile?.login) {
+          bio = `GitHub user: ${rawData.github.profile.login}. Technical professional.`;
+        } else {
+          bio = 'Professional profile information available.';
+        }
+        console.log(`[Enrichment] Created minimal fallback bio`);
+      }
+      
       // Extract basic projects from GitHub repos
       if (rawData.github?.repositories && Array.isArray(rawData.github.repositories)) {
         projects = rawData.github.repositories.slice(0, 5).map(repo => ({
           title: repo.name || 'Untitled Project',
           summary: repo.description || `GitHub repository: ${repo.name || 'Unknown'}`,
           source: 'github_fallback'
+        }));
+      }
+      
+      // If no projects from GitHub, try to extract from LinkedIn positions
+      if (projects.length === 0 && rawData.linkedin?.profile?.positions?.values) {
+        projects = rawData.linkedin.profile.positions.values.slice(0, 3).map(pos => ({
+          title: pos.title || 'Professional Experience',
+          summary: `${pos.title || ''} at ${pos.companyName || 'Company'}. ${pos.description || ''}`.substring(0, 500),
+          source: 'linkedin_fallback'
         }));
       }
       
@@ -188,14 +213,23 @@ const enrichProfile = async (employeeId) => {
 
       // Step 4: Store projects in projects table (cleaned and processed) - BATCH INSERT for efficiency
       if (projects && projects.length > 0) {
-        // Determine source - if projects came from fallback (have source field), use it, otherwise use 'gemini_ai' or 'fallback'
+        // Determine source - if projects came from fallback (have source field), use it, otherwise use 'gemini_ai'
+        // For fallback projects, we want to replace ALL fallback projects, not just from one source
         const projectSource = projects[0]?.source || 'gemini_ai';
+        const isFallback = projectSource.includes('fallback');
         
-        // Delete existing projects from this enrichment source (to avoid duplicates)
-        await client.query(
-          `DELETE FROM projects WHERE employee_id = $1 AND source = $2`,
-          [employeeId, projectSource]
-        );
+        // Delete existing projects - if fallback, delete all fallback projects; otherwise delete only from this source
+        if (isFallback) {
+          await client.query(
+            `DELETE FROM projects WHERE employee_id = $1 AND source LIKE '%fallback'`,
+            [employeeId]
+          );
+        } else {
+          await client.query(
+            `DELETE FROM projects WHERE employee_id = $1 AND source = $2`,
+            [employeeId, projectSource]
+          );
+        }
 
         // Batch insert projects for efficiency (instead of loop)
         const validProjects = projects
@@ -237,18 +271,16 @@ const enrichProfile = async (employeeId) => {
         );
       }
 
-      // Step 6: Mark raw data as processed (processed = true) - ONLY if we got results
-      if (bio || (projects && projects.length > 0)) {
-        await client.query(
-          `UPDATE external_data_raw 
-           SET processed = true, updated_at = CURRENT_TIMESTAMP 
-           WHERE employee_id = $1 AND processed = false`,
-          [employeeId]
-        );
-        console.log(`[Enrichment] Raw data marked as processed`);
-      } else {
-        console.warn(`[Enrichment] ⚠️ No bio or projects generated - NOT marking as processed. Will retry next time.`);
-      }
+      // Step 6: Mark raw data as processed (processed = true) - ALWAYS if we attempted processing
+      // Even if bio/projects are empty, we mark as processed to avoid infinite retries
+      // The fallback should have extracted something, but if not, we still mark as processed
+      await client.query(
+        `UPDATE external_data_raw 
+         SET processed = true, updated_at = CURRENT_TIMESTAMP 
+         WHERE employee_id = $1 AND processed = false`,
+        [employeeId]
+      );
+      console.log(`[Enrichment] Raw data marked as processed (bio: ${!!bio}, projects: ${projects?.length || 0})`);
 
       // Step 8: Generate value proposition if current_role and target_role exist
       if (bio || (projects && projects.length > 0)) {

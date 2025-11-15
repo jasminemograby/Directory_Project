@@ -27,13 +27,14 @@ const Layout = ({ children }) => {
   const userEmail = getUserEmail();
   const isAuthenticated = !!userEmail;
 
-  // Don't show Layout navigation on landing page - it has its own header
+  // Don't show Layout navigation on landing page or company registration pages - they have their own header
   const isLandingPage = location.pathname === ROUTES.HOME || location.pathname === ROUTES.HR_LANDING;
+  const isCompanyRegistration = location.pathname.startsWith('/company/register');
   
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-body)' }}>
-      {/* Navigation Bar - only show if not landing page (Header is now global) */}
-      {!isLandingPage && (
+      {/* Navigation Bar - only show if not landing page or company registration (Header is now global) */}
+      {!isLandingPage && !isCompanyRegistration && (
       <nav className="shadow-sm border-b" style={{
         marginTop: '64px', // Space for global header 
         backgroundColor: 'var(--bg-card)', 

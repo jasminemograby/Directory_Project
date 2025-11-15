@@ -7,6 +7,7 @@ import Button from '../components/common/Button';
 import { apiService } from '../services/api';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { ROUTES, getProfilePath } from '../utils/constants';
+import PendingProfilesApproval from '../components/HR/PendingProfilesApproval';
 
 const CompanyProfile = () => {
   const { companyId } = useParams();
@@ -21,34 +22,66 @@ const CompanyProfile = () => {
   const currentCompanyId = companyId || localStorage.getItem('companyId');
 
   const fetchCompanyData = useCallback(async () => {
-    if (!currentCompanyId) {
-      setError('Please set a company ID.');
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
-      // Fetch company data
-      const companyResponse = await apiService.getCompany(currentCompanyId);
-      if (companyResponse.data && companyResponse.data.data) {
-        setCompany(companyResponse.data.data);
-      } else {
-        // Try fetching by HR email
-        const hrEmail = localStorage.getItem('hrEmail');
-        if (hrEmail) {
-          const companyByEmailResponse = await apiService.getCompany(null, hrEmail);
-          if (companyByEmailResponse.data && companyByEmailResponse.data.data) {
-            setCompany(companyByEmailResponse.data.data);
+      let companyResponse;
+      let resolvedCompanyId = currentCompanyId;
+
+      // Try to fetch by company ID first
+      if (currentCompanyId) {
+        try {
+          companyResponse = await apiService.getCompany(currentCompanyId);
+          if (companyResponse.data && companyResponse.data.success) {
+            setCompany(companyResponse.data.data);
+            resolvedCompanyId = companyResponse.data.data.id;
           }
+        } catch (idError) {
+          // If 404 by ID, try by HR email as fallback
+          if (idError.response?.status === 404) {
+            console.warn(`Company not found by ID ${currentCompanyId}, trying HR email fallback...`);
+            const hrEmail = localStorage.getItem('hrEmail');
+            if (hrEmail) {
+              try {
+                companyResponse = await apiService.getCompanyByHrEmail(hrEmail);
+                if (companyResponse.data && companyResponse.data.success) {
+                  setCompany(companyResponse.data.data);
+                  resolvedCompanyId = companyResponse.data.data.id;
+                  // Update stored company ID if found by email
+                  localStorage.setItem('companyId', resolvedCompanyId);
+                }
+              } catch (emailError) {
+                throw emailError; // Re-throw if email lookup also fails
+              }
+            } else {
+              throw idError; // Re-throw if no HR email available
+            }
+          } else {
+            throw idError; // Re-throw if not a 404 error
+          }
+        }
+      } else {
+        // No company ID - fetch by HR email
+        const hrEmail = localStorage.getItem('hrEmail');
+        if (!hrEmail) {
+          throw new Error('No company ID or HR email available');
+        }
+        companyResponse = await apiService.getCompanyByHrEmail(hrEmail);
+        if (companyResponse.data && companyResponse.data.success) {
+          setCompany(companyResponse.data.data);
+          resolvedCompanyId = companyResponse.data.data.id;
+          // Store company ID for future use
+          localStorage.setItem('companyId', resolvedCompanyId);
         }
       }
 
+      // Update currentCompanyId for subsequent calls
+      const finalCompanyId = resolvedCompanyId || currentCompanyId;
+
       // Fetch company hierarchy
       try {
-        const hierarchyResponse = await apiService.getCompanyHierarchy(currentCompanyId);
+        const hierarchyResponse = await apiService.getCompanyHierarchy(finalCompanyId);
         if (hierarchyResponse.data && hierarchyResponse.data.data) {
           setHierarchy(hierarchyResponse.data.data.hierarchy);
         }
@@ -58,7 +91,7 @@ const CompanyProfile = () => {
 
       // Fetch employees list
       try {
-        const employeesResponse = await apiService.getEmployees({ company_id: currentCompanyId });
+        const employeesResponse = await apiService.getEmployees({ company_id: finalCompanyId });
         if (employeesResponse.data && employeesResponse.data.data) {
           setEmployees(employeesResponse.data.data.employees || []);
         }
@@ -78,9 +111,14 @@ const CompanyProfile = () => {
     } catch (error) {
       console.error('Error fetching company data:', error);
       if (error.response?.status === 404) {
-        setError('Company profile not found.');
+        const errorMsg = error.response?.data?.error || 'Company profile not found';
+        if (errorMsg.includes('HR email') || errorMsg.includes('HR not found')) {
+          setError('HR not found or not authorized. Please ensure you are logged in with the correct HR email.');
+        } else {
+          setError('Company profile not found. Please complete company registration first.');
+        }
       } else {
-        setError('Failed to load company profile. Please try again.');
+        setError(error.response?.data?.error || 'Failed to load company profile. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -239,6 +277,11 @@ const CompanyProfile = () => {
             />
           </div>
         )}
+
+        {/* Pending Profile Approvals Section */}
+        <div className="mb-6">
+          <PendingProfilesApproval />
+        </div>
 
         {/* Requests Section */}
         <div className="rounded-lg p-6 mb-6" style={{ 

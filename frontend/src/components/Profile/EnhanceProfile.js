@@ -201,19 +201,21 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
         throw new Error('API base URL not configured');
       }
       
-      // If already connected, disconnect first to force fresh OAuth
-      if (linkedInStatus === 'connected') {
-        try {
-          await apiService.disconnectProvider(employeeId, 'linkedin');
-          console.log('[EnhanceProfile] Disconnected LinkedIn for reconnect');
-        } catch (disconnectError) {
-          console.warn('[EnhanceProfile] Failed to disconnect LinkedIn (non-critical):', disconnectError.message);
-          // Continue anyway - will try to reconnect
-        }
+      // Always disconnect first to force fresh OAuth (even if status says disconnected)
+      // This ensures we clear any stale tokens
+      try {
+        await apiService.disconnectProvider(employeeId, 'linkedin');
+        console.log('[EnhanceProfile] Disconnected LinkedIn for fresh OAuth');
+        // Small delay to ensure disconnect completes
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (disconnectError) {
+        console.warn('[EnhanceProfile] Failed to disconnect LinkedIn (non-critical, continuing anyway):', disconnectError.message);
+        // Continue anyway - will try to reconnect
       }
       
       // Direct redirect to LinkedIn OAuth (same pattern as GitHub)
       const authorizeEndpoint = `${API_BASE_URL}/external/linkedin/authorize/${employeeId}?mode=redirect`;
+      console.log('[EnhanceProfile] Redirecting to LinkedIn OAuth:', authorizeEndpoint);
       window.location.href = authorizeEndpoint;
     } catch (error) {
       console.error('Error initiating LinkedIn auth:', error);
@@ -233,18 +235,20 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
         throw new Error('API base URL not configured');
       }
       
-      // If already connected, disconnect first to force fresh OAuth
-      if (githubStatus === 'connected') {
-        try {
-          await apiService.disconnectProvider(employeeId, 'github');
-          console.log('[EnhanceProfile] Disconnected GitHub for reconnect');
-        } catch (disconnectError) {
-          console.warn('[EnhanceProfile] Failed to disconnect GitHub (non-critical):', disconnectError.message);
-          // Continue anyway - will try to reconnect
-        }
+      // Always disconnect first to force fresh OAuth (even if status says disconnected)
+      // This ensures we clear any stale tokens
+      try {
+        await apiService.disconnectProvider(employeeId, 'github');
+        console.log('[EnhanceProfile] Disconnected GitHub for fresh OAuth');
+        // Small delay to ensure disconnect completes
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (disconnectError) {
+        console.warn('[EnhanceProfile] Failed to disconnect GitHub (non-critical, continuing anyway):', disconnectError.message);
+        // Continue anyway - will try to reconnect
       }
       
       const authorizeEndpoint = `${API_BASE_URL}/external/github/authorize/${employeeId}?mode=redirect`;
+      console.log('[EnhanceProfile] Redirecting to GitHub OAuth:', authorizeEndpoint);
       window.location.href = authorizeEndpoint;
     } catch (error) {
       console.error('Error initiating GitHub auth:', error);

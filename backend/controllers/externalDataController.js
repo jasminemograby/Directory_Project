@@ -115,6 +115,25 @@ const handleLinkedInCallback = async (req, res, next) => {
       console.log(`[LinkedIn Callback] Automatically fetching LinkedIn profile data for employee: ${employeeId}`);
       await linkedInService.fetchProfileData(employeeId);
       console.log(`[LinkedIn Callback] ✅ LinkedIn data fetched and stored successfully`);
+      
+      // Check if both LinkedIn and GitHub are connected - if so, trigger enrichment
+      const tokensCheck = await query(
+        `SELECT provider FROM oauth_tokens WHERE employee_id = $1 AND provider IN ('linkedin', 'github')`,
+        [employeeId]
+      );
+      const hasLinkedIn = tokensCheck.rows.some(r => r.provider === 'linkedin');
+      const hasGitHub = tokensCheck.rows.some(r => r.provider === 'github');
+      
+      if (hasLinkedIn && hasGitHub) {
+        console.log(`[LinkedIn Callback] Both LinkedIn and GitHub connected - triggering automatic enrichment`);
+        try {
+          const profileEnrichmentService = require('../services/profileEnrichmentService');
+          await profileEnrichmentService.enrichProfile(employeeId);
+          console.log(`[LinkedIn Callback] ✅ Automatic enrichment completed`);
+        } catch (enrichError) {
+          console.warn('[LinkedIn Callback] ⚠️ Enrichment failed (non-critical):', enrichError.message);
+        }
+      }
     } catch (fetchError) {
       console.warn('[LinkedIn Callback] ⚠️ Failed to fetch LinkedIn data automatically (non-critical):', fetchError.message);
       // Don't fail the callback if data fetch fails - user can fetch manually later
@@ -277,6 +296,25 @@ const handleGitHubCallback = async (req, res, next) => {
       console.log(`[GitHub Callback] Automatically fetching GitHub profile data for employee: ${employeeId}`);
       await githubService.fetchProfileData(employeeId);
       console.log(`[GitHub Callback] ✅ GitHub data fetched and stored successfully`);
+      
+      // Check if both LinkedIn and GitHub are connected - if so, trigger enrichment
+      const tokensCheck = await query(
+        `SELECT provider FROM oauth_tokens WHERE employee_id = $1 AND provider IN ('linkedin', 'github')`,
+        [employeeId]
+      );
+      const hasLinkedIn = tokensCheck.rows.some(r => r.provider === 'linkedin');
+      const hasGitHub = tokensCheck.rows.some(r => r.provider === 'github');
+      
+      if (hasLinkedIn && hasGitHub) {
+        console.log(`[GitHub Callback] Both LinkedIn and GitHub connected - triggering automatic enrichment`);
+        try {
+          const profileEnrichmentService = require('../services/profileEnrichmentService');
+          await profileEnrichmentService.enrichProfile(employeeId);
+          console.log(`[GitHub Callback] ✅ Automatic enrichment completed`);
+        } catch (enrichError) {
+          console.warn('[GitHub Callback] ⚠️ Enrichment failed (non-critical):', enrichError.message);
+        }
+      }
     } catch (fetchError) {
       console.warn('[GitHub Callback] ⚠️ Failed to fetch GitHub data automatically (non-critical):', fetchError.message);
       // Don't fail the callback if data fetch fails - user can fetch manually later
@@ -378,10 +416,23 @@ const collectAllData = async (req, res, next) => {
     }
 
     // Process data through Gemini AI (enrichment) - AUTOMATIC after connection
+    // Check if we have raw data (either from current fetch OR already stored)
     let enrichmentResult = null;
-    if (results.linkedin || results.github) {
+    const hasRawData = results.linkedin || results.github;
+    
+    // Also check if there's unprocessed raw data already in the database
+    const rawDataCheck = await query(
+      `SELECT COUNT(*) as count 
+       FROM external_data_raw 
+       WHERE employee_id = $1 AND processed = false`,
+      [employeeId]
+    );
+    const hasUnprocessedRawData = parseInt(rawDataCheck.rows[0].count, 10) > 0;
+    
+    if (hasRawData || hasUnprocessedRawData) {
       try {
         console.log(`[Collect] Starting automatic Gemini enrichment for employee: ${employeeId}`);
+        console.log(`[Collect] Has raw data from fetch: ${hasRawData}, Has unprocessed raw data in DB: ${hasUnprocessedRawData}`);
         const profileEnrichmentService = require('../services/profileEnrichmentService');
         enrichmentResult = await profileEnrichmentService.enrichProfile(employeeId);
         console.log('[Collect] ✅ Automatic profile enrichment completed:', {
@@ -397,7 +448,7 @@ const collectAllData = async (req, res, next) => {
         enrichmentResult = { error: error.message };
       }
     } else {
-      console.log('[Collect] ⚠️ No data to enrich (no LinkedIn or GitHub data fetched)');
+      console.log('[Collect] ⚠️ No data to enrich (no LinkedIn or GitHub data fetched or stored)');
     }
 
     res.json({
