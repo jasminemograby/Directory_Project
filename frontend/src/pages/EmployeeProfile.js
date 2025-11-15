@@ -312,6 +312,7 @@ const EmployeeProfile = () => {
   ];
 
   return (
+    <>
     <div className={`min-h-screen pt-16 ${
         theme === 'day-mode' ? 'bg-gray-50' : 'bg-slate-900'
       }`}>
@@ -477,6 +478,7 @@ const EmployeeProfile = () => {
           </div>
         )}
       </div>
+    </div>
     </>
   );
 };
