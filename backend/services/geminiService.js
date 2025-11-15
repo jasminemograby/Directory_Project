@@ -18,6 +18,15 @@ if (process.env.GEMINI_MODEL) {
   console.log(`[Gemini] Using default model: ${GEMINI_MODEL}`);
 }
 
+// Check API key on startup
+if (!GEMINI_API_KEY) {
+  console.error('[Gemini] ⚠️  WARNING: GEMINI_API_KEY is not set! Gemini features will not work.');
+} else {
+  // Log first 10 chars of API key for verification (not the full key for security)
+  const keyPreview = GEMINI_API_KEY.substring(0, 10) + '...';
+  console.log(`[Gemini] API Key configured: ${keyPreview} (length: ${GEMINI_API_KEY.length})`);
+}
+
 /**
  * Sanitize input data to prevent injection attacks
  * @param {string} text - Text to sanitize
@@ -293,11 +302,30 @@ Generate ONLY the bio text, without any additional commentary, labels, or explan
   } catch (error) {
     console.error('[Gemini] Error generating bio:', error.message);
     if (error.response) {
-      console.error('[Gemini] API Error Status:', error.response.status);
-      console.error('[Gemini] API Error Data:', JSON.stringify(error.response.data, null, 2));
+      const status = error.response.status;
+      const errorData = error.response.data;
+      console.error('[Gemini] API Error Status:', status);
+      console.error('[Gemini] API Error Data:', JSON.stringify(errorData, null, 2));
       console.error('[Gemini] API URL:', error.config?.url);
+      
+      // For critical errors (quota, auth, etc.), throw to trigger fallback
+      if (status === 429) {
+        console.error('[Gemini] ❌ Quota exceeded (429) - will use fallback');
+        throw new Error('Gemini API quota exceeded');
+      } else if (status === 401 || status === 403) {
+        console.error(`[Gemini] ❌ Authentication error (${status}) - check API key`);
+        throw new Error(`Gemini API authentication failed: ${errorData?.error?.message || 'Invalid API key'}`);
+      } else if (status >= 500) {
+        console.error(`[Gemini] ❌ Server error (${status}) - will use fallback`);
+        throw new Error(`Gemini API server error: ${status}`);
+      }
+    } else if (error.request) {
+      console.error('[Gemini] ❌ No response from Gemini API - network error');
+      throw new Error('Gemini API network error - no response received');
     }
-    // Don't throw - return null for graceful degradation
+    
+    // For other errors, return null (graceful degradation)
+    console.warn('[Gemini] ⚠️  Unknown error, returning null');
     return null;
   }
 };
@@ -476,11 +504,30 @@ Return ONLY the JSON array, no additional text or explanations.`;
   } catch (error) {
     console.error('[Gemini] Error identifying projects:', error.message);
     if (error.response) {
-      console.error('[Gemini] API Error Status:', error.response.status);
-      console.error('[Gemini] API Error Data:', JSON.stringify(error.response.data, null, 2));
+      const status = error.response.status;
+      const errorData = error.response.data;
+      console.error('[Gemini] API Error Status:', status);
+      console.error('[Gemini] API Error Data:', JSON.stringify(errorData, null, 2));
       console.error('[Gemini] API URL:', error.config?.url);
+      
+      // For critical errors (quota, auth, etc.), throw to trigger fallback
+      if (status === 429) {
+        console.error('[Gemini] ❌ Quota exceeded (429) - will use fallback');
+        throw new Error('Gemini API quota exceeded');
+      } else if (status === 401 || status === 403) {
+        console.error(`[Gemini] ❌ Authentication error (${status}) - check API key`);
+        throw new Error(`Gemini API authentication failed: ${errorData?.error?.message || 'Invalid API key'}`);
+      } else if (status >= 500) {
+        console.error(`[Gemini] ❌ Server error (${status}) - will use fallback`);
+        throw new Error(`Gemini API server error: ${status}`);
+      }
+    } else if (error.request) {
+      console.error('[Gemini] ❌ No response from Gemini API - network error');
+      throw new Error('Gemini API network error - no response received');
     }
-    // Don't throw - return empty array for graceful degradation
+    
+    // For other errors, return empty array (graceful degradation)
+    console.warn('[Gemini] ⚠️  Unknown error, returning empty array');
     return [];
   }
 };
