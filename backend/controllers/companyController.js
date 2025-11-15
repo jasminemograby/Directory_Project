@@ -104,11 +104,11 @@ const getCompanyById = async (companyId) => {
       query('SELECT COUNT(*) as count FROM employees WHERE company_id = $1', [companyId]),
     ]);
 
-    // Get company settings (exercise_limit, passing_grade, max_attempts)
+    // Get company settings (exercise_limit, passing_grade, max_test_attempts)
     const settingsResult = await query(
       `SELECT setting_key, setting_value
        FROM company_settings
-       WHERE company_id = $1 AND setting_key IN ('exercise_limit', 'passing_grade', 'max_attempts')`,
+       WHERE company_id = $1 AND setting_key IN ('exercise_limit', 'passing_grade', 'max_test_attempts', 'max_attempts')`,
       [companyId]
     );
 
@@ -133,7 +133,7 @@ const getCompanyById = async (companyId) => {
       settings: {
         exerciseLimit: settings.exercise_limit || null,
         passingGrade: settings.passing_grade || null,
-        maxAttempts: settings.max_attempts || null,
+        maxAttempts: settings.max_test_attempts || settings.max_attempts || null,
       },
     };
   } catch (error) {

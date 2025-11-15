@@ -1,6 +1,7 @@
 // HR Dashboard Page
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import Header from '../components/common/Header';
 import { apiService } from '../services/api';
 import { authService } from '../utils/auth';
 import { ROUTES } from '../utils/constants';
@@ -178,7 +179,9 @@ const HRDashboard = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-screen" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)' }}>
+      <Header />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
       {/* Success Message */}
       {successMessage && (
         <div className="mb-6 border border-accent-green rounded-lg p-4" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)' }}>
@@ -215,9 +218,9 @@ const HRDashboard = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
+      {/* Statistics Cards - Display Only (Not Clickable) */}
       <div className="grid md:grid-cols-3 gap-6 mb-6">
-        <div className="rounded-lg p-6 transition-all" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }} onMouseEnter={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-hover)'} onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-card)'}>
+        <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Departments</p>
@@ -231,7 +234,7 @@ const HRDashboard = () => {
           </div>
         </div>
 
-        <div className="rounded-lg p-6 transition-all" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }} onMouseEnter={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-hover)'} onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-card)'}>
+        <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Teams</p>
@@ -245,7 +248,7 @@ const HRDashboard = () => {
           </div>
         </div>
 
-        <div className="rounded-lg p-6 transition-all" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }} onMouseEnter={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-hover)'} onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-card)'}>
+        <div className="rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Employees</p>
@@ -279,7 +282,7 @@ const HRDashboard = () => {
             )}
             {company.settings.maxAttempts && (
               <div>
-                <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Max Attempts</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Max Test Attempts</p>
                 <p className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{company.settings.maxAttempts}</p>
               </div>
             )}
@@ -294,17 +297,20 @@ const HRDashboard = () => {
         </div>
       )}
 
-      {/* Hierarchy Tree */}
-      {hierarchy && (
-        <div className="mb-6">
+      {/* Organization Hierarchy - Single Tree View */}
+      <div className="rounded-lg p-6 mb-6" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-card)', borderColor: 'var(--bg-secondary)', borderWidth: '1px', borderStyle: 'solid' }}>
+        <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Organization Hierarchy</h2>
+        {hierarchy ? (
           <HierarchyTree
             hierarchy={hierarchy}
             onEmployeeClick={(employeeId) => {
               navigate(`${ROUTES.PROFILE}/${employeeId}`);
             }}
           />
-        </div>
-      )}
+        ) : (
+          <p style={{ color: 'var(--text-secondary)' }}>Loading hierarchy...</p>
+        )}
+      </div>
 
       {/* Pending Profiles Approval Section */}
       <div className="mb-6">
@@ -322,63 +328,13 @@ const HRDashboard = () => {
         <div className="grid md:grid-cols-3 gap-4">
           <Button
             variant="primary"
-            onClick={async () => {
-              // Get HR employee ID from company data or localStorage
-              let hrEmployeeId = null;
-              
-              // First, try to get from company data (most reliable)
-              if (company && company.hr && company.hr.id) {
-                hrEmployeeId = company.hr.id;
-              } else {
-                // Fallback to localStorage
-                hrEmployeeId = localStorage.getItem('hrEmployeeId') || localStorage.getItem('currentEmployeeId');
-              }
-              
-              // If still no ID, try to fetch from API using HR email
-              if (!hrEmployeeId) {
-                try {
-                  const hrEmail = localStorage.getItem('hrEmail') || authService.getUserEmail();
-                  if (hrEmail && company && company.id) {
-                    // Fetch HR employee by email and company
-                    const response = await apiService.getEmployees({ company_id: company.id });
-                    if (response.data && response.data.data && response.data.data.employees) {
-                      const hrEmployee = response.data.data.employees.find(
-                        emp => emp.email && emp.email.toLowerCase() === hrEmail.toLowerCase()
-                      );
-                      if (hrEmployee) {
-                        hrEmployeeId = hrEmployee.id;
-                        localStorage.setItem('hrEmployeeId', hrEmployeeId);
-                        localStorage.setItem('currentEmployeeId', hrEmployeeId);
-                      }
-                    }
-                  }
-                } catch (err) {
-                  console.warn('Could not fetch HR employee ID:', err);
-                }
-              }
-              
-              if (hrEmployeeId) {
-                // Navigate to profile with employee ID in URL
-                // ROUTES.PROFILE is '/profile/:employeeId', so we need to replace :employeeId
-                const profileUrl = `/profile/${hrEmployeeId}`;
-                console.log('[HRDashboard] Navigating to profile:', profileUrl, 'with employee ID:', hrEmployeeId);
-                // Also update localStorage to ensure consistency BEFORE navigation
-                localStorage.setItem('currentEmployeeId', hrEmployeeId);
-                localStorage.setItem('hrEmployeeId', hrEmployeeId);
-                navigate(profileUrl);
-              } else {
-                // Fallback: try to navigate to profile/me or show error
-                console.warn('[HRDashboard] No HR employee ID found, trying profile/me');
-                // Make sure we have at least the email in localStorage
-                const hrEmail = localStorage.getItem('hrEmail') || authService.getUserEmail();
-                if (hrEmail) {
-                  localStorage.setItem('hrEmail', hrEmail);
-                }
-                navigate(ROUTES.PROFILE_ME || ROUTES.EMPLOYEE_PROFILE);
-              }
+            onClick={() => {
+              // Navigate to Learning Analytics microservice frontend
+              const analyticsUrl = process.env.REACT_APP_LEARNING_ANALYTICS_URL || 'https://learning-analytics.vercel.app';
+              window.open(analyticsUrl, '_blank');
             }}
           >
-            View My Profile
+            Analytics
           </Button>
           <Button
             variant="secondary"
@@ -394,7 +350,7 @@ const HRDashboard = () => {
           </Button>
         </div>
       </div>
-
+      </div>
     </div>
   );
 };

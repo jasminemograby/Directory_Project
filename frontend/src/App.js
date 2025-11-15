@@ -37,12 +37,8 @@ function App() {
           <Route path={ROUTES.LOGIN} element={<Login />} />
           <Route path={ROUTES.HR_LANDING} element={<HRLanding />} />
           
-          {/* HR Dashboard */}
-          <Route path={ROUTES.HR_DASHBOARD} element={
-            <Layout>
-              <HRDashboard />
-            </Layout>
-          } />
+          {/* HR Dashboard - No Layout wrapper (uses Header internally) */}
+          <Route path={ROUTES.HR_DASHBOARD} element={<HRDashboard />} />
           
           {/* Employee Profile */}
           <Route path={ROUTES.EMPLOYEE_PROFILE} element={<EmployeeProfile />} />

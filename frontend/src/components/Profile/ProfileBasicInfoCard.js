@@ -35,7 +35,7 @@ const ProfileBasicInfoCard = ({ employee, onEditClick }) => {
         <p className={`text-sm ${
           theme === 'day-mode' ? 'text-gray-600' : 'text-gray-400'
         }`}>
-          {employee.role || employee.current_role || 'Employee'}
+          {employee.current_role || employee.role || 'Employee'}
         </p>
         {employee.target_role && (
           <p className={`text-xs mt-1 ${

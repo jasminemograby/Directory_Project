@@ -39,10 +39,19 @@ const ProfileOverviewTab = ({ employee, processedData, profileData }) => {
       {/* Value Proposition + Relevance Score */}
       {profileData && profileData.career && (
         <CareerBlock
-          currentRole={profileData.career.currentRole || profileData.career.current_role}
-          targetRole={profileData.career.targetRole || profileData.career.target_role}
+          currentRole={profileData.career.currentRole || profileData.career.current_role || employee?.current_role || employee?.role}
+          targetRole={profileData.career.targetRole || profileData.career.target_role || employee?.target_role}
           valueProposition={profileData.career.valueProposition || profileData.career.value_proposition}
           relevanceScore={profileData.career.relevanceScore || profileData.career.relevance_score}
+        />
+      )}
+      {/* Fallback: Show employee data if profileData doesn't have career */}
+      {(!profileData || !profileData.career) && employee && (
+        <CareerBlock
+          currentRole={employee.current_role || employee.role}
+          targetRole={employee.target_role}
+          valueProposition={null}
+          relevanceScore={null}
         />
       )}
 

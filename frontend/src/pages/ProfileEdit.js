@@ -280,8 +280,9 @@ const ProfileEdit = () => {
                   <p><strong>Email:</strong> {employee.email || 'N/A'}</p>
                   <p><strong>Role:</strong> {employee.role || employee.current_role || 'N/A'}</p>
                   {employee.target_role && <p><strong>Target Role:</strong> {employee.target_role}</p>}
-                  {employee.department_id && <p><strong>Department:</strong> {employee.department_id}</p>}
-                  {employee.team_id && <p><strong>Team:</strong> {employee.team_id}</p>}
+                  {employee.department_name && <p><strong>Department:</strong> {employee.department_name}</p>}
+                  {employee.team_name && <p><strong>Team:</strong> {employee.team_name}</p>}
+                  {employee.company_name && <p><strong>Company:</strong> {employee.company_name}</p>}
                   <p><strong>Employee Type:</strong> {employee.type || 'regular'}</p>
                 </div>
                 <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>

@@ -19,25 +19,31 @@ const getEmployee = async (req, res, next) => {
 
     const result = await query(
       `SELECT 
-        id,
-        name,
-        email,
-        phone,
-        address,
-        role,
-        current_role,
-        target_role,
-        type,
-        company_id,
-        department_id,
-        team_id,
-        preferred_language,
-        bio,
-        profile_status,
-        created_at,
-        updated_at
-       FROM employees 
-       WHERE id = $1`,
+        e.id,
+        e.name,
+        e.email,
+        e.phone,
+        e.address,
+        e.role,
+        e.current_role,
+        e.target_role,
+        e.type,
+        e.company_id,
+        e.department_id,
+        e.team_id,
+        e.preferred_language,
+        e.bio,
+        e.profile_status,
+        e.created_at,
+        e.updated_at,
+        c.name as company_name,
+        d.name as department_name,
+        t.name as team_name
+       FROM employees e
+       LEFT JOIN companies c ON e.company_id = c.id
+       LEFT JOIN departments d ON e.department_id = d.id
+       LEFT JOIN teams t ON e.team_id = t.id
+       WHERE e.id = $1`,
       [id]
     );
 
@@ -48,9 +54,17 @@ const getEmployee = async (req, res, next) => {
       });
     }
 
+    const employee = result.rows[0];
+    
+    // Return employee with department and team names
     res.json({
       success: true,
-      data: result.rows[0]
+      data: {
+        ...employee,
+        department_name: employee.department_name || null,
+        team_name: employee.team_name || null,
+        company_name: employee.company_name || null
+      }
     });
   } catch (error) {
     console.error('Error fetching employee:', error.message);

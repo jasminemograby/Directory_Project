@@ -401,57 +401,6 @@ const EmployeeProfile = () => {
               </div>
             </div>
 
-            {/* Show enrichment section even if enriched (for re-connection) */}
-            {/* Always show EnhanceProfile section so users can connect/reconnect LinkedIn and GitHub */}
-            <div className="mt-6">
-              <div className={`rounded-lg p-4 mb-4 border ${
-                theme === 'day-mode' 
-                  ? 'bg-blue-50 border-blue-200' 
-                  : 'bg-blue-900/20 border-blue-800'
-              }`}>
-                <h3 className={`text-lg font-semibold mb-2 ${
-                  theme === 'day-mode' ? 'text-blue-800' : 'text-blue-300'
-                }`}>
-                  Connect External Accounts
-                </h3>
-                <p className={`text-sm ${
-                  theme === 'day-mode' ? 'text-blue-700' : 'text-blue-300'
-                }`}>
-                  Connect your LinkedIn and GitHub accounts to enrich your profile with professional data, 
-                  work experience, projects, and skills.
-                </p>
-              </div>
-              <EnhanceProfile 
-                employeeId={currentEmployeeId} 
-                onEnrichmentComplete={handleEnrichmentComplete}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Show enrichment section even when profile is enriched (for re-connection) */}
-        {isEnriched && employee && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className={`rounded-lg p-4 mb-4 border ${
-              theme === 'day-mode' 
-                ? 'bg-blue-50 border-blue-200' 
-                : 'bg-blue-900/20 border-blue-800'
-            }`}>
-              <h3 className={`text-lg font-semibold mb-2 ${
-                theme === 'day-mode' ? 'text-blue-800' : 'text-blue-300'
-              }`}>
-                Connect External Accounts
-              </h3>
-              <p className={`text-sm ${
-                theme === 'day-mode' ? 'text-blue-700' : 'text-blue-300'
-              }`}>
-                Connect or reconnect your LinkedIn and GitHub accounts to update your profile data.
-              </p>
-            </div>
-            <EnhanceProfile 
-              employeeId={currentEmployeeId} 
-              onEnrichmentComplete={handleEnrichmentComplete}
-            />
           </div>
         )}
       </div>
