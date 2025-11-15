@@ -42,7 +42,7 @@ const getCompanyHierarchy = async (req, res) => {
         const teams = await Promise.all(
           teamsResult.rows.map(async (team) => {
             const employeesResult = await query(
-              `SELECT id, name, email, role, type, current_role, target_role
+              `SELECT id, name, email, role, type, "current_role", target_role
                FROM employees 
                WHERE team_id = $1 AND company_id = $2
                ORDER BY name`,

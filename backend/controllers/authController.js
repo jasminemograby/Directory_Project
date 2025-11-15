@@ -27,7 +27,7 @@ const login = async (req, res) => {
         e.email,
         e.type,
         e.role,
-        e.current_role,
+        e."current_role",
         e.target_role,
         e.profile_status,
         e.company_id,

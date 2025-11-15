@@ -30,7 +30,7 @@ const getEmployeeProfile = async (req, res) => {
 
     // Get basic employee data
     const employeeResult = await query(
-      `SELECT id, name, email, role, type, current_role, target_role, value_proposition, 
+      `SELECT id, name, email, role, type, "current_role", target_role, value_proposition, 
               profile_status, company_id, created_at, updated_at
        FROM employees WHERE id = $1`,
       [employeeId]
@@ -87,7 +87,7 @@ const getEmployeeProfile = async (req, res) => {
     if (!relevanceScoreData) {
       relevanceScoreData = await mockSkillsEngineService.getRelevanceScore(
         employeeId,
-        employee.current_role,
+        employee."current_role",
         employee.target_role
       );
     }
@@ -455,7 +455,7 @@ const getTeamHierarchy = async (req, res) => {
 
     // Get all employees in the team
     const employeesResult = await query(
-      `SELECT id, name, email, role, type, current_role, target_role
+      `SELECT id, name, email, role, type, "current_role", target_role
        FROM employees 
        WHERE team_id = $1 AND company_id = $2
        ORDER BY name`,
@@ -574,7 +574,7 @@ const getDepartmentHierarchy = async (req, res) => {
     const teams = await Promise.all(
       teamsResult.rows.map(async (team) => {
         const employeesResult = await query(
-          `SELECT id, name, email, role, type, current_role, target_role
+          `SELECT id, name, email, role, type, "current_role", target_role
            FROM employees 
            WHERE team_id = $1 AND company_id = $2
            ORDER BY name`,

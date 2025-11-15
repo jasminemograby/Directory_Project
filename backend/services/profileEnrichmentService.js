@@ -206,7 +206,7 @@ const enrichProfile = async (employeeId) => {
       // Step 8: Generate value proposition if current_role and target_role exist
       if (bio || (projects && projects.length > 0)) {
         const employeeCheck = await client.query(
-          `SELECT current_role, target_role FROM employees WHERE id = $1`,
+          `SELECT "current_role", target_role FROM employees WHERE id = $1`,
           [employeeId]
         );
         
@@ -250,7 +250,7 @@ const enrichProfile = async (employeeId) => {
         console.log(`[Enrichment] Sending data to Skills Engine for normalization...`);
         const microserviceIntegrationService = require('./microserviceIntegrationService');
         const employeeResult = await query(
-          `SELECT type, current_role, target_role FROM employees WHERE id = $1`,
+          `SELECT type, "current_role", target_role FROM employees WHERE id = $1`,
           [employeeId]
         );
         

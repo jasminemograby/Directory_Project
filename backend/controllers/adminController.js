@@ -71,7 +71,7 @@ const getAllEmployees = async (req, res) => {
         e.email,
         e.role,
         e.type,
-        e.current_role,
+        e."current_role",
         e.target_role,
         e.profile_status,
         e.created_at,

@@ -41,7 +41,7 @@ const enrollEmployeesToLearningPath = async (req, res) => {
 
     // Verify all employees exist and belong to the same company
     const employeesResult = await query(
-      `SELECT id, name, email, company_id, current_role, target_role, type
+      `SELECT id, name, email, company_id, "current_role", target_role, type
        FROM employees 
        WHERE id = ANY($1::uuid[])`,
       [employeeIds]

@@ -78,7 +78,7 @@ const getValueProposition = async (employeeId) => {
 
     // Get current role and target role from employee
     const employeeResult = await query(
-      `SELECT current_role, target_role FROM employees WHERE id = $1`,
+      `SELECT "current_role", target_role FROM employees WHERE id = $1`,
       [employeeId]
     );
 
