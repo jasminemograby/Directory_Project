@@ -114,12 +114,7 @@ const EmployeeProfile = () => {
         setProfileData(mockDataService.getEmployeeProfile(currentEmployeeId));
       }
 
-      // Cache the fetched data - use final values from state setters
-      const cacheKey = `profile_${currentEmployeeId}`;
-      // Note: We can't use employee, processedData, profileData, hierarchy here directly
-      // because they're set via setState which is async. The cache will be populated
-      // on the next render when these values are available.
-      // For now, we'll cache after state is set in a useEffect
+      // Note: Cache update is handled in useEffect below when state values are available
     } catch (error) {
       console.error('Error fetching employee data:', error);
       // Don't redirect to 404 - show error message instead
