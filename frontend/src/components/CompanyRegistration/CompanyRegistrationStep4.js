@@ -108,16 +108,41 @@ const CompanyRegistrationStep4 = () => {
     // But if no departments exist, that's fine - company can have employees without departments
     if (formData.departments && formData.departments.length > 0) {
       const departmentsWithoutManagers = [];
+      const managerConflicts = [];
+      
       formData.departments.forEach((dept) => {
         // Check if any employee is assigned as manager of this department
-        const hasManager = formData.employees.some(
+        const employeeManager = formData.employees.find(
           (emp) => emp.isManager && emp.managerType === 'dept_manager' && emp.managerOfId === dept.id
         );
-        if (!hasManager) {
+        
+        // Check if department has a managerId set (from department form)
+        const deptManagerId = dept.managerId;
+        
+        // If both exist, they must be the same employee
+        if (employeeManager && deptManagerId) {
+          // deptManagerId is an email, employeeManager.email is the email
+          if (employeeManager.email !== deptManagerId) {
+            managerConflicts.push({
+              department: dept.name || dept.id,
+              employeeManager: employeeManager.email,
+              deptManager: deptManagerId
+            });
+          }
+        }
+        
+        // Department must have at least one manager (either from employee or from department form)
+        if (!employeeManager && !deptManagerId) {
           departmentsWithoutManagers.push(dept.name || dept.id);
         }
       });
-      if (departmentsWithoutManagers.length > 0) {
+      
+      if (managerConflicts.length > 0) {
+        const conflictMessages = managerConflicts.map(c => 
+          `Department "${c.department}" has conflicting managers: Employee ${c.employeeManager} is set as manager, but department form has ${c.deptManager} as manager. Please ensure both match.`
+        );
+        newErrors.departments = conflictMessages.join(' ');
+      } else if (departmentsWithoutManagers.length > 0) {
         newErrors.departments = `The following departments are missing a manager: ${departmentsWithoutManagers.join(', ')}. Please assign a manager to each department before proceeding.`;
       }
     }
@@ -126,20 +151,45 @@ const CompanyRegistrationStep4 = () => {
     // But if no teams exist, that's fine - company can have employees without teams
     if (formData.departments && formData.departments.length > 0) {
       const teamsWithoutManagers = [];
+      const teamManagerConflicts = [];
+      
       formData.departments.forEach((dept) => {
         if (dept.teams && dept.teams.length > 0) {
           dept.teams.forEach((team) => {
             // Check if any employee is assigned as manager of this team
-            const hasManager = formData.employees.some(
+            const employeeManager = formData.employees.find(
               (emp) => emp.isManager && emp.managerType === 'team_manager' && emp.managerOfId === team.id
             );
-            if (!hasManager) {
+            
+            // Check if team has a managerId set (from team form)
+            const teamManagerId = team.managerId;
+            
+            // If both exist, they must be the same employee
+            if (employeeManager && teamManagerId) {
+              // teamManagerId is an email, employeeManager.email is the email
+              if (employeeManager.email !== teamManagerId) {
+                teamManagerConflicts.push({
+                  team: `${dept.name || 'Unknown'} → ${team.name || team.id}`,
+                  employeeManager: employeeManager.email,
+                  teamManager: teamManagerId
+                });
+              }
+            }
+            
+            // Team must have at least one manager (either from employee or from team form)
+            if (!employeeManager && !teamManagerId) {
               teamsWithoutManagers.push(`${dept.name || 'Unknown'} → ${team.name || team.id}`);
             }
           });
         }
       });
-      if (teamsWithoutManagers.length > 0) {
+      
+      if (teamManagerConflicts.length > 0) {
+        const conflictMessages = teamManagerConflicts.map(c => 
+          `Team "${c.team}" has conflicting managers: Employee ${c.employeeManager} is set as manager, but team form has ${c.teamManager} as manager. Please ensure both match.`
+        );
+        newErrors.teams = conflictMessages.join(' ');
+      } else if (teamsWithoutManagers.length > 0) {
         newErrors.teams = `The following teams are missing a manager: ${teamsWithoutManagers.join(', ')}. Please assign a manager to each team before proceeding.`;
       }
     }
@@ -162,14 +212,21 @@ const CompanyRegistrationStep4 = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    console.log('[Step4] Form submit triggered');
+    console.log('[Step4] Form data:', formData);
 
     // Validate form
     const validationErrors = validateFormData();
+    console.log('[Step4] Validation errors:', validationErrors);
+    
     if (Object.keys(validationErrors).length > 0) {
+      console.log('[Step4] Validation failed, setting errors');
       setErrors(validationErrors);
       return;
     }
 
+    console.log('[Step4] Validation passed, starting submission...');
     setLoading(true);
     setErrors({}); // Clear previous errors
     
@@ -212,9 +269,11 @@ const CompanyRegistrationStep4 = () => {
         payload.decisionMakerId = formData.decisionMakerId;
       }
 
+      console.log('[Step4] Sending payload to API:', payload);
+      
       const response = await apiService.registerCompany(payload);
 
-      console.log('Registration response:', response.data);
+      console.log('[Step4] Registration response:', response.data);
 
       if (response.data.success) {
         // Store company ID and HR employee ID for HR Dashboard
@@ -275,9 +334,11 @@ const CompanyRegistrationStep4 = () => {
         setLoading(false);
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      console.error('Error response:', JSON.stringify(error.response?.data, null, 2));
-      console.error('Error status:', error.response?.status);
+      console.error('[Step4] Registration error:', error);
+      console.error('[Step4] Error response:', JSON.stringify(error.response?.data, null, 2));
+      console.error('[Step4] Error status:', error.response?.status);
+      console.error('[Step4] Error message:', error.message);
+      console.error('[Step4] Full error:', error);
       
       // Don't redirect on error - show error message instead
       let errorMessage = error.response?.data?.message || 
