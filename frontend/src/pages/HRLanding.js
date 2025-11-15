@@ -8,52 +8,6 @@ const HRLanding = () => {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)' }}>
-      {/* Navigation Bar - Header is now global, this is just navigation */}
-      <div style={{ 
-        position: 'relative', 
-        zIndex: 10,
-        marginTop: '64px' // Space for global header
-      }}>
-        <div style={{ 
-          height: '64px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          maxWidth: '1280px',
-          margin: '0 auto',
-          padding: '0 24px',
-          borderBottom: '1px solid var(--border-default)',
-          backgroundColor: 'var(--bg-card)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <button
-              onClick={() => navigate(ROUTES.HOME)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 'var(--radius-md)',
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: 500,
-                transition: 'all var(--transition-fast) var(--transition-ease)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'var(--bg-section)';
-                e.currentTarget.style.color = 'var(--primary-base)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.color = 'var(--text-primary)';
-              }}
-            >
-              Home
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Welcome Section */}
       <section style={{
         padding: '80px 24px',
@@ -299,7 +253,7 @@ const HRLanding = () => {
                 borderRadius: 'var(--radius-lg)',
                 border: 'none',
                 background: 'white',
-                color: 'var(--primary-base)',
+                color: '#1e40af', // Fixed blue color for text (works in both light and dark mode)
                 cursor: 'pointer',
                 minWidth: '280px',
                 transition: 'all var(--transition-fast) var(--transition-ease)',
@@ -326,47 +280,49 @@ const HRLanding = () => {
             >
               Register Your Company Now
             </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ color: 'var(--text-inverse)', opacity: 0.9 }}>Already Registered?</span>
-              <button
-                onClick={() => navigate(ROUTES.LOGIN)}
-                style={{
-                  padding: '18px 36px',
-                  fontSize: '18px',
-                  fontWeight: 700,
-                  borderRadius: 'var(--radius-lg)',
-                  border: '3px solid white',
-                  background: 'transparent',
-                  color: 'white',
-                  cursor: 'pointer',
-                  minWidth: '140px',
-                  transition: 'all var(--transition-fast) var(--transition-ease)',
-                  letterSpacing: '0.01em',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
-                  e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.9)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                  e.currentTarget.style.borderColor = 'white';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.outline = '3px solid rgba(255, 255, 255, 0.5)';
-                  e.currentTarget.style.outlineOffset = '2px';
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.outline = 'none';
-                }}
-              >
-                Login
-              </button>
-            </div>
+            <button
+              onClick={() => navigate(ROUTES.LOGIN)}
+              style={{
+                padding: '18px 36px',
+                fontSize: '18px',
+                fontWeight: 700,
+                borderRadius: 'var(--radius-lg)',
+                border: '3px solid white',
+                background: 'transparent',
+                color: 'white',
+                cursor: 'pointer',
+                minWidth: '240px',
+                transition: 'all var(--transition-fast) var(--transition-ease)',
+                letterSpacing: '0.01em',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+                e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.borderColor = 'white';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.outline = '3px solid rgba(255, 255, 255, 0.5)';
+                e.currentTarget.style.outlineOffset = '2px';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.outline = 'none';
+              }}
+            >
+              <span style={{ opacity: 0.9 }}>Already Registered?</span>
+              <span>Login</span>
+            </button>
           </div>
         </div>
       </section>

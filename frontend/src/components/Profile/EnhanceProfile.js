@@ -201,6 +201,17 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
         throw new Error('API base URL not configured');
       }
       
+      // If already connected, disconnect first to force fresh OAuth
+      if (linkedInStatus === 'connected') {
+        try {
+          await apiService.disconnectProvider(employeeId, 'linkedin');
+          console.log('[EnhanceProfile] Disconnected LinkedIn for reconnect');
+        } catch (disconnectError) {
+          console.warn('[EnhanceProfile] Failed to disconnect LinkedIn (non-critical):', disconnectError.message);
+          // Continue anyway - will try to reconnect
+        }
+      }
+      
       // Direct redirect to LinkedIn OAuth (same pattern as GitHub)
       const authorizeEndpoint = `${API_BASE_URL}/external/linkedin/authorize/${employeeId}?mode=redirect`;
       window.location.href = authorizeEndpoint;
@@ -217,9 +228,22 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
       setLoading(true);
       setError(null);
       setGithubStatus('connecting');
+      
       if (!API_BASE_URL) {
         throw new Error('API base URL not configured');
       }
+      
+      // If already connected, disconnect first to force fresh OAuth
+      if (githubStatus === 'connected') {
+        try {
+          await apiService.disconnectProvider(employeeId, 'github');
+          console.log('[EnhanceProfile] Disconnected GitHub for reconnect');
+        } catch (disconnectError) {
+          console.warn('[EnhanceProfile] Failed to disconnect GitHub (non-critical):', disconnectError.message);
+          // Continue anyway - will try to reconnect
+        }
+      }
+      
       const authorizeEndpoint = `${API_BASE_URL}/external/github/authorize/${employeeId}?mode=redirect`;
       window.location.href = authorizeEndpoint;
     } catch (error) {
