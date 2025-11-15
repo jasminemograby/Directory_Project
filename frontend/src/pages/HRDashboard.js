@@ -359,13 +359,17 @@ const HRDashboard = () => {
               
               if (hrEmployeeId) {
                 // Navigate to profile with employee ID in URL
-                navigate(`${ROUTES.PROFILE}/${hrEmployeeId}`);
+                // ROUTES.PROFILE is '/profile/:employeeId', so we need to replace :employeeId
+                const profileUrl = ROUTES.PROFILE.replace(':employeeId', hrEmployeeId);
+                console.log('[HRDashboard] Navigating to profile:', profileUrl, 'with employee ID:', hrEmployeeId);
+                navigate(profileUrl);
                 // Also update localStorage to ensure consistency
                 localStorage.setItem('currentEmployeeId', hrEmployeeId);
                 localStorage.setItem('hrEmployeeId', hrEmployeeId);
               } else {
-                // Fallback: navigate without ID (will show error)
-                navigate(ROUTES.EMPLOYEE_PROFILE);
+                // Fallback: try to navigate to profile/me or show error
+                console.warn('[HRDashboard] No HR employee ID found, trying profile/me');
+                navigate(ROUTES.PROFILE_ME || ROUTES.EMPLOYEE_PROFILE);
               }
             }}
           >
