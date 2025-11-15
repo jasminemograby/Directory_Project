@@ -11,18 +11,20 @@ The requested permission scope is not valid
 
 ## הפתרון
 
-### שלב 1: בדוק שה-Product מופעל
+### שלב 1: בדוק שה-Product מופעל (הכי חשוב!)
 
 1. לך ל-[LinkedIn Developer Portal](https://www.linkedin.com/developers/apps)
-2. בחר את ה-App שלך (`Directory Project - Employee Profiles`)
+2. בחר את ה-App שלך
 3. לך לטאב **"Products"**
-4. ודא שיש לך **"Sign In with LinkedIn using OpenID Connect"** מופעל
+4. **ודא שיש לך "Sign In with LinkedIn using OpenID Connect" מופעל**
 
 **אם אין לך את ה-Product הזה:**
 1. לחץ על **"Request access"** או **"Add product"**
 2. בחר **"Sign In with LinkedIn using OpenID Connect"**
 3. לחץ **"Request"** או **"Add"**
 4. LinkedIn יאשר את זה מיד (אין צורך באישור מיוחד)
+
+**זה הכי חשוב!** בלי ה-Product הזה, גם ה-scopes הבסיסיים (`openid`, `profile`, `email`) לא יעבדו!
 
 ### שלב 2: בדוק את ה-Redirect URLs
 
@@ -39,10 +41,8 @@ The requested permission scope is not valid
 1. לך לטאב **"Auth"**
 2. תחת **"Application credentials"**
 3. ודא שיש לך:
-   - **Client ID** (העתק את ה-Client ID שלך)
-   - **Client Secret** (לחץ "Show" כדי לראות אותו)
-   
-   **⚠️ חשוב:** אל תשלח את ה-Client Secret בפומבי! רק העתק אותו ל-Railway Variables.
+   - **Client ID** - העתק את ה-Client ID שלך
+   - **Client Secret** - לחץ "Show" כדי לראות אותו
 
 ### שלב 4: ודא שהמשתנים ב-Railway נכונים
 
@@ -50,7 +50,7 @@ The requested permission scope is not valid
 2. בחר את ה-Service (Backend)
 3. לך ל-**"Variables"**
 4. ודא שיש:
-   - `LINKEDIN_CLIENT_ID` = ה-Client ID שלך (לדוגמה: `REMOVED_CLIENT_ID`)
+   - `LINKEDIN_CLIENT_ID` = ה-Client ID שלך
    - `LINKEDIN_CLIENT_SECRET` = ה-Client Secret שלך (העתק מ-LinkedIn Developer Portal)
    - `LINKEDIN_REDIRECT_URI` = `https://directoryproject-production.up.railway.app/api/external/linkedin/callback`
    
@@ -77,7 +77,7 @@ The requested permission scope is not valid
 ## שגיאות נפוצות
 
 ### שגיאה: "The requested permission scope is not valid"
-**פתרון:** ודא ש-"Sign In with LinkedIn using OpenID Connect" מופעל ב-Products
+**פתרון:** ודא ש-"Sign In with LinkedIn using OpenID Connect" מופעל ב-Products (זה הכי חשוב!)
 
 ### שגיאה: "redirect_uri_mismatch"
 **פתרון:** ודא שה-Redirect URL ב-LinkedIn Developer Portal תואם בדיוק ל-URL ב-Railway
