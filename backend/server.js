@@ -65,7 +65,20 @@ app.use(cors(corsOptions));
 // Middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow unsafe-eval for React dev tools and some libraries
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://directoryproject-production.up.railway.app", "https://*.railway.app", "https://*.vercel.app"],
+      fontSrc: ["'self'", "data:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
 }));
 app.use(morgan('combined'));
 app.use(express.json());
@@ -145,6 +158,26 @@ app.use('/api/internal', require('./routes/internal'));
 
 // Employee Enrollment endpoints
 app.use('/api/enrollment', require('./routes/enrollment'));
+
+// Root /api endpoint - return API info (for debugging)
+app.get('/api', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Directory API is running',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      company: '/api/company',
+      employee: '/api/employee',
+      profile: '/api/profile',
+      external: '/api/external',
+      exchange: '/api/exchange',
+      internal: '/api/internal',
+      enrollment: '/api/enrollment'
+    }
+  });
+});
 
 // 404 handler (must be after all routes)
 app.use(notFound);
