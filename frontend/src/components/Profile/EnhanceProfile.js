@@ -69,8 +69,25 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
     checkConnectionStatus();
   }, [checkConnectionStatus]);
 
+  // Prevent multiple simultaneous calls to handleFetchData
+  const isFetchingData = useRef(false);
+  const enrichmentTriggered = useRef(false);
+
   const handleFetchData = useCallback(async () => {
+    // Prevent multiple simultaneous calls
+    if (isFetchingData.current) {
+      console.log('[EnhanceProfile] Already fetching data, skipping...');
+      return;
+    }
+
+    // Prevent multiple enrichment triggers
+    if (enrichmentTriggered.current) {
+      console.log('[EnhanceProfile] Enrichment already triggered, skipping...');
+      return;
+    }
+
     try {
+      isFetchingData.current = true;
       setLoading(true);
       setError(null);
       console.log('[EnhanceProfile] Starting data collection for employee:', employeeId);
@@ -115,8 +132,11 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
             });
             setSuccessMessage('✅ Profile enriched and approved automatically! Redirecting to your complete profile...');
             
+            // Mark enrichment as triggered to prevent multiple calls
+            enrichmentTriggered.current = true;
+            
             // Trigger enrichment complete callback - profile is now enriched and approved
-            if (linkedInStatus === 'connected' && githubStatus === 'connected') {
+            if (linkedInStatus === 'connected' && githubStatus === 'connected' && onEnrichmentComplete) {
               // Wait a bit for processed data to be available and profile status to update
               setTimeout(() => {
                 if (onEnrichmentComplete) {
@@ -127,8 +147,9 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
             }
           }
         } else {
-          // If no enrichment result but both are connected, still trigger callback
-          if (linkedInStatus === 'connected' && githubStatus === 'connected') {
+          // If no enrichment result but both are connected, still trigger callback (only once)
+          if (linkedInStatus === 'connected' && githubStatus === 'connected' && !enrichmentTriggered.current && onEnrichmentComplete) {
+            enrichmentTriggered.current = true;
             console.log('[EnhanceProfile] Both connected but enrichment not yet complete, waiting...');
             // Wait longer for enrichment to complete
             setTimeout(() => {
@@ -143,8 +164,11 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
     } catch (error) {
       console.error('[EnhanceProfile] Error fetching external data:', error);
       setError('Failed to fetch profile data. Please try again.');
+      // Reset on error to allow retry
+      isFetchingData.current = false;
     } finally {
       setLoading(false);
+      isFetchingData.current = false;
     }
   }, [employeeId, linkedInStatus, githubStatus, onEnrichmentComplete]);
 
@@ -152,22 +176,18 @@ const EnhanceProfile = ({ employeeId, onEnrichmentComplete }) => {
   const hasCalledComplete = useRef(false);
   useEffect(() => {
     // Both LinkedIn and GitHub are required
-    if (linkedInStatus === 'connected' && githubStatus === 'connected' && !hasCalledComplete.current) {
+    if (linkedInStatus === 'connected' && githubStatus === 'connected' && !hasCalledComplete.current && !enrichmentTriggered.current) {
       hasCalledComplete.current = true;
       // Automatically trigger enrichment after both are connected
+      // Note: handleFetchData will call onEnrichmentComplete, so we don't need to call it here
       handleFetchData();
-      if (onEnrichmentComplete) {
-        // Delay callback to allow enrichment to complete
-        setTimeout(() => {
-          onEnrichmentComplete();
-        }, 2000);
-      }
     }
     // Reset if either disconnected
     if (linkedInStatus !== 'connected' || githubStatus !== 'connected') {
       hasCalledComplete.current = false;
+      enrichmentTriggered.current = false;
     }
-  }, [linkedInStatus, githubStatus, onEnrichmentComplete, handleFetchData]);
+  }, [linkedInStatus, githubStatus, handleFetchData]);
 
 
   const handleLinkedInConnect = async () => {
