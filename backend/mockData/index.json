@@ -1,0 +1,306 @@
+{
+  "description": "Centralized mock data fallback for external microservices",
+  "version": "2.0.0",
+  "lastUpdated": "2024-01-01",
+  "SkillsEngine": {
+    "competencies": [
+      {
+        "id": "comp-1",
+        "name": "Software Development",
+        "level": "intermediate",
+        "verified": false,
+        "nestedCompetencies": [
+          {
+            "id": "nested-1",
+            "name": "Frontend Development",
+            "level": "intermediate",
+            "verified": false,
+            "skills": [
+              { "id": "skill-1", "name": "React", "level": "intermediate", "verified": false },
+              { "id": "skill-2", "name": "JavaScript", "level": "advanced", "verified": true },
+              { "id": "skill-3", "name": "CSS", "level": "intermediate", "verified": false }
+            ]
+          },
+          {
+            "id": "nested-2",
+            "name": "Backend Development",
+            "level": "beginner",
+            "verified": false,
+            "skills": [
+              { "id": "skill-4", "name": "Node.js", "level": "beginner", "verified": false },
+              { "id": "skill-5", "name": "Express", "level": "beginner", "verified": false }
+            ]
+          }
+        ],
+        "skills": [
+          { "id": "skill-6", "name": "Git", "level": "intermediate", "verified": true },
+          { "id": "skill-7", "name": "Agile", "level": "beginner", "verified": false }
+        ]
+      },
+      {
+        "id": "comp-2",
+        "name": "Quality Assurance",
+        "level": "beginner",
+        "verified": false,
+        "nestedCompetencies": [],
+        "skills": [
+          { "id": "skill-8", "name": "Manual Testing", "level": "beginner", "verified": false },
+          { "id": "skill-9", "name": "Test Planning", "level": "beginner", "verified": false }
+        ]
+      }
+    ],
+    "relevance_score": {
+      "score": 75,
+      "maxScore": 100,
+      "percentage": 75,
+      "requiredSkills": 15,
+      "verifiedSkills": 11,
+      "missingSkills": 4
+    },
+    "normalized_skills": [
+      {
+        "skill_name": "JavaScript",
+        "category": "Programming",
+        "level": "intermediate"
+      },
+      {
+        "skill_name": "React",
+        "category": "Frontend",
+        "level": "intermediate"
+      }
+    ],
+    "verified_skills": [
+      {
+        "skill_name": "JavaScript",
+        "category": "Programming",
+        "level": "advanced",
+        "verified_at": "2024-01-01T00:00:00Z"
+      }
+    ]
+  },
+  "CourseBuilder": {
+    "completed_courses": [
+      {
+        "course_id": "course-1",
+        "course_name": "Introduction to React",
+        "learner_id": null,
+        "feedback": "Great course! Learned a lot about React hooks and state management.",
+        "completed_at": "2024-01-01T00:00:00Z",
+        "test_attempts": 2,
+        "final_grade": 85
+      },
+      {
+        "course_id": "course-2",
+        "course_name": "Advanced JavaScript",
+        "learner_id": null,
+        "feedback": "Excellent content. The async/await section was particularly helpful.",
+        "completed_at": "2024-01-01T00:00:00Z",
+        "test_attempts": 1,
+        "final_grade": 92
+      }
+    ],
+    "learning_courses": [
+      {
+        "course_id": "course-4",
+        "course_name": "TypeScript Mastery",
+        "learner_id": null,
+        "progress": 45,
+        "started_at": "2024-01-01T00:00:00Z",
+        "last_accessed": "2024-01-01T00:00:00Z"
+      }
+    ],
+    "assigned_courses": [
+      {
+        "course_id": "course-6",
+        "course_name": "API Design Best Practices",
+        "learner_id": null,
+        "assigned_at": "2024-01-01T00:00:00Z",
+        "assigned_by": "HR Manager",
+        "due_date": "2024-02-01T00:00:00Z"
+      }
+    ]
+  },
+  "ContentStudio": {
+    "taught_courses": [
+      {
+        "course_id": "taught-1",
+        "course_name": "React Fundamentals",
+        "trainer_id": null,
+        "trainer_name": "Trainer Name",
+        "status": "active",
+        "students_count": 25,
+        "created_at": "2024-01-01T00:00:00Z",
+        "last_updated": "2024-01-01T00:00:00Z"
+      },
+      {
+        "course_id": "taught-2",
+        "course_name": "JavaScript Advanced Patterns",
+        "trainer_id": null,
+        "trainer_name": "Trainer Name",
+        "status": "active",
+        "students_count": 18,
+        "created_at": "2024-01-01T00:00:00Z",
+        "last_updated": "2024-01-01T00:00:00Z"
+      }
+    ],
+    "trainer_profile": {
+      "trainer_id": null,
+      "trainer_name": "Trainer Name",
+      "aiEnabled": false,
+      "public_publish_enabled": false,
+      "exercises_limited": 10,
+      "status": "active"
+    }
+  },
+  "Assessment": {
+    "assessments": [
+      {
+        "assessment_id": "assess-1",
+        "assessment_name": "JavaScript Fundamentals",
+        "employee_id": null,
+        "status": "pending",
+        "created_at": "2024-01-01T00:00:00Z"
+      }
+    ],
+    "results": [
+      {
+        "assessment_id": "assess-1",
+        "employee_id": null,
+        "score": 85,
+        "max_score": 100,
+        "completed_at": "2024-01-01T00:00:00Z"
+      }
+    ]
+  },
+  "LearnerAI": {
+    "recommendations": [
+      {
+        "employee_id": null,
+        "recommended_courses": [
+          {
+            "course_id": "rec-1",
+            "course_name": "Advanced React Patterns",
+            "reason": "Based on your current skills and career goals"
+          }
+        ],
+        "personalized_path": {
+          "steps": [
+            {
+              "step": 1,
+              "action": "Complete TypeScript Mastery course",
+              "priority": "high"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "ManagementReporting": {
+    "company_hierarchy": {
+      "company_id": null,
+      "company_name": "Example Company",
+      "departments": [
+        {
+          "department_id": null,
+          "department_name": "Engineering",
+          "teams": [
+            {
+              "team_id": null,
+              "team_name": "Frontend Team",
+              "employees": []
+            }
+          ]
+        }
+      ]
+    },
+    "kpis": {
+      "company_id": null,
+      "total_employees": 0,
+      "active_trainers": 0,
+      "completed_courses": 0,
+      "average_relevance_score": 75
+    }
+  },
+  "LearningAnalytics": {
+    "analytics": {
+      "employee_id": null,
+      "learning_progress": {
+        "total_courses": 0,
+        "completed": 0,
+        "in_progress": 0,
+        "assigned": 0
+      },
+      "skill_growth": {
+        "skills_verified": 0,
+        "skills_pending": 0,
+        "growth_rate": 0
+      },
+      "engagement_metrics": {
+        "last_active": "2024-01-01T00:00:00Z",
+        "average_session_duration": 0,
+        "courses_started_this_month": 0
+      }
+    }
+  },
+  "Directory": {
+    "employee_profile": {
+      "employee_id": null,
+      "name": "Example Employee",
+      "email": "employee@example.com",
+      "role": "Developer",
+      "target_role": "Senior Developer",
+      "bio": "Professional software engineer with expertise in web development.",
+      "value_proposition": "Experienced developer ready to take on senior responsibilities.",
+      "relevance_score": 75
+    },
+    "company_data": {
+      "company_id": null,
+      "company_name": "Example Company",
+      "industry": "Technology",
+      "verification_status": "verified"
+    }
+  },
+  "linkedin": {
+    "example": {
+      "name": "John Doe",
+      "title": "Software Engineer",
+      "experience": [],
+      "education": []
+    }
+  },
+  "github": {
+    "example": {
+      "username": "johndoe",
+      "repos": [],
+      "contributions": 0
+    }
+  },
+  "gemini": {
+    "bio": "Professional software engineer with expertise in web development.",
+    "projects": [
+      {
+        "title": "Sample Project",
+        "summary": "A sample project description generated by AI."
+      }
+    ]
+  },
+  "auth_service": {
+    "registration_check": {
+      "default": {
+        "isRegistered": false,
+        "userId": null,
+        "note": "Mock data: All employees treated as not registered when Auth Service unavailable"
+      }
+    }
+  },
+  "sendpulse": {
+    "in_app_notification": {
+      "default": {
+        "success": true,
+        "messageId": "db-stored",
+        "pushSent": false,
+        "note": "Mock data: In-app notification stored in database. Push notification not sent (SendPulse not configured or user not subscribed)"
+      }
+    }
+  }
+}
