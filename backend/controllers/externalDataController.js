@@ -34,9 +34,30 @@ const initiateLinkedInAuth = async (req, res, next) => {
       });
     }
 
+    // Check if there's an existing token - if so, disconnect first to ensure fresh OAuth
+    const existingToken = await query(
+      `SELECT id, provider FROM oauth_tokens WHERE employee_id = $1 AND provider = 'linkedin'`,
+      [employeeId]
+    );
+    
+    if (existingToken.rows.length > 0) {
+      console.log(`[LinkedIn Auth] Found existing token for employee ${employeeId}, deleting to force fresh OAuth`);
+      await query(
+        `DELETE FROM oauth_tokens WHERE employee_id = $1 AND provider = 'linkedin'`,
+        [employeeId]
+      );
+      // Also delete raw data to ensure fresh fetch
+      await query(
+        `DELETE FROM external_data_raw WHERE employee_id = $1 AND provider = 'linkedin'`,
+        [employeeId]
+      );
+      console.log(`[LinkedIn Auth] ✅ Existing token and raw data deleted`);
+    }
+    
     // Generate authorization URL
     const authUrl = linkedInService.getAuthorizationUrl(employeeId);
-    console.log(`[LinkedIn Auth] Generated auth URL: ${authUrl.substring(0, 100)}...`);
+    console.log(`[LinkedIn Auth] Generated auth URL: ${authUrl.substring(0, 150)}...`);
+    console.log(`[LinkedIn Auth] Full redirect URI: ${process.env.LINKEDIN_REDIRECT_URI || 'using default'}`);
     
     // If mode=redirect (or Accept header prefers HTML), redirect immediately to LinkedIn
     const prefersRedirect = mode === 'redirect' || req.accepts(['html', 'json']) === 'html';
@@ -211,6 +232,26 @@ const initiateGitHubAuth = async (req, res, next) => {
       });
     }
 
+    // Check if there's an existing token - if so, disconnect first to ensure fresh OAuth
+    const existingToken = await query(
+      `SELECT id, provider FROM oauth_tokens WHERE employee_id = $1 AND provider = 'github'`,
+      [employeeId]
+    );
+    
+    if (existingToken.rows.length > 0) {
+      console.log(`[GitHub Auth] Found existing token for employee ${employeeId}, deleting to force fresh OAuth`);
+      await query(
+        `DELETE FROM oauth_tokens WHERE employee_id = $1 AND provider = 'github'`,
+        [employeeId]
+      );
+      // Also delete raw data to ensure fresh fetch
+      await query(
+        `DELETE FROM external_data_raw WHERE employee_id = $1 AND provider = 'github'`,
+        [employeeId]
+      );
+      console.log(`[GitHub Auth] ✅ Existing token and raw data deleted`);
+    }
+
     // Build base URL dynamically for redirect URI fallback (works across environments)
     const requestBaseUrl = `${req.protocol}://${req.get('host')}`;
     console.log(`[GitHub Auth] Request base URL: ${requestBaseUrl}`);
@@ -219,7 +260,7 @@ const initiateGitHubAuth = async (req, res, next) => {
     const authUrl = githubService.getAuthorizationUrl(employeeId, {
       baseUrl: requestBaseUrl
     });
-    console.log(`[GitHub Auth] Generated auth URL: ${authUrl.substring(0, 100)}...`);
+    console.log(`[GitHub Auth] Generated auth URL: ${authUrl.substring(0, 150)}...`);
 
     // If mode=redirect (or Accept header prefers HTML), redirect immediately to GitHub
     const prefersRedirect = mode === 'redirect' || req.accepts(['html', 'json']) === 'html';
@@ -286,6 +327,26 @@ const handleGitHubCallback = async (req, res, next) => {
     }
 
     console.log(`[GitHub Callback] Processing OAuth for employee: ${employeeId}`);
+
+    // Check if there's an existing token - if so, disconnect first to ensure fresh OAuth
+    const existingToken = await query(
+      `SELECT id, provider FROM oauth_tokens WHERE employee_id = $1 AND provider = 'github'`,
+      [employeeId]
+    );
+    
+    if (existingToken.rows.length > 0) {
+      console.log(`[GitHub Callback] Found existing token for employee ${employeeId}, deleting to force fresh OAuth`);
+      await query(
+        `DELETE FROM oauth_tokens WHERE employee_id = $1 AND provider = 'github'`,
+        [employeeId]
+      );
+      // Also delete raw data to ensure fresh fetch
+      await query(
+        `DELETE FROM external_data_raw WHERE employee_id = $1 AND provider = 'github'`,
+        [employeeId]
+      );
+      console.log(`[GitHub Callback] ✅ Existing token and raw data deleted`);
+    }
 
     // Exchange code for token
     await githubService.exchangeCodeForToken(code, employeeId);
@@ -553,6 +614,8 @@ const disconnectProvider = async (req, res, next) => {
   try {
     const { employeeId, provider } = req.params;
 
+    console.log(`[Disconnect] Disconnecting ${provider} for employee: ${employeeId}`);
+
     if (!employeeId || !provider) {
       return res.status(400).json({
         success: false,
@@ -575,26 +638,55 @@ const disconnectProvider = async (req, res, next) => {
       [employeeId, provider]
     );
 
-    if (deleteResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'No connection found for this provider'
-      });
-    }
+    console.log(`[Disconnect] Token deletion result: ${deleteResult.rows.length} row(s) deleted`);
 
-    // Also delete raw data (optional - you might want to keep it)
-    await query(
+    // Also delete raw data to ensure fresh fetch on reconnect
+    const rawDataDeleteResult = await query(
       `DELETE FROM external_data_raw 
-       WHERE employee_id = $1 AND provider = $2`,
+       WHERE employee_id = $1 AND provider = $2
+       RETURNING id`,
       [employeeId, provider]
     );
 
+    console.log(`[Disconnect] Raw data deletion result: ${rawDataDeleteResult.rows.length} row(s) deleted`);
+
+    // Also delete processed data to ensure fresh enrichment
+    const processedDataDeleteResult = await query(
+      `DELETE FROM external_data_processed 
+       WHERE employee_id = $1
+       RETURNING id`,
+      [employeeId]
+    );
+
+    console.log(`[Disconnect] Processed data deletion result: ${processedDataDeleteResult.rows.length} row(s) deleted`);
+
+    // Also delete projects from this provider
+    const projectsDeleteResult = await query(
+      `DELETE FROM projects 
+       WHERE employee_id = $1 AND source LIKE '%${provider}%'
+       RETURNING id`,
+      [employeeId]
+    );
+
+    console.log(`[Disconnect] Projects deletion result: ${projectsDeleteResult.rows.length} row(s) deleted`);
+
+    if (deleteResult.rows.length === 0) {
+      console.log(`[Disconnect] ⚠️ No token found, but continuing with cleanup`);
+    }
+
     res.json({
       success: true,
-      message: `${provider} disconnected successfully`
+      message: `${provider} disconnected successfully`,
+      deleted: {
+        tokens: deleteResult.rows.length,
+        rawData: rawDataDeleteResult.rows.length,
+        processedData: processedDataDeleteResult.rows.length,
+        projects: projectsDeleteResult.rows.length
+      }
     });
   } catch (error) {
-    console.error('Error disconnecting provider:', error.message);
+    console.error('[Disconnect] ❌ Error disconnecting provider:', error.message);
+    console.error('[Disconnect] Error stack:', error.stack);
     next(error);
   }
 };
