@@ -141,7 +141,20 @@ const loadMockData = async () => {
  */
 const getRollbackMockData = async (serviceName, payloadSchema = {}) => {
   const mockData = await loadMockData();
+  
+  // Log if mock data is empty (for debugging)
+  if (!mockData || Object.keys(mockData).length === 0) {
+    console.warn(`[MockData] ⚠️ Mock data is empty for service: ${serviceName}`);
+  }
+  
   const serviceData = mockData[serviceName] || mockData[serviceName.toLowerCase()] || {};
+  
+  // Log if service data not found
+  if (!serviceData || Object.keys(serviceData).length === 0) {
+    console.warn(`[MockData] ⚠️ No mock data found for service: ${serviceName}, available services: ${Object.keys(mockData).join(', ')}`);
+  } else {
+    console.log(`[MockData] ✅ Using mock data for service: ${serviceName} (${Object.keys(serviceData).length} keys)`);
+  }
 
   // If payload has specific fields, try to match them in mock data
   if (payloadSchema && Object.keys(payloadSchema).length > 0) {
@@ -270,7 +283,7 @@ const sendRequest = async (targetServiceName, payloadObject, endpoint = '/api/ex
     });
 
     // Use fallback on error/timeout
-    console.log(`[MicroserviceIntegration] ${targetServiceName}: Using fallback mock data`);
+    console.log(`[MicroserviceIntegration] ${targetServiceName}: Using fallback mock data (error: ${error.message || 'unknown'})`);
     const fallbackData = await getRollbackMockData(targetServiceName, payloadObject);
     
     return {
