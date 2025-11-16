@@ -9,15 +9,33 @@ const { query } = require('../config/database');
  */
 const initiateLinkedInAuth = async (req, res, next) => {
   try {
-    const { employeeId } = req.params;
+    // Get employeeId from multiple sources (fallback pattern)
+    const employeeId = req.params.employeeId || 
+                       req.query.employeeId || 
+                       req.headers['x-employee-id'] ||
+                       (req.user && req.user.employeeId) ||
+                       (req.session && req.session.employeeId);
+    
     const { mode } = req.query || {};
     
-    console.log(`[LinkedIn Auth] Initiating OAuth for employee: ${employeeId}, mode: ${mode}`);
+    console.log(`[LinkedIn Auth] Initiating OAuth - Request details:`, {
+      employeeId,
+      mode,
+      paramsEmployeeId: req.params.employeeId,
+      queryEmployeeId: req.query.employeeId,
+      headerEmployeeId: req.headers['x-employee-id'],
+      userEmployeeId: req.user?.employeeId,
+      sessionEmployeeId: req.session?.employeeId,
+      method: req.method,
+      url: req.url,
+      headers: Object.keys(req.headers)
+    });
     
     if (!employeeId) {
+      console.error('[LinkedIn Auth] ❌ No employee ID found in request');
       return res.status(400).json({
         success: false,
-        error: 'Employee ID is required'
+        error: 'Employee ID is required. Please ensure you are logged in and the employee ID is provided.'
       });
     }
 
@@ -28,11 +46,14 @@ const initiateLinkedInAuth = async (req, res, next) => {
     );
 
     if (employeeResult.rows.length === 0) {
+      console.error(`[LinkedIn Auth] ❌ Employee not found: ${employeeId}`);
       return res.status(404).json({
         success: false,
         error: 'Employee not found'
       });
     }
+
+    console.log(`[LinkedIn Auth] ✅ Employee verified: ${employeeResult.rows[0].name} (${employeeResult.rows[0].email})`);
 
     // Check if there's an existing token - if so, disconnect first to ensure fresh OAuth
     const existingToken = await query(

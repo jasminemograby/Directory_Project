@@ -40,6 +40,11 @@ const getAuthorizationUrl = (employeeId, state = null) => {
     // 'w_member_social'  // Work experience, education, positions (requires LinkedIn approval - add if approved)
   ].join(' ');
 
+  // Validate redirect URI
+  if (!LINKEDIN_REDIRECT_URI) {
+    throw new Error('LinkedIn Redirect URI not configured');
+  }
+
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: LINKEDIN_CLIENT_ID,
@@ -50,9 +55,12 @@ const getAuthorizationUrl = (employeeId, state = null) => {
 
   const authUrl = `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`;
   
-  // Log scopes for debugging (don't log full URL for security)
+  // Log scopes and redirect URI for debugging (don't log full URL for security)
   console.log(`[LinkedIn] Generating authorization URL with scopes: ${scopes}`);
   console.log(`[LinkedIn] Scopes count: ${scopes.split(' ').length}`);
+  console.log(`[LinkedIn] Redirect URI: ${LINKEDIN_REDIRECT_URI}`);
+  console.log(`[LinkedIn] Client ID: ${LINKEDIN_CLIENT_ID ? `${LINKEDIN_CLIENT_ID.substring(0, 8)}...` : 'NOT SET'}`);
+  console.log(`[LinkedIn] State parameter length: ${stateParam.length}`);
   
   return authUrl;
 };

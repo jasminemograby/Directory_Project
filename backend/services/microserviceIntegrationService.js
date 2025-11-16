@@ -85,12 +85,16 @@ const recordFailure = (serviceName) => {
 let mockDataCache = null;
 // Use absolute path from project root, or relative from backend/services
 // Try multiple possible paths for production (Railway uses /app as root)
+// Priority: backend/mockData (for Railway), then root mockData, then /app/mockData
 const possiblePaths = [
   process.env.MOCKDATA_PATH,
-  path.resolve(__dirname, '../../mockData/index.json'),
-  path.resolve(__dirname, '../../../mockData/index.json'),
-  '/app/mockData/index.json',
-  path.join(process.cwd(), 'mockData', 'index.json')
+  path.resolve(__dirname, '../mockData/index.json'), // backend/mockData/index.json (Railway)
+  path.resolve(__dirname, '../../mockData/index.json'), // root/mockData/index.json
+  path.resolve(__dirname, '../../../mockData/index.json'), // alternative root path
+  '/app/mockData/index.json', // Railway absolute path
+  '/app/backend/mockData/index.json', // Railway backend path
+  path.join(process.cwd(), 'mockData', 'index.json'), // current working directory
+  path.join(process.cwd(), 'backend', 'mockData', 'index.json') // backend subdirectory
 ].filter(Boolean); // Remove undefined values
 
 const MOCK_DATA_PATH = possiblePaths[0]; // Use first available path
@@ -103,21 +107,28 @@ const loadMockData = async () => {
     return mockDataCache;
   }
 
+  console.log('[MockData] Attempting to load mock data from paths:', possiblePaths);
+
   // Try all possible paths
   for (const tryPath of possiblePaths) {
     try {
+      // Check if file exists
+      await fs.access(tryPath);
       const data = await fs.readFile(tryPath, 'utf8');
       mockDataCache = JSON.parse(data);
-      console.log('[MockData] Loaded mock data from:', tryPath);
+      console.log('[MockData] ✅ Loaded mock data from:', tryPath);
       return mockDataCache;
     } catch (error) {
       // Try next path
+      if (error.code !== 'ENOENT') {
+        console.warn(`[MockData] ⚠️ Error reading ${tryPath}:`, error.message);
+      }
       continue;
     }
   }
   
   // If all paths failed, return empty structure
-  console.warn('[MockData] Failed to load mock data from all paths:', possiblePaths);
+  console.error('[MockData] ❌ Failed to load mock data from all paths:', possiblePaths);
   console.warn('[MockData] Using empty mock data structure');
   return {};
 };
