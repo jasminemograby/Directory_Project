@@ -55,7 +55,13 @@ const getPendingProfiles = async (req, res) => {
     }
 
     // Get all pending profiles in the company
-    // Show profiles that are pending - either have processed data OR have raw data waiting to be processed
+    // IMPORTANT: Only show profiles that have completed enrichment (OAuth + Gemini processing)
+    // A profile must have processed data (bio) to appear in pending approvals
+    // This means the employee must have:
+    // 1. Logged in to their profile
+    // 2. Connected LinkedIn and/or GitHub (OAuth)
+    // 3. Completed enrichment (Gemini AI processing)
+    // Only then will it appear for HR approval
     const pendingResult = await query(
       `SELECT DISTINCT
         e.id,
@@ -81,10 +87,10 @@ const getPendingProfiles = async (req, res) => {
        LEFT JOIN departments d ON e.department_id = d.id
        LEFT JOIN teams t ON e.team_id = t.id
        LEFT JOIN external_data_processed edp ON e.id = edp.employee_id
-       LEFT JOIN external_data_raw edr ON e.id = edr.employee_id AND edr.processed = false
+       LEFT JOIN external_data_raw edr ON e.id = edr.employee_id
        WHERE e.company_id = $1 
        AND e.profile_status = 'pending'
-       AND (edp.bio IS NOT NULL OR edr.id IS NOT NULL)
+       AND edp.bio IS NOT NULL
        ORDER BY e.created_at DESC`,
       [companyId]
     );
